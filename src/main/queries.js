@@ -111,11 +111,13 @@ export function chapterOverview(db, libraryRoot, chapterId) {
 }
 
 // Scene detail: the scene's fields, its file-derived counts, and its beats
-// in order. Returns null for an unknown scene.
+// in order. chapterSceneCount lets the screen say "scene 2 of 4". Returns
+// null for an unknown scene.
 export function sceneDetail(db, libraryRoot, sceneId) {
   const scene = db
     .prepare(
       `SELECT s.id, s.position, s.title, s.pov, s.status, s.filename,
+              (SELECT count(*) FROM scenes sib WHERE sib.chapter_id = s.chapter_id) AS chapterSceneCount,
               c.id AS chapterId, c.number AS chapterNumber, c.title AS chapterTitle, c.folder AS chapterFolder,
               w.id AS workId, w.title AS workTitle, w.folder AS workFolder
        FROM scenes s
