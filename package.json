@@ -12,7 +12,8 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "start": "electron-vite preview",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps",
+    "test": "node --test \"test/**/*.test.mjs\""
   },
   "dependencies": {
     "better-sqlite3": "13.1.1",
