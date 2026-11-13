@@ -16,9 +16,10 @@ import { requireTestLibrary } from './guard.mjs'
 import { openSqlite } from '../../src/main/sqlite.js'
 import { migrate } from '../../src/main/migrate.js'
 import { scenePath } from '../../src/main/paths.js'
+import { TEST_DB_NAME } from '../../src/main/test-library.js'
 import * as data from './data.mjs'
 
-export const DB_NAME = '.ficbible-test.sqlite'
+export const DB_NAME = TEST_DB_NAME
 const MANIFEST_NAME = '.ficbible-seed-manifest.json'
 const SEED = 20261113
 const migrationsDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'migrations')

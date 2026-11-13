@@ -10,6 +10,7 @@
   },
   "scripts": {
     "dev": "electron-vite dev",
+    "dev:test": "node scripts/dev-test-library.mjs",
     "build": "electron-vite build",
     "start": "electron-vite preview",
     "postinstall": "electron-builder install-app-deps",

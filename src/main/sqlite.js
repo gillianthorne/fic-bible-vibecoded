@@ -17,8 +17,9 @@ function nativeBindingPath() {
   return path.join(pkgDir, 'build', 'Release', 'better_sqlite3.node')
 }
 
-export function openSqlite(file) {
-  const db = new Database(file, { nativeBinding: nativeBindingPath() })
+// readonly also refuses to create the file if it doesn't exist.
+export function openSqlite(file, { readonly = false } = {}) {
+  const db = new Database(file, { nativeBinding: nativeBindingPath(), readonly, fileMustExist: readonly })
   // Off by default in SQLite, and per-connection, so it must be set on
   // every open. Without it the REFERENCES clauses are decoration.
   db.pragma('foreign_keys = ON')

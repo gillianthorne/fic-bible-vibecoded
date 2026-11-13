@@ -7,7 +7,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-export const MARKER = '.ficbible-test-library'
+import { MARKER } from '../../src/main/test-library.js'
+
+export { MARKER }
 
 // Returns the library root as a resolved real path, or throws. Reads only.
 export function requireTestLibrary(root) {

@@ -4,6 +4,8 @@ import { closeDatabase, databasePath, openDatabase, schemaVersion, sqliteVersion
 import { resolveLibraryRoot } from './config.js'
 import { readTestScene } from './scene.js'
 import { createHandlers } from './handlers.js'
+import { openSqlite } from './sqlite.js'
+import { checkTestLibrary, TEST_DB_NAME } from './test-library.js'
 
 // Run a check and report its result or its error, so one failure doesn't
 // hide the others.
@@ -60,9 +62,25 @@ function createWindow() {
 
 ipcMain.handle('status:get', () => collectStatus())
 
+// Dev only: FIC_BIBLE_TEST_LIBRARY points the screens at a seeded test
+// library (see `npm run dev:test`). Ignored in a packaged build. The test
+// database is opened read-only and never migrated.
+const testLibraryEnv = app.isPackaged ? undefined : process.env.FIC_BIBLE_TEST_LIBRARY
+let testLibrary = null
+
+function openTestLibrary() {
+  if (!testLibrary) {
+    const libraryRoot = checkTestLibrary(testLibraryEnv)
+    const db = openSqlite(path.join(libraryRoot, TEST_DB_NAME), { readonly: true })
+    testLibrary = { db, libraryRoot }
+  }
+  return testLibrary
+}
+
 // The data the screens read. Opened per request so a database or config
 // that was broken at startup is retried, and its error shown.
 function openLibrary() {
+  if (testLibraryEnv) return openTestLibrary()
   return { db: openDatabase(), libraryRoot: resolveLibraryRoot().libraryRoot }
 }
 
@@ -70,7 +88,11 @@ for (const [channel, handler] of Object.entries(createHandlers(openLibrary))) {
   ipcMain.handle(channel, (_event, ...args) => handler(...args))
 }
 
-app.on('will-quit', closeDatabase)
+app.on('will-quit', () => {
+  closeDatabase()
+  testLibrary?.db.close()
+  testLibrary = null
+})
 
 app.whenReady().then(() => {
   // Open and migrate the database at start. A failure isn't fatal here:
