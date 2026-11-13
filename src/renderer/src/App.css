@@ -41,20 +41,9 @@ body {
   padding: 16px 24px;
 }
 
-/* Sidebar */
+/* Sidebar: navigation tree */
 
-.sidebar-work + .sidebar-work {
-  margin-top: 16px;
-}
-
-.sidebar h2 {
-  margin: 0 0 4px;
-  padding: 0 8px;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.sidebar .muted {
+.sidebar > .muted {
   margin: 0;
   padding: 0 8px;
 }
@@ -66,13 +55,11 @@ body {
 }
 
 .sidebar button {
-  display: block;
-  width: 100%;
-  padding: 4px 8px;
   border: 0;
   border-radius: 4px;
   background: none;
   font: inherit;
+  color: inherit;
   text-align: left;
   cursor: pointer;
 }
@@ -81,21 +68,67 @@ body {
   background: #e9e9e5;
 }
 
-.sidebar button.selected {
+.tree-work + .tree-work {
+  margin-top: 12px;
+}
+
+.tree-work h2 {
+  margin: 0 0 2px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tree-work-title {
+  display: block;
+  width: 100%;
+  padding: 4px 4px;
+}
+
+.tree-toggle-mark,
+.tree-toggle {
+  color: #777;
+}
+
+.tree-row {
+  display: flex;
+  align-items: stretch;
+}
+
+.tree-toggle {
+  flex: 0 0 18px;
+  padding: 0;
+  text-align: center;
+}
+
+.tree-item {
+  display: block;
+  flex: 1;
+  width: 100%;
+  padding: 4px 6px;
+}
+
+.tree-item.selected {
   background: #dde4ee;
   font-weight: 600;
 }
 
-.chapter-number {
+.tree-number {
   color: #777;
 }
 
-.sidebar-scenes {
+/* Scenes sit under their chapter's title, past the chapter's arrow. */
+.sidebar .tree-scenes {
   margin-bottom: 4px;
+  padding-left: 18px;
 }
 
-.sidebar .sidebar-scene {
-  padding-left: 22px;
+.tree-scene {
+  font-size: 13px;
+}
+
+.tree-empty {
+  margin: 0;
+  padding: 2px 6px 4px 22px;
   font-size: 13px;
 }
 
