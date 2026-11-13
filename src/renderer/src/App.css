@@ -126,6 +126,39 @@ body {
   font-size: 13px;
 }
 
+/* Scene status at a glance. Same hues as the status labels, stronger so
+   they read at dot size. Outlined is a hollow ring: nothing written yet. */
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+  vertical-align: 1px;
+  border: 1.5px solid transparent;
+}
+.status-dot-outlined {
+  border-color: #999;
+}
+.status-dot-drafting {
+  background: #e0a526;
+}
+.status-dot-drafted {
+  background: #4a86c5;
+}
+.status-dot-revised {
+  background: #4a9a5a;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 .tree-empty {
   margin: 0;
   padding: 2px 6px 4px 22px;

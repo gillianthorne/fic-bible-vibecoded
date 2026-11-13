@@ -37,10 +37,22 @@ function Item({ kind, id, selection, onSelect, className, children }) {
   )
 }
 
+// A dot rather than the full status label, which wouldn't fit beside a
+// title. The status is also given as text, so it doesn't rest on colour.
+function StatusDot({ status }) {
+  return (
+    <>
+      <span className={`status-dot status-dot-${status.replace(/\s+/g, '-')}`} aria-hidden="true" />
+      <span className="visually-hidden">({status})</span>
+    </>
+  )
+}
+
 function Scene({ scene, selection, onSelect }) {
   return (
-    <li>
+    <li title={`${scene.title} (${scene.status})`}>
       <Item kind="scene" id={scene.id} selection={selection} onSelect={onSelect} className="tree-scene">
+        <StatusDot status={scene.status} />
         <span className="tree-number">{scene.position}.</span> {scene.title}
       </Item>
     </li>
