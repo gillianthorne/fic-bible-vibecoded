@@ -90,6 +90,15 @@ body {
   color: #777;
 }
 
+.sidebar-scenes {
+  margin-bottom: 4px;
+}
+
+.sidebar .sidebar-scene {
+  padding-left: 22px;
+  font-size: 13px;
+}
+
 /* Chapter overview */
 
 .chapter-overview header p {
