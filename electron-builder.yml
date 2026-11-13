@@ -1,0 +1,39 @@
+appId: local.ficbible.app
+productName: Fic Bible
+
+directories:
+  output: dist
+
+files:
+  - out/**
+  - package.json
+  # Ship only the copy of SQLite compiled from source against Electron.
+  # Drop the bundled prebuilds and the C sources/build intermediates.
+  - "!node_modules/better-sqlite3/prebuilds/**"
+  - "!node_modules/better-sqlite3/{src,deps}/**"
+  - "!node_modules/better-sqlite3/build/**"
+  - node_modules/better-sqlite3/build/Release/better_sqlite3.node
+
+# Native modules can't be loaded from inside the asar archive.
+asarUnpack:
+  - node_modules/better-sqlite3/build/Release/better_sqlite3.node
+
+# Rebuild native modules from source against Electron's headers for the
+# target before packaging. The force_build flag comes from package.json
+# "config", so run packaging through the npm scripts.
+npmRebuild: true
+beforeBuild: scripts/require-native-host.cjs
+
+win:
+  target: nsis
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Office
+  maintainer: Fic Bible
