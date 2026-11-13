@@ -8,6 +8,20 @@ import { QueryError } from './QueryError.jsx'
 // Built as nested lists with disclosure buttons (aria-expanded), not an
 // ARIA tree: role="tree" promises arrow-key navigation, which v1 doesn't
 // have. Which rows are open is owned by App (isExpanded / onToggle).
+//
+// Titles are one line, cut with an ellipsis; the full title is in the
+// row's tooltip. A collapsed row that hides the open item is marked, so the
+// selection can't vanish by folding its parent.
+
+const isSelected = (selection, kind, id) => selection?.kind === kind && selection.id === id
+
+const chapterHolds = (chapter, selection) =>
+  isSelected(selection, 'chapter', chapter.id) ||
+  (selection?.kind === 'scene' && chapter.scenes.some((s) => s.id === selection.id))
+
+function HiddenSelection() {
+  return <span className="visually-hidden">(contains the open item)</span>
+}
 
 function Disclosure({ open, label, onToggle }) {
   return (
@@ -24,7 +38,7 @@ function Disclosure({ open, label, onToggle }) {
 }
 
 function Item({ kind, id, selection, onSelect, className, children }) {
-  const selected = selection?.kind === kind && selection.id === id
+  const selected = isSelected(selection, kind, id)
   return (
     <button
       type="button"
@@ -53,7 +67,8 @@ function Scene({ scene, selection, onSelect }) {
     <li title={`${scene.title} (${scene.status})`}>
       <Item kind="scene" id={scene.id} selection={selection} onSelect={onSelect} className="tree-scene">
         <StatusDot status={scene.status} />
-        <span className="tree-number">{scene.position}.</span> {scene.title}
+        <span className="tree-number">{scene.position}.</span>
+        <span className="tree-title">{scene.title}</span>
       </Item>
     </li>
   )
@@ -62,12 +77,17 @@ function Scene({ scene, selection, onSelect }) {
 function Chapter({ chapter, selection, onSelect, isExpanded, onToggle }) {
   const key = `chapter:${chapter.id}`
   const open = isExpanded(key)
+  // The chapter's own row shows its selection; this is for a hidden scene.
+  const hidesSelection =
+    !open && selection?.kind === 'scene' && chapter.scenes.some((s) => s.id === selection.id)
   return (
     <li>
-      <div className="tree-row">
+      <div className={['tree-row', hidesSelection && 'hides-selection'].filter(Boolean).join(' ')} title={chapter.title}>
         <Disclosure open={open} label={`scenes in chapter ${chapter.number}`} onToggle={() => onToggle(key)} />
         <Item kind="chapter" id={chapter.id} selection={selection} onSelect={onSelect}>
-          <span className="tree-number">{chapter.number}.</span> {chapter.title}
+          <span className="tree-number">{chapter.number}.</span>
+          <span className="tree-title">{chapter.title}</span>
+          {hidesSelection && <HiddenSelection />}
         </Item>
       </div>
       {open &&
@@ -87,14 +107,22 @@ function Chapter({ chapter, selection, onSelect, isExpanded, onToggle }) {
 function Work({ work, selection, onSelect, isExpanded, onToggle }) {
   const key = `work:${work.id}`
   const open = isExpanded(key)
+  const hidesSelection = !open && work.chapters.some((ch) => chapterHolds(ch, selection))
   return (
     <li className="tree-work">
       <h2>
-        <button type="button" className="tree-work-title" aria-expanded={open} onClick={() => onToggle(key)}>
+        <button
+          type="button"
+          className={['tree-work-title', hidesSelection && 'hides-selection'].filter(Boolean).join(' ')}
+          aria-expanded={open}
+          title={work.title}
+          onClick={() => onToggle(key)}
+        >
           <span className="tree-toggle-mark" aria-hidden="true">
             {open ? '▾' : '▸'}
-          </span>{' '}
-          {work.title}
+          </span>
+          <span className="tree-title">{work.title}</span>
+          {hidesSelection && <HiddenSelection />}
         </button>
       </h2>
       {open &&

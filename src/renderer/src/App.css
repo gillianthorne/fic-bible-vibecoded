@@ -78,20 +78,63 @@ body {
   font-weight: 600;
 }
 
-.tree-work-title {
-  display: block;
+/* Rows are one line: number, dot and arrow keep their size, only the
+   title shrinks, ending in an ellipsis. */
+.tree-work-title,
+.tree-item {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
   width: 100%;
+}
+
+.tree-work-title {
   padding: 4px 4px;
 }
 
+.tree-toggle-mark {
+  flex: none;
+  width: 14px;
+}
+
+.tree-number,
+.status-dot {
+  flex: none;
+}
+
+.tree-number {
+  margin-right: 4px;
+}
+
+.tree-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A collapsed row whose open item is folded away inside it. */
+.sidebar .hides-selection {
+  box-shadow: inset 3px 0 0 #8aa2c4;
+  background: #e7ecf4;
+}
+
 .tree-toggle-mark,
-.tree-toggle {
+.sidebar .tree-toggle {
   color: #777;
+}
+
+/* Chapter arrows line up under the work's arrow. */
+.sidebar .tree-chapters {
+  padding-left: 4px;
 }
 
 .tree-row {
   display: flex;
   align-items: stretch;
+  min-width: 0;
+  border-radius: 4px;
 }
 
 .tree-toggle {
@@ -101,9 +144,7 @@ body {
 }
 
 .tree-item {
-  display: block;
   flex: 1;
-  width: 100%;
   padding: 4px 6px;
 }
 
