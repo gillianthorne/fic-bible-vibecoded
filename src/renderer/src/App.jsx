@@ -51,6 +51,8 @@ export default function App() {
         <p>
           Version: {database.sqliteVersion}
           <br />
+          Schema version: {database.schemaVersion}
+          <br />
           File: {database.path}
         </p>
       </Check>

@@ -7,6 +7,8 @@ directories:
 files:
   - out/**
   - package.json
+  # Read at runtime from app.getAppPath(); applied on every start.
+  - migrations/*.sql
   # Ship only the copy of SQLite compiled from source against Electron.
   # Drop the bundled prebuilds and the C sources/build intermediates.
   - "!node_modules/better-sqlite3/prebuilds/**"

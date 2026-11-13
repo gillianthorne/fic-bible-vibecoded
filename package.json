@@ -14,6 +14,7 @@
     "start": "electron-vite preview",
     "postinstall": "electron-builder install-app-deps",
     "test": "node scripts/run-as-node.mjs --test \"test/**/*.test.mjs\"",
+    "migrate": "node scripts/run-as-node.mjs scripts/migrate.mjs",
     "dist:win": "electron-vite build && electron-builder --win",
     "dist:linux": "electron-vite build && electron-builder --linux"
   },

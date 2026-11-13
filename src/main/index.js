@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'node:path'
-import { closeDatabase, databasePath, sqliteVersion } from './db.js'
+import { closeDatabase, databasePath, openDatabase, schemaVersion, sqliteVersion } from './db.js'
 import { resolveLibraryRoot } from './config.js'
 import { readTestScene } from './scene.js'
 
@@ -16,7 +16,11 @@ function attempt(fn) {
 
 function collectStatus() {
   return {
-    database: attempt(() => ({ path: databasePath(), sqliteVersion: sqliteVersion() })),
+    database: attempt(() => ({
+      path: databasePath(),
+      sqliteVersion: sqliteVersion(),
+      schemaVersion: schemaVersion()
+    })),
     library: attempt(() => resolveLibraryRoot()),
     scene: attempt(() => readTestScene(resolveLibraryRoot().libraryRoot))
   }
@@ -58,6 +62,13 @@ ipcMain.handle('status:get', () => collectStatus())
 app.on('will-quit', closeDatabase)
 
 app.whenReady().then(() => {
+  // Open and migrate the database at start. A failure isn't fatal here:
+  // openDatabase() is retried by the status check, which shows the error.
+  try {
+    openDatabase()
+  } catch (e) {
+    console.error(`Database not ready: ${e.message}`)
+  }
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
