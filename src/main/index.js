@@ -1,5 +1,22 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'node:path'
+import { closeDatabase, databasePath, sqliteVersion } from './db.js'
+
+// Run a check and report its result or its error, so one failure doesn't
+// hide the others.
+function attempt(fn) {
+  try {
+    return { ok: true, ...fn() }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+}
+
+function collectStatus() {
+  return {
+    database: attempt(() => ({ path: databasePath(), sqliteVersion: sqliteVersion() }))
+  }
+}
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -32,7 +49,9 @@ function createWindow() {
   }
 }
 
-ipcMain.handle('status:get', () => ({ ok: true }))
+ipcMain.handle('status:get', () => collectStatus())
+
+app.on('will-quit', closeDatabase)
 
 app.whenReady().then(() => {
   createWindow()
