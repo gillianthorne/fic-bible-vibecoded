@@ -1,25 +1,10 @@
 import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
+import { number, Status, Wordcount } from './labels.jsx'
 
 // Read-only. Every scene in the chapter, so its shape is readable without
 // clicking into anything. Wordcounts come from the scene files, read by
 // the main process on every load.
-
-const number = (n) => n.toLocaleString()
-
-function Wordcount({ scene }) {
-  if (scene.wordcount !== null) return number(scene.wordcount)
-  const label = scene.fileError === 'ENOENT' ? 'file missing' : 'unreadable'
-  return (
-    <span className="file-error" title={scene.fileError}>
-      {label}
-    </span>
-  )
-}
-
-function Status({ value }) {
-  return <span className={`status status-${value.replace(/\s+/g, '-')}`}>{value}</span>
-}
 
 export default function ChapterOverview({ chapterId }) {
   const result = useQuery(() => window.ficBible.chapterOverview(chapterId), chapterId)

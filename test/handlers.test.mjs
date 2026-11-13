@@ -59,6 +59,7 @@ test('a failure to open becomes an error result, not a throw', () => {
   })
   assert.deepEqual(broken['nav:tree'](), { ok: false, error: 'database not ready' })
   assert.deepEqual(broken['chapter:overview'](1), { ok: false, error: 'database not ready' })
+  assert.deepEqual(broken['scene:detail'](1), { ok: false, error: 'database not ready' })
 })
 
 test('a missing scene file is reported per scene and in the total', () => {
@@ -81,5 +82,37 @@ test('a missing scene file is reported per scene and in the total', () => {
     assert.equal(after.wordcount, before.wordcount - before.scenes[0].wordcount)
   } finally {
     fs.renameSync(file + '.moved', file)
+  }
+})
+
+const firstSceneId = (chapterTitle) =>
+  db
+    .prepare(
+      `SELECT s.id FROM scenes s JOIN chapters c ON c.id = s.chapter_id
+       WHERE c.title = ? ORDER BY s.position LIMIT 1`
+    )
+    .pluck()
+    .get(chapterTitle)
+
+test('scene:detail returns the scene, its file-derived wordcount and its beats', () => {
+  const result = handlers['scene:detail'](firstSceneId('Signal'))
+  assert.equal(result.ok, true)
+  const scene = result.data
+  assert.equal(scene.position, 1)
+  assert.equal(scene.fileError, null)
+  assert.equal(typeof scene.wordcount, 'number')
+  assert.ok(scene.beats.length > 0)
+  assert.deepEqual(scene.beats.map((b) => b.position), scene.beats.map((_, i) => i + 1))
+})
+
+test('scene:detail gives null data for an unknown scene', () => {
+  assert.deepEqual(handlers['scene:detail'](999999), { ok: true, data: null })
+})
+
+test('scene:detail refuses anything but a positive integer', () => {
+  for (const bad of [0, -1, 1.5, '1', null, undefined, NaN, {}]) {
+    const result = handlers['scene:detail'](bad)
+    assert.equal(result.ok, false, `accepted ${String(bad)}`)
+    assert.match(result.error, /sceneId must be a positive integer/)
   }
 })

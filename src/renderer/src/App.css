@@ -90,6 +90,15 @@ body {
   color: #777;
 }
 
+.sidebar-scenes {
+  margin-bottom: 4px;
+}
+
+.sidebar .sidebar-scene {
+  padding-left: 22px;
+  font-size: 13px;
+}
+
 /* Chapter overview */
 
 .chapter-overview header p {
@@ -141,6 +150,155 @@ body {
   border-top: 2px solid #ccc;
   border-bottom: 0;
   font-weight: 600;
+}
+
+/* Scene detail */
+
+.scene-detail {
+  max-width: 760px;
+}
+
+.scene-detail header p {
+  margin: 0;
+}
+
+.scene-detail h1 {
+  margin: 2px 0 10px;
+  font-size: 20px;
+}
+
+.scene-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  margin: 0;
+}
+
+.scene-fields dt {
+  font-size: 12px;
+  color: #777;
+}
+
+.scene-fields dd {
+  margin: 2px 0 0;
+}
+
+.scene-fields .num {
+  font-variant-numeric: tabular-nums;
+}
+
+.scene-detail h2 {
+  margin: 24px 0 6px;
+  font-size: 15px;
+}
+
+.beat-summary p,
+p.beat-summary {
+  margin: 0;
+}
+
+.still-missing {
+  color: #9a6400;
+  font-weight: 600;
+}
+
+.nothing-missing {
+  color: #2f7a3d;
+}
+
+.beat-bar {
+  display: flex;
+  height: 6px;
+  margin-top: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: #eee;
+}
+
+.beat-bar-landed {
+  background: #4a9a5a;
+}
+
+.beat-bar-missing {
+  background: #f0c060;
+}
+
+.beats {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+}
+
+.beat {
+  display: flex;
+  gap: 10px;
+  padding: 8px 10px;
+  border-left: 3px solid transparent;
+  border-bottom: 1px solid #eee;
+}
+
+.beat-marker {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  margin-top: 4px;
+  border-radius: 50%;
+  border: 2px solid #aaa;
+}
+
+.beat-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: 12px;
+  color: #666;
+}
+
+.beat-kind {
+  padding: 0 6px;
+  border-radius: 3px;
+  background: #eceae4;
+  color: #444;
+}
+
+.beat-ref {
+  font-variant-numeric: tabular-nums;
+}
+
+.beat-content {
+  margin: 3px 0 0;
+  white-space: pre-wrap;
+}
+
+.beat-planned {
+  border-left-color: #f0c060;
+  background: #fffaf0;
+}
+
+.beat-planned .beat-marker {
+  border-color: #d39a20;
+}
+
+.beat-planned .beat-status {
+  color: #9a6400;
+  font-weight: 600;
+}
+
+.beat-in-draft .beat-marker {
+  border-color: #4a9a5a;
+  background: #4a9a5a;
+}
+
+.beat-cut {
+  color: #999;
+}
+
+.beat-cut .beat-marker {
+  border-color: #ccc;
+}
+
+.beat-cut .beat-content {
+  text-decoration: line-through;
 }
 
 /* Status labels */

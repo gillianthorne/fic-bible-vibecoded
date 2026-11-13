@@ -89,6 +89,11 @@ test('scene detail returns beats in order with refs inside the file', () => {
   }
 })
 
+test('scene detail knows how many scenes its chapter has', () => {
+  assert.equal(sceneDetail(db, root, sceneId('Salt and Static', 1, 3)).chapterSceneCount, 6)
+  assert.equal(sceneDetail(db, root, sceneId('The Lantern Road', 2, 1)).chapterSceneCount, 1)
+})
+
 test('a missing scene file is reported, not thrown, and left out of totals', () => {
   const id = sceneId('The Lantern Road', 3, 1)
   const detail = sceneDetail(db, root, id)
