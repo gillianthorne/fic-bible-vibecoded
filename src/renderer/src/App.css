@@ -41,20 +41,9 @@ body {
   padding: 16px 24px;
 }
 
-/* Sidebar */
+/* Sidebar: navigation tree */
 
-.sidebar-work + .sidebar-work {
-  margin-top: 16px;
-}
-
-.sidebar h2 {
-  margin: 0 0 4px;
-  padding: 0 8px;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.sidebar .muted {
+.sidebar > .muted {
   margin: 0;
   padding: 0 8px;
 }
@@ -66,13 +55,11 @@ body {
 }
 
 .sidebar button {
-  display: block;
-  width: 100%;
-  padding: 4px 8px;
   border: 0;
   border-radius: 4px;
   background: none;
   font: inherit;
+  color: inherit;
   text-align: left;
   cursor: pointer;
 }
@@ -81,21 +68,141 @@ body {
   background: #e9e9e5;
 }
 
-.sidebar button.selected {
+.tree-work + .tree-work {
+  margin-top: 12px;
+}
+
+.tree-work h2 {
+  margin: 0 0 2px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Rows are one line: number, dot and arrow keep their size, only the
+   title shrinks, ending in an ellipsis. */
+.tree-work-title,
+.tree-item {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  width: 100%;
+}
+
+.tree-work-title {
+  padding: 4px 4px;
+}
+
+.tree-toggle-mark {
+  flex: none;
+  width: 14px;
+}
+
+.tree-number,
+.status-dot {
+  flex: none;
+}
+
+.tree-number {
+  margin-right: 4px;
+}
+
+.tree-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A collapsed row whose open item is folded away inside it. */
+.sidebar .hides-selection {
+  box-shadow: inset 3px 0 0 #8aa2c4;
+  background: #e7ecf4;
+}
+
+.tree-toggle-mark,
+.sidebar .tree-toggle {
+  color: #777;
+}
+
+/* Chapter arrows line up under the work's arrow. */
+.sidebar .tree-chapters {
+  padding-left: 4px;
+}
+
+.tree-row {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  border-radius: 4px;
+}
+
+.tree-toggle {
+  flex: 0 0 18px;
+  padding: 0;
+  text-align: center;
+}
+
+.tree-item {
+  flex: 1;
+  padding: 4px 6px;
+}
+
+.tree-item.selected {
   background: #dde4ee;
   font-weight: 600;
 }
 
-.chapter-number {
+.tree-number {
   color: #777;
 }
 
-.sidebar-scenes {
+/* Scenes sit under their chapter's title, past the chapter's arrow. */
+.sidebar .tree-scenes {
   margin-bottom: 4px;
+  padding-left: 18px;
 }
 
-.sidebar .sidebar-scene {
-  padding-left: 22px;
+.tree-scene {
+  font-size: 13px;
+}
+
+/* Scene status at a glance. Same hues as the status labels, stronger so
+   they read at dot size. Outlined is a hollow ring: nothing written yet. */
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+  vertical-align: 1px;
+  border: 1.5px solid transparent;
+}
+.status-dot-outlined {
+  border-color: #999;
+}
+.status-dot-drafting {
+  background: #e0a526;
+}
+.status-dot-drafted {
+  background: #4a86c5;
+}
+.status-dot-revised {
+  background: #4a9a5a;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.tree-empty {
+  margin: 0;
+  padding: 2px 6px 4px 22px;
   font-size: 13px;
 }
 

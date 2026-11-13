@@ -68,6 +68,8 @@ test('covers the requested edge cases', () => {
   assert.ok(edgeCases.sceneWithNoBeats)
   assert.ok(edgeCases.crlfScene)
   assert.ok(edgeCases.emptyScenes.length >= 1)
+  assert.ok(edgeCases.longChapterTitle)
+  assert.ok(edgeCases.longSceneTitle)
 
   const db = openSqlite(path.join(root, DB_NAME))
   const distinct = (sql) => db.prepare(sql).pluck().all()
