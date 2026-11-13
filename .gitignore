@@ -1,4 +1,6 @@
 node_modules/
 out/
 dist/
-dev-library/
+# Seeded test library: only the marker is tracked.
+dev-library/*
+!dev-library/.ficbible-test-library

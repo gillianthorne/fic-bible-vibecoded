@@ -10,10 +10,14 @@
   },
   "scripts": {
     "dev": "electron-vite dev",
+    "dev:test": "node scripts/dev-test-library.mjs",
     "build": "electron-vite build",
     "start": "electron-vite preview",
     "postinstall": "electron-builder install-app-deps",
-    "test": "node --test \"test/**/*.test.mjs\"",
+    "test": "node scripts/run-as-node.mjs --test \"test/**/*.test.mjs\"",
+    "migrate": "node scripts/run-as-node.mjs scripts/migrate.mjs",
+    "seed": "node scripts/run-as-node.mjs scripts/seed/seed.mjs",
+    "show-queries": "node scripts/run-as-node.mjs scripts/seed/show-queries.mjs",
     "dist:win": "electron-vite build && electron-builder --win",
     "dist:linux": "electron-vite build && electron-builder --linux"
   },

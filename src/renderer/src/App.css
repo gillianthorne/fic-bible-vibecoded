@@ -1,0 +1,193 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  color: #222;
+  background: #fff;
+}
+
+.muted {
+  color: #777;
+}
+
+/* Layout: sidebar left, one main pane right */
+
+.layout {
+  display: flex;
+  height: 100%;
+}
+
+.sidebar {
+  flex: 0 0 220px;
+  overflow-y: auto;
+  padding: 12px 8px;
+  border-right: 1px solid #ddd;
+  background: #f6f6f4;
+}
+
+.main-pane {
+  flex: 1;
+  overflow: auto;
+  padding: 16px 24px;
+}
+
+/* Sidebar */
+
+.sidebar-work + .sidebar-work {
+  margin-top: 16px;
+}
+
+.sidebar h2 {
+  margin: 0 0 4px;
+  padding: 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sidebar .muted {
+  margin: 0;
+  padding: 0 8px;
+}
+
+.sidebar ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar button {
+  display: block;
+  width: 100%;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sidebar button:hover {
+  background: #e9e9e5;
+}
+
+.sidebar button.selected {
+  background: #dde4ee;
+  font-weight: 600;
+}
+
+.chapter-number {
+  color: #777;
+}
+
+/* Chapter overview */
+
+.chapter-overview header p {
+  margin: 0;
+}
+
+.chapter-overview h1 {
+  margin: 2px 0 6px;
+  font-size: 20px;
+}
+
+.chapter-overview table {
+  margin-top: 16px;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.chapter-overview th,
+.chapter-overview td {
+  padding: 5px 8px;
+  border-bottom: 1px solid #e5e5e5;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.chapter-overview td:nth-child(2) {
+  white-space: normal;
+}
+
+.chapter-overview thead th {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  vertical-align: bottom;
+}
+
+.chapter-overview .beats-group {
+  text-align: center;
+  border-bottom-color: #ccc;
+}
+
+.chapter-overview .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.chapter-overview tfoot th,
+.chapter-overview tfoot td {
+  border-top: 2px solid #ccc;
+  border-bottom: 0;
+  font-weight: 600;
+}
+
+/* Status labels */
+
+.status {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 12px;
+  background: #eee;
+}
+
+.status-outlined {
+  background: #eee;
+}
+.status-drafting {
+  background: #fdf0cf;
+}
+.status-drafted {
+  background: #dcecf8;
+}
+.status-revised {
+  background: #dcf1dd;
+}
+.status-ready-to-post {
+  background: #e5def5;
+}
+.status-posted {
+  background: #dcf1dd;
+}
+
+/* Errors */
+
+.file-error {
+  color: #b02a2a;
+  font-weight: normal;
+}
+
+.query-error {
+  padding: 8px 12px;
+  border: 1px solid #e3b3b3;
+  border-radius: 4px;
+  background: #fbefef;
+  color: #7a1f1f;
+}
+
+.query-error pre {
+  margin: 4px 0 0;
+  white-space: pre-wrap;
+}

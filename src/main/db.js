@@ -1,28 +1,38 @@
 import { app } from 'electron'
 import path from 'node:path'
-import Database from 'better-sqlite3'
-
-// better-sqlite3 ships prebuilt binaries and prefers them by default. We
-// want the copy compiled from source against Electron's headers (see the
-// "config.node_gyp_force_build" entry in package.json), so point at it
-// explicitly. If that build is missing, opening the database fails loudly
-// rather than falling back to a prebuilt.
-function nativeBindingPath() {
-  const pkgDir = path.dirname(require.resolve('better-sqlite3/package.json'))
-  return path.join(pkgDir, 'build', 'Release', 'better_sqlite3.node')
-}
+import { openSqlite } from './sqlite.js'
+import { currentVersion, migrate } from './migrate.js'
 
 export function databasePath() {
   return path.join(app.getPath('userData'), 'fic-bible.sqlite')
 }
 
+// The app root in dev, app.asar when packaged; Electron's fs reads into asar.
+function migrationsDir() {
+  return path.join(app.getAppPath(), 'migrations')
+}
+
 let db = null
 
+// Opens the database and brings its schema up to date. If a migration
+// fails, the connection is closed and the error propagates, so the app
+// never works against a half-migrated schema.
 export function openDatabase() {
   if (!db) {
-    db = new Database(databasePath(), { nativeBinding: nativeBindingPath() })
+    const conn = openSqlite(databasePath())
+    try {
+      migrate(conn, migrationsDir())
+    } catch (e) {
+      conn.close()
+      throw e
+    }
+    db = conn
   }
   return db
+}
+
+export function schemaVersion() {
+  return currentVersion(openDatabase())
 }
 
 export function closeDatabase() {

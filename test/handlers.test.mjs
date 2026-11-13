@@ -1,0 +1,85 @@
+// The IPC handlers against a freshly seeded temp library.
+// Uses the Electron-built SQLite module: run through `npm test`.
+import { test, before, after } from 'node:test'
+import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { MARKER } from '../scripts/seed/guard.mjs'
+import { DB_NAME, seed } from '../scripts/seed/seed.mjs'
+import { openSqlite } from '../src/main/sqlite.js'
+import { createHandlers } from '../src/main/handlers.js'
+
+let root
+let db
+let handlers
+
+before(() => {
+  root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'fic-bible-handlers-')))
+  fs.writeFileSync(path.join(root, MARKER), '')
+  seed(root)
+  db = openSqlite(path.join(root, DB_NAME))
+  handlers = createHandlers(() => ({ db, libraryRoot: root }))
+})
+
+after(() => db.close())
+
+const chapterId = (title) => db.prepare('SELECT id FROM chapters WHERE title = ?').pluck().get(title)
+
+test('nav:tree wraps the navigation tree', () => {
+  const result = handlers['nav:tree']()
+  assert.equal(result.ok, true)
+  assert.equal(result.data.length, 3)
+})
+
+test('chapter:overview returns scenes and a file-derived total', () => {
+  const result = handlers['chapter:overview'](chapterId('Signal'))
+  assert.equal(result.ok, true)
+  const { scenes, wordcount, uncounted } = result.data
+  assert.ok(scenes.length > 0)
+  assert.equal(uncounted, 0)
+  assert.equal(wordcount, scenes.reduce((sum, s) => sum + s.wordcount, 0))
+})
+
+test('chapter:overview gives null data for an unknown chapter', () => {
+  assert.deepEqual(handlers['chapter:overview'](999999), { ok: true, data: null })
+})
+
+test('chapter:overview refuses anything but a positive integer', () => {
+  for (const bad of [0, -1, 1.5, '1', null, undefined, NaN, {}]) {
+    const result = handlers['chapter:overview'](bad)
+    assert.equal(result.ok, false, `accepted ${String(bad)}`)
+    assert.match(result.error, /chapterId must be a positive integer/)
+  }
+})
+
+test('a failure to open becomes an error result, not a throw', () => {
+  const broken = createHandlers(() => {
+    throw new Error('database not ready')
+  })
+  assert.deepEqual(broken['nav:tree'](), { ok: false, error: 'database not ready' })
+  assert.deepEqual(broken['chapter:overview'](1), { ok: false, error: 'database not ready' })
+})
+
+test('a missing scene file is reported per scene and in the total', () => {
+  const id = chapterId('Signal')
+  const before = handlers['chapter:overview'](id).data
+  const victim = db
+    .prepare(
+      `SELECT w.folder AS w, c.folder AS c, s.filename AS f FROM scenes s
+       JOIN chapters c ON c.id = s.chapter_id JOIN works w ON w.id = c.work_id
+       WHERE c.id = ? ORDER BY s.position LIMIT 1`
+    )
+    .get(id)
+  const file = path.join(root, victim.w, victim.c, victim.f)
+  fs.renameSync(file, file + '.moved')
+  try {
+    const after = handlers['chapter:overview'](id).data
+    assert.equal(after.scenes[0].wordcount, null)
+    assert.equal(after.scenes[0].fileError, 'ENOENT')
+    assert.equal(after.uncounted, 1)
+    assert.equal(after.wordcount, before.wordcount - before.scenes[0].wordcount)
+  } finally {
+    fs.renameSync(file + '.moved', file)
+  }
+})
