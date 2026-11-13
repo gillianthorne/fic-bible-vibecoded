@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'node:path'
 import { closeDatabase, databasePath, sqliteVersion } from './db.js'
+import { resolveLibraryRoot } from './config.js'
 
 // Run a check and report its result or its error, so one failure doesn't
 // hide the others.
@@ -14,7 +15,8 @@ function attempt(fn) {
 
 function collectStatus() {
   return {
-    database: attempt(() => ({ path: databasePath(), sqliteVersion: sqliteVersion() }))
+    database: attempt(() => ({ path: databasePath(), sqliteVersion: sqliteVersion() })),
+    library: attempt(() => resolveLibraryRoot())
   }
 }
 
