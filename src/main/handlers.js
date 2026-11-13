@@ -1,4 +1,4 @@
-import { chapterOverview, navigationTree } from './queries.js'
+import { chapterOverview, navigationTree, sceneDetail } from './queries.js'
 
 // What the renderer can ask for, one function per IPC channel. No Electron
 // imports, so these are tested with plain `node --test`.
@@ -35,6 +35,14 @@ export function createHandlers(open) {
         const id = requireId(chapterId, 'chapterId')
         const { db, libraryRoot } = open()
         return chapterOverview(db, libraryRoot, id)
+      }),
+
+    // data is null for a scene that doesn't exist.
+    'scene:detail': (sceneId) =>
+      respond(() => {
+        const id = requireId(sceneId, 'sceneId')
+        const { db, libraryRoot } = open()
+        return sceneDetail(db, libraryRoot, id)
       })
   }
 }
