@@ -3,6 +3,7 @@ import path from 'node:path'
 import { closeDatabase, databasePath, openDatabase, schemaVersion, sqliteVersion } from './db.js'
 import { resolveLibraryRoot } from './config.js'
 import { readTestScene } from './scene.js'
+import { createHandlers } from './handlers.js'
 
 // Run a check and report its result or its error, so one failure doesn't
 // hide the others.
@@ -58,6 +59,16 @@ function createWindow() {
 }
 
 ipcMain.handle('status:get', () => collectStatus())
+
+// The data the screens read. Opened per request so a database or config
+// that was broken at startup is retried, and its error shown.
+function openLibrary() {
+  return { db: openDatabase(), libraryRoot: resolveLibraryRoot().libraryRoot }
+}
+
+for (const [channel, handler] of Object.entries(createHandlers(openLibrary))) {
+  ipcMain.handle(channel, (_event, ...args) => handler(...args))
+}
 
 app.on('will-quit', closeDatabase)
 
