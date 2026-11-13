@@ -142,6 +142,7 @@ function generate(db, root, created) {
       makeDir(root, path.join(work.folder, chFolder), created)
       summary.chapters++
       if (ch.scenes === 1) summary.edgeCases.chapterWithOneScene = `${work.title} ch ${number}`
+      if (ch.title.length > 40) summary.edgeCases.longChapterTitle = `${work.title} ch ${number}`
 
       for (let position = 1; position <= ch.scenes; position++) {
         const special = ch.special?.[position]
@@ -160,9 +161,13 @@ function generate(db, root, created) {
         if (!text) (summary.edgeCases.emptyScenes ??= []).push(where)
         createFile(root, path.relative(root, scenePath(root, work.folder, chFolder, filename)), text, created)
 
-        const sceneId = insertScene.run(
-          chapterId, position, data.sceneTitle(sceneIndex++), filename, pov, status
-        ).lastInsertRowid
+        // sceneIndex advances either way, so the other scenes keep their titles.
+        let title = data.sceneTitle(sceneIndex++)
+        if (special === 'long-title') {
+          title = data.LONG_SCENE_TITLE
+          summary.edgeCases.longSceneTitle = where
+        }
+        const sceneId = insertScene.run(chapterId, position, title, filename, pov, status).lastInsertRowid
         summary.scenes++
 
         if (special === 'no-beats') {

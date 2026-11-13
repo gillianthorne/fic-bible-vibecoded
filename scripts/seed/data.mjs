@@ -39,8 +39,9 @@ export const OUTLINE = [
     chapters: [
       { title: 'Signal', status: 'posted', scenes: 6 },
       { title: 'The Tide Tables', status: 'ready to post', scenes: 2, special: { 2: 'no-beats' } },
-      { title: 'Low Water', status: 'drafting', scenes: 5 },
-      { title: 'Interference', status: 'drafting', scenes: 3 },
+      { title: 'Low Water', status: 'drafting', scenes: 5, special: { 1: 'long-title' } },
+      // Too long for the sidebar width, at chapter level.
+      { title: 'Everything the Lighthouse Keeper Never Wrote Down in the Log', status: 'drafting', scenes: 3 },
       { title: 'What the Radio Said', status: 'drafting', scenes: 2, special: { 2: 'empty' } }
     ]
   },
@@ -169,6 +170,9 @@ export function prose(r, pov) {
 export function sceneTitle(index) {
   return SCENE_TITLES[index % SCENE_TITLES.length]
 }
+
+// Too long for the sidebar width, at scene level.
+export const LONG_SCENE_TITLE = 'The Conversation in the Stairwell That Neither of Them Mentions Again'
 
 export function beatContent(r, kind, pov) {
   return fill(r.pick(BEATS[kind]), r, pov)
