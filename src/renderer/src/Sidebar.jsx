@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
 import LibraryBar from './LibraryBar.jsx'
@@ -9,6 +10,10 @@ import LibraryBar from './LibraryBar.jsx'
 // Built as nested lists with disclosure buttons (aria-expanded), not an
 // ARIA tree: role="tree" promises arrow-key navigation, which v1 doesn't
 // have. Which rows are open is owned by App (isExpanded / onToggle).
+//
+// "+ New work / chapter / scene" add one at the end: a title box opens in
+// place, Enter creates it (a row plus its empty folder or file), Escape
+// cancels. They're hidden for a test library, which can't be changed.
 //
 // Titles are one line, cut with an ellipsis; the full title is in the
 // row's tooltip. A collapsed row that hides the open item is marked, so the
@@ -63,6 +68,69 @@ function StatusDot({ status }) {
   )
 }
 
+// A "+ New …" entry that opens into a title box. create(title) resolves
+// to { ok, data: newId } or { ok: false, error }; onCreated(newId) runs
+// after a successful create. A failed create keeps the box open with the
+// error under it.
+function NewItem({ what, create, onCreated, className }) {
+  const [open, setOpen] = useState(false)
+  const [title, setTitle] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+
+  function close() {
+    setOpen(false)
+    setTitle('')
+    setError(null)
+  }
+
+  async function submit(e) {
+    e.preventDefault()
+    setBusy(true)
+    setError(null)
+    try {
+      const result = await create(title)
+      if (result.ok) {
+        close()
+        onCreated(result.data)
+      } else setError(result.error)
+    } catch (err) {
+      setError(String(err?.message ?? err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const classes = (base) => [base, className].filter(Boolean).join(' ')
+  if (!open) {
+    return (
+      <button type="button" className={classes('tree-new')} onClick={() => setOpen(true)}>
+        + New {what}
+      </button>
+    )
+  }
+  return (
+    <form className={classes('tree-new-form')} onSubmit={submit}>
+      <input
+        type="text"
+        value={title}
+        aria-label={`New ${what} title`}
+        placeholder={`New ${what} title`}
+        autoFocus
+        disabled={busy}
+        onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={(e) => e.key === 'Escape' && close()}
+      />
+      {error && (
+        <p className="tree-new-error" role="alert">
+          {error}
+        </p>
+      )}
+      <p className="tree-new-hint">Enter to create · Esc to cancel</p>
+    </form>
+  )
+}
+
 function Scene({ scene, selection, onSelect }) {
   return (
     <li title={`${scene.title} (${scene.status})`}>
@@ -75,7 +143,7 @@ function Scene({ scene, selection, onSelect }) {
   )
 }
 
-function Chapter({ chapter, selection, onSelect, isExpanded, onToggle }) {
+function Chapter({ chapter, workId, selection, onSelect, isExpanded, onToggle, canCreate, onCreated }) {
   const key = `chapter:${chapter.id}`
   const open = isExpanded(key)
   // The chapter's own row shows its selection; this is for a hidden scene.
@@ -101,13 +169,21 @@ function Chapter({ chapter, selection, onSelect, isExpanded, onToggle }) {
             ))}
           </ul>
         ))}
+      {open && canCreate && (
+        <NewItem
+          what="scene"
+          className="tree-new-scene"
+          create={(title) => window.ficBible.createScene(chapter.id, title)}
+          onCreated={(id) => onCreated({ kind: 'scene', id }, [`work:${workId}`, `chapter:${chapter.id}`])}
+        />
+      )}
     </li>
   )
 }
 
 // Clicking a work opens its overview and unfolds it. Clicking it again
 // while its overview is open folds or unfolds it.
-function Work({ work, selection, onSelect, isExpanded, onToggle }) {
+function Work({ work, selection, onSelect, isExpanded, onToggle, canCreate, onCreated }) {
   const key = `work:${work.id}`
   const open = isExpanded(key)
   const selected = isSelected(selection, 'work', work.id)
@@ -145,21 +221,36 @@ function Work({ work, selection, onSelect, isExpanded, onToggle }) {
               <Chapter
                 key={chapter.id}
                 chapter={chapter}
+                workId={work.id}
                 selection={selection}
                 onSelect={onSelect}
                 isExpanded={isExpanded}
                 onToggle={onToggle}
+                canCreate={canCreate}
+                onCreated={onCreated}
               />
             ))}
           </ul>
         ))}
+      {open && canCreate && (
+        <NewItem
+          what="chapter"
+          className="tree-new-chapter"
+          create={(title) => window.ficBible.createChapter(work.id, title)}
+          onCreated={(id) => onCreated({ kind: 'chapter', id }, [`work:${work.id}`])}
+        />
+      )}
     </li>
   )
 }
 
 // refreshKey changes after an import, so the tree is read again.
-export default function Sidebar({ selection, onSelect, isExpanded, onToggle, refreshKey, onImported }) {
+// onCreated(selection, expandKeys) runs after something is created: App
+// reads the library again, unfolds expandKeys and opens the new item.
+export default function Sidebar({ selection, onSelect, isExpanded, onToggle, refreshKey, onImported, onCreated }) {
   const tree = useQuery(() => window.ficBible.navigationTree(), `tree:${refreshKey}`)
+  const info = useQuery(() => window.ficBible.libraryInfo(), 'library-info', refreshKey)
+  const canCreate = info.ok === true && info.data.canChange
 
   return (
     <nav className="sidebar" aria-label="Works, chapters and scenes">
@@ -180,9 +271,19 @@ export default function Sidebar({ selection, onSelect, isExpanded, onToggle, ref
               onSelect={onSelect}
               isExpanded={isExpanded}
               onToggle={onToggle}
+              canCreate={canCreate}
+              onCreated={onCreated}
             />
           ))}
         </ul>
+      )}
+      {tree.ok && canCreate && (
+        <NewItem
+          what="work"
+          className="tree-new-work"
+          create={(title) => window.ficBible.createWork(title)}
+          onCreated={(id) => onCreated({ kind: 'work', id }, [`work:${id}`])}
+        />
       )}
     </nav>
   )
