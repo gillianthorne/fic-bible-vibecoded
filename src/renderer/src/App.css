@@ -1454,3 +1454,196 @@ p.beat-summary {
 .work-overview .work-link {
   margin: 0 0 4px;
 }
+
+/* Edit prose, under the scene's title in the viewer, and beside View
+   prose on the scene detail. */
+
+.prose-viewer header .edit-prose {
+  display: inline-block;
+  margin: 0 0 8px;
+}
+
+.scene-detail .prose-links {
+  display: flex;
+  gap: 24px;
+}
+
+/* Scene prose editor: the same page as the viewer, with a toolbar above
+   the text. The text is markdown source, marks visible but faded,
+   styled as it reads. Paragraph numbers sit in the margin as they do in
+   the viewer. */
+
+.prose-editor header {
+  margin-bottom: 16px;
+}
+
+.editor-bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin: 0 0 12px var(--prose-gutter);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule);
+  background: var(--page);
+}
+
+.editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.editor-toolbar-gap {
+  width: 10px;
+}
+
+.editor-toolbar button,
+.editor-save button {
+  min-width: 32px;
+  height: 30px;
+  padding: 0 9px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 4px;
+  background: var(--paper-sunk);
+  color: var(--ink);
+  font: 14px var(--sans);
+  cursor: pointer;
+}
+
+.editor-toolbar button:hover {
+  border-color: var(--gold-deep);
+  background: var(--paper-shade);
+}
+
+.editor-toolbar .tool-bold {
+  font-weight: 700;
+}
+
+.editor-toolbar .tool-italic {
+  font-family: var(--serif);
+  font-style: italic;
+}
+
+.editor-toolbar .tool-strike {
+  text-decoration: line-through;
+}
+
+.editor-toolbar .tool-heading {
+  font-weight: 700;
+}
+
+.editor-toolbar .tool-break {
+  letter-spacing: 1px;
+}
+
+.editor-save {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.editor-save .button-primary {
+  border-color: var(--gold-deep);
+  background: var(--primary);
+  font-weight: 600;
+}
+
+.editor-save .button-primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.editor-state {
+  font-size: 13px;
+}
+
+.editor-state-dirty {
+  color: var(--amber-ink);
+}
+
+.prose-editor .save-error {
+  margin: 0 0 12px var(--prose-gutter);
+}
+
+.editor-host .cm-editor {
+  background: transparent;
+  color: var(--page-ink);
+  font-family: var(--serif);
+  font-size: var(--prose-size);
+  line-height: var(--prose-leading);
+}
+
+.editor-host .cm-editor.cm-focused {
+  outline: none;
+}
+
+.editor-host .cm-scroller {
+  font-family: inherit;
+  line-height: inherit;
+}
+
+.editor-host .cm-content {
+  min-height: 60vh;
+  padding: 4px 0 40vh;
+  caret-color: var(--page-ink);
+}
+
+.editor-host .cm-line {
+  padding: 0 4px;
+}
+
+.editor-host .cm-activeLine {
+  background: rgba(212, 160, 79, 0.07);
+}
+
+.editor-host .cm-cursor {
+  border-left: 2px solid var(--page-ink);
+}
+
+.editor-host .cm-selectionBackground,
+.editor-host .cm-focused .cm-selectionBackground {
+  background: rgba(212, 160, 79, 0.3) !important;
+}
+
+.editor-host .cm-gutters {
+  width: var(--prose-gutter);
+  border: 0;
+  background: transparent;
+}
+
+.editor-host .cm-paragraph-numbers {
+  width: 100%;
+}
+
+.editor-host .cm-paragraph-numbers .cm-gutterElement {
+  padding-right: 1.1rem;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--page-margin);
+  opacity: 0.75;
+}
+
+.editor-host .cm-prose-mark {
+  color: var(--page-margin);
+}
+
+.editor-host .cm-prose-quote {
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+.editor-host .cm-prose-code {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.9em;
+}
+
+.editor-host .cm-prose-link {
+  color: var(--link);
+}

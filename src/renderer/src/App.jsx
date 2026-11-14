@@ -6,13 +6,14 @@ import WorkOverview from './WorkOverview.jsx'
 import ChapterOverview from './ChapterOverview.jsx'
 import SceneDetail from './SceneDetail.jsx'
 import ProseViewer from './ProseViewer.jsx'
+import ProseEditor from './ProseEditor.jsx'
 import ChapterProse from './ChapterProse.jsx'
 import ImportReport from './ImportReport.jsx'
 import SidebarHandle, { useSidebarWidth } from './SidebarHandle.jsx'
 
 // Each screen sits on a sheet of paper; the kind sets how wide it may grow.
 function sheetKind(selection) {
-  if (selection.view === 'prose') return 'prose'
+  if (selection.view === 'prose' || selection.view === 'edit') return 'prose'
   return selection.kind
 }
 
@@ -23,8 +24,8 @@ const sameScreen = (a, b) => a.kind === b.kind && a.id === b.id && a.view === b.
 // selection is { kind: 'home' }, { kind: 'work', id }, { kind: 'chapter', id, view },
 // { kind: 'scene', id, view }
 // or { kind: 'import', report } for the result of the last import.
-// view is 'prose' for the prose viewer (a scene's, or the whole chapter's);
-// anything else is the scene detail or chapter overview. The sidebar
+// view is 'prose' for the prose viewer (a scene's, or the whole chapter's),
+// or 'edit' for a scene's prose editor; anything else is the scene detail or chapter overview. The sidebar
 // selects with no view, so a sidebar click always opens those.
 //
 // history is the screens opened before this one, oldest first, for the
@@ -53,13 +54,26 @@ export default function App() {
     mainPane.current?.scrollTo(0, 0)
   }, [selection])
 
+  // True while the prose editor has unsaved changes. Every way of leaving
+  // a screen asks first while it is; the editor clears it as it closes.
+  const unsaved = useRef(false)
+  const setUnsaved = (dirty) => {
+    unsaved.current = dirty
+  }
+  const mayLeave = () =>
+    !unsaved.current || window.confirm('Leave without saving? Your changes to this scene will be lost.')
+
   // Opening the screen that's already open adds nothing to history.
-  const navigate = (next) =>
+  const navigate = (next) => {
+    if (sameScreen(selection, next) || !mayLeave()) return
     setNav((prev) =>
       sameScreen(prev.selection, next) ? prev : { selection: next, history: [...prev.history, prev.selection] }
     )
+  }
 
   const goBack = () =>
+    history.length > 0 &&
+    mayLeave() &&
     setNav((prev) =>
       prev.history.length === 0
         ? prev
@@ -80,6 +94,7 @@ export default function App() {
   const showImport = (report) => {
     setLibraryVersion((v) => v + 1)
     const next = { kind: 'import', report }
+    if (!mayLeave()) return
     if (report.cleared > 0) setNav({ selection: next, history: [] })
     else navigate(next)
   }
@@ -173,12 +188,13 @@ export default function App() {
               onOpenChapter={(chapter) => navigate({ kind: 'chapter', id: chapter.id, view: 'prose' })}
             />
           )}
-          {selection.kind === 'scene' && selection.view !== 'prose' && (
+          {selection.kind === 'scene' && selection.view !== 'prose' && selection.view !== 'edit' && (
             <SceneDetail
               sceneId={selection.id}
               refreshKey={libraryVersion}
               onChanged={changed}
               onOpenProse={() => navigate({ kind: 'scene', id: selection.id, view: 'prose' })}
+              onEditProse={() => navigate({ kind: 'scene', id: selection.id, view: 'edit' })}
             />
           )}
           {selection.kind === 'scene' && selection.view === 'prose' && (
@@ -186,6 +202,15 @@ export default function App() {
               sceneId={selection.id}
               onBack={() => backTo({ kind: 'scene', id: selection.id })}
               onOpenScene={(scene) => openSceneProse(scene.id, scene.chapterId)}
+              onEditProse={() => navigate({ kind: 'scene', id: selection.id, view: 'edit' })}
+            />
+          )}
+          {selection.kind === 'scene' && selection.view === 'edit' && (
+            <ProseEditor
+              sceneId={selection.id}
+              onBack={() => backTo({ kind: 'scene', id: selection.id, view: 'prose' })}
+              onDirtyChange={setUnsaved}
+              onSaved={changed}
             />
           )}
         </div>

@@ -61,9 +61,19 @@ A Read chapter link opens the whole chapter's prose: every scene in order on one
 
 ### 4. Scene prose viewer (main pane)
 
-Read-only display of the scene's markdown file **with paragraph numbers shown**. This exists specifically so a paragraph reference can be located, and so a beat can be pointed at a real passage. No editing, no formatting toolbar.
+Read-only display of the scene's markdown file **with paragraph numbers shown**. This exists specifically so a paragraph reference can be located, and so a beat can be pointed at a real passage. No editing, no formatting toolbar: editing is a separate screen, opened from an Edit prose button here and on the scene detail.
 
 Previous and next links move through the work's scenes in reading order, across chapter ends.
+
+### 4a. Scene prose editor (main pane, v2)
+
+Edits one scene's markdown file. It is a separate screen from the viewer, so reading a scene never risks changing it.
+
+The editor shows the markdown source, with its markers (`**`, `*`, `#`, `>`) left visible, and styles the text as it would read: bold text is bold, italic text is italic, headings are larger. Paragraph numbers, counted exactly as the viewer counts them, are shown in the margin, and the scene's paragraph count and wordcount update as you type.
+
+A toolbar formats the selection: bold, italic, strikethrough, heading, blockquote, bulleted and numbered list, and a scene break. Bold and italic also have Ctrl-B and Ctrl-I (Cmd on a Mac). Each toggles: applied to text that already has it, it takes it off. Typing the markdown by hand works the same as using the buttons. No images.
+
+Saving is explicit, with a Save button or Ctrl-S. There is no autosave. Leaving the editor, or closing the app, with unsaved changes asks first. The chapter read view stays read-only.
 
 ### 5. Work overview (main pane)
 
@@ -75,7 +85,7 @@ The screen the app opens on. At the top, the total wordcount across every work. 
 
 ### What the app does not have in v1
 
-No search, no settings UI beyond picking the library root, no themes, no keyboard-shortcut system, no onboarding, no splash screen.
+No search, no settings UI beyond picking the library root, no themes, no keyboard-shortcut system, no onboarding, no splash screen. (The prose editor's own Ctrl-B, Ctrl-I and Ctrl-S work only inside the editor, and are not a shortcut system.)
 
 ## Storage model
 
@@ -196,7 +206,16 @@ The v1 write boundary, stated precisely because it is easy to widen by accident:
 
 - The app **may read** any file under the library root
 - The app **may create** a new empty folder when a work or chapter is created, and a new empty scene file when a scene is created. Each is named as import expects (a work's folder is its title; a chapter is `##-title`; a scene is `##-title.md`) and always comes after the existing ones. If the name is already taken on disk, nothing is created.
-- The app **must never write to a file that has content**
+- The app **must never write to a file that has content**, with one exception, added in v2: saving a scene from the prose editor
+
+Saving from the prose editor is the only write to an existing file, and it is guarded:
+
+- It writes only that scene's own file, the one its row points at
+- It refuses to save if the file has changed on disk since the editor opened it (another editor, a sync client), and says so rather than overwriting
+- It writes to a temporary file beside the scene, then renames it over the original, so a failed save leaves the old file whole
+- It keeps the file's line endings (CRLF or LF) and any byte-order mark as they were. A file that mixes CRLF and LF is saved with whichever it uses most
+- Saving text that hasn't changed writes nothing
+- A file that isn't valid UTF-8 can't be opened in the editor, since saving it would change bytes the author never touched
 
 Creating a scene creates its file immediately, empty. A scene therefore always has a file and always has a wordcount, which is zero until it is written. This keeps outlining ahead of drafting possible without making `filename` nullable or special-casing missing files everywhere.
 
@@ -219,7 +238,7 @@ A feature is not done until it has been run on both machines.
 
 Explicitly not in v1:
 
-- Editing prose in the app
+- Editing prose in the app (added in v2: see Scene prose editor)
 - Wordcount history or progress-over-time
 - Cross-reference search across beats
 - Chapter file assembly for posting
@@ -228,7 +247,7 @@ Explicitly not in v1:
 
 **v2 candidates**, in rough order of how interesting they are to build:
 
-1. In-app prose editing — the riskiest change, since it gives the app write access to real drafts
+1. In-app prose editing — the riskiest change, since it gives the app write access to real drafts. Built: see Scene prose editor, and the save rules under File handling
 2. Wordcount history — a snapshots table, written on a scan the user triggers
 3. Cross-reference views — every scene where a given beat kind or POV appears
 4. Synced database — keep the database in the library folder so a cloud folder (e.g. OneDrive) carries it between laptops with the prose. Replaces "the data is per-machine"; a cloud service can't merge a database, so the app would need to warn when it finds a conflict copy

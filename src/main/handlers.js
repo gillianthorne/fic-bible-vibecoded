@@ -1,5 +1,6 @@
 import { chapterOverview, chapterProse, libraryOverview, navigationTree, sceneDetail, sceneProse, suggestions, workOverview } from './queries.js'
 import { checkLink } from './links.js'
+import { readSceneSource, saveSceneSource } from './save.js'
 import { createChapter, createScene, createWork } from './create.js'
 import { deleteWorks, importLibrary, worksMissingFrom } from './import.js'
 import { createBeat, deleteBeat, moveBeat, updateBeat, updateChapter, updateScene, updateWork } from './edit.js'
@@ -170,6 +171,21 @@ export function createHandlers(open, library = null, links = null) {
         const id = requireId(chapterId, 'chapterId')
         const { db, libraryRoot } = open()
         return chapterProse(db, libraryRoot, id)
+      }),
+
+    // The prose editor. data is null for a scene that doesn't exist.
+    'scene:source': (sceneId) =>
+      respond(() => {
+        const { db, libraryRoot } = open()
+        return readSceneSource(db, libraryRoot, sceneId)
+      }),
+
+    // The only write to a file with content: refused if the file changed
+    // on disk since baseHash was read. data is { hash, written }.
+    'scene:save': (sceneId, text, baseHash) =>
+      respond(() => {
+        const { db, libraryRoot } = open()
+        return saveSceneSource(db, libraryRoot, sceneId, text, baseHash)
       }),
 
     // data is null for a scene that doesn't exist.

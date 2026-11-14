@@ -5,7 +5,8 @@ import { number } from './labels.jsx'
 
 const count = (n, noun) => `${number(n)} ${noun}${n === 1 ? '' : 's'}`
 
-// Read-only view of a scene's file, numbered by paragraph so a beat's
+// Read-only view of a scene's file (editing is ProseEditor, a separate
+// screen), numbered by paragraph so a beat's
 // paragraph_ref can be found. The paragraphs come from the main process
 // already split by splitParagraphs, the same split the paragraph count
 // uses; the number shown is the paragraph's place in that list, 1-based.
@@ -61,7 +62,7 @@ const sceneLabel = (s) => `Ch ${s.chapterNumber}, scene ${s.position}: ${s.title
 
 // onOpenScene(scene) opens another scene's prose: scene is
 // { id, chapterId, ... } from previous or next.
-export default function ProseViewer({ sceneId, onBack, onOpenScene }) {
+export default function ProseViewer({ sceneId, onBack, onOpenScene, onEditProse }) {
   const result = useQuery(() => window.ficBible.sceneProse(sceneId), sceneId)
 
   const back = (
@@ -89,6 +90,11 @@ export default function ProseViewer({ sceneId, onBack, onOpenScene }) {
           {scene.work.title} · Chapter {scene.chapter.number}: {scene.chapter.title}
         </p>
         <h1>{scene.title}</h1>
+        {scene.fileError === null && (
+          <button type="button" className="link-button edit-prose" onClick={onEditProse}>
+            Edit prose →
+          </button>
+        )}
         {scene.paragraphs?.length > 0 && (
           <p className="muted">
             {count(scene.paragraphs.length, 'paragraph')} · {count(scene.wordcount, 'word')}

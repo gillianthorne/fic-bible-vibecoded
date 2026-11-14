@@ -3,7 +3,8 @@ import { useQuery } from './useQuery.js'
 // The bar above the sheet: a back button, then where the open screen sits,
 // as Home / work / chapter / scene. Every part but the last opens its
 // screen; the last is the open screen itself. A prose view (a scene's or
-// a whole chapter's) adds a last part, Prose.
+// a whole chapter's) adds a last part, Prose; the prose editor adds Edit
+// prose.
 //
 // Titles come from the navigation tree, the same read the sidebar does, so
 // this reads no files. refreshKey re-reads it after an import or edit, so
@@ -52,7 +53,7 @@ export default function NavBar({
 }) {
   const tree = useQuery(() => window.ficBible.navigationTree(), 'navbar', refreshKey)
   const { work, chapter, scene } = tree.ok ? locate(tree.data, selection) : {}
-  const prose = selection.view === 'prose'
+  const prose = selection.view === 'prose' || selection.view === 'edit'
 
   return (
     <div className="nav-bar">
@@ -87,7 +88,7 @@ export default function NavBar({
               {scene.position}. {scene.title}
             </Crumb>
           )}
-          {prose && (scene || chapter) && <Crumb current>Prose</Crumb>}
+          {prose && (scene || chapter) && <Crumb current>{selection.view === 'edit' ? 'Edit prose' : 'Prose'}</Crumb>}
           {selection.kind === 'import' && <Crumb current>Import report</Crumb>}
         </ol>
       </nav>

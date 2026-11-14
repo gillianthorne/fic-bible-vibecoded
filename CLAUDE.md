@@ -11,9 +11,12 @@ Full design spec: `docs/spec.md`. Read it before making design decisions.
 - No field lives in both stores. Files own the prose; SQLite owns
   everything about the prose. Never store scene text in a column.
 - Wordcounts are computed at read time, never stored.
-- Never write to a file that has content. Creating an empty scene file,
-  or an empty folder for a new work or chapter, are the only permitted
-  writes.
+- Never write to a file that has content, except saving a scene from
+  the prose editor, under the guards in `docs/spec.md` (File handling):
+  refuse if the file changed on disk since it was opened, write a temp
+  file then rename it over, keep line endings and BOM. Otherwise,
+  creating an empty scene file, or an empty folder for a new work or
+  chapter, are the only permitted writes.
 - All paths go through Node's `path` module. No hardcoded separators.
 - No network requests, ever.
 - Scene files are addressed by scene + paragraph number, never line number.
@@ -21,7 +24,8 @@ Full design spec: `docs/spec.md`. Read it before making design decisions.
 ## Scope
 
 v1 is the six screens in the spec. Do not add search, settings UI,
-themes, or prose editing — those are explicitly deferred.
+or themes — those are explicitly deferred. v2 adds the prose editor
+(spec screen 4a).
 
 ## Working style
 

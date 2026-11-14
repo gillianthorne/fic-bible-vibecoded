@@ -41,6 +41,23 @@ function createWindow() {
     }
   })
 
+  // The prose editor refuses to unload while it has unsaved changes.
+  // Electron then cancels the close (or reload) silently; ask instead, and
+  // let it go ahead if the author says so.
+  win.webContents.on('will-prevent-unload', (event) => {
+    const response = dialog.showMessageBoxSync(win, {
+      type: 'question',
+      title: 'Unsaved changes',
+      message: 'This scene has unsaved changes.',
+      detail: 'If you leave now, your changes since the last save will be lost.',
+      buttons: ['Leave without saving', 'Stay'],
+      defaultId: 1,
+      cancelId: 1,
+      noLink: true
+    })
+    if (response === 0) event.preventDefault()
+  })
+
   // electron-vite sets this in dev so the renderer loads from its local dev server.
   if (process.env.ELECTRON_RENDERER_URL) {
     win.loadURL(process.env.ELECTRON_RENDERER_URL)
