@@ -4,23 +4,25 @@
 
 :root {
   /* The desk: sidebar and the space around the sheet. */
-  --desk: #4a3527;
-  --desk-deep: #34251b;
-  --desk-line: #5a4232;
-  --desk-text: #f1e4cf;
-  --desk-muted: #bba486;
-  --desk-hover-solid: #4a372a;
-  --desk-selected: #6a4a33;
-  --desk-accent: #d9a35b;
+  --desk: #2e2018;
+  --desk-deep: #1e150f;
+  --desk-line: #3e2d21;
+  --desk-text: #efe0c6;
+  --desk-muted: #ad9474;
+  --desk-hover-solid: #33251b;
+  --desk-selected: #4a3423;
+  --gold: #d4a04f;
+  --gold-deep: #a8792f;
+  --desk-accent: var(--gold);
 
-  /* Paper: every screen. */
-  --paper: #f5ecdc;
-  --paper-shade: #ece0ca;
-  --paper-sunk: #fbf6ec;
-  --ink: #2b221c;
-  --ink-soft: #6e5c4b;
-  --rule: #e0d0b5;
-  --rule-strong: #c7b08e;
+  /* Paper: every screen but the prose page, a darker tan. */
+  --paper: #d4bb93;
+  --paper-shade: #c6aa7e;
+  --paper-sunk: #ddc7a3;
+  --ink: #22180f;
+  --ink-soft: #58442f;
+  --rule: #bb9e73;
+  --rule-strong: #9c7c50;
 
   /* The prose page: lighter paper, near-black ink. */
   --page: #faf4e8;
@@ -28,25 +30,25 @@
   --page-margin: #a8957d;
 
   /* Actions. */
-  --link: #8a4a1e;
-  --primary: #7a4423;
-  --primary-hover: #63361b;
+  --link: #6e470f;
+  --primary: var(--gold);
+  --primary-hover: #c18d3c;
   --danger: #a3372b;
-  --focus: #c98a3d;
+  --focus: var(--gold);
 
   /* Status hues: warm, but each still distinct. */
   --amber: #d4932a;
-  --amber-soft: #f4e0b6;
-  --amber-ink: #8a5a0c;
+  --amber-soft: #ebc684;
+  --amber-ink: #6e4506;
   --blue: #5a82a6;
-  --blue-soft: #dde5ea;
+  --blue-soft: #c4d0d4;
   --green: #5d8c4c;
-  --green-soft: #e0e9d2;
-  --green-ink: #3f6a31;
-  --plum-soft: #e8dbe6;
-  --red-ink: #8e2a22;
-  --red-soft: #f6e1da;
-  --red-line: #e2b4a8;
+  --green-soft: #c6d4a4;
+  --green-ink: #34571f;
+  --plum-soft: #d4bfcc;
+  --red-ink: #7a221b;
+  --red-soft: #ecc9bd;
+  --red-line: #c98e7e;
 
   --serif: Georgia, 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
   --sans: system-ui, 'Segoe UI', sans-serif;
@@ -103,8 +105,8 @@ body {
    wider grab area. */
 .sidebar-handle {
   position: relative;
-  flex: 0 0 1px;
-  background: var(--desk-line);
+  flex: 0 0 2px;
+  background: var(--gold);
   cursor: col-resize;
   touch-action: none;
 }
@@ -119,9 +121,8 @@ body {
 .sidebar-handle:hover,
 .sidebar-handle:focus-visible,
 .resizing .sidebar-handle {
-  background: var(--desk-accent);
   outline: none;
-  box-shadow: 0 0 0 1px var(--desk-accent);
+  box-shadow: 0 0 0 1px var(--gold), 0 0 8px rgb(212 160 79 / 0.6);
 }
 
 /* While dragging, keep the resize cursor and don't select text. */
@@ -135,7 +136,7 @@ body {
   min-width: 0;
   overflow: auto;
   padding: 28px 32px 48px;
-  background: radial-gradient(ellipse at top, #56402f, var(--desk) 70%);
+  background: radial-gradient(ellipse at top, #3d2b1f, var(--desk) 70%);
 }
 
 /* The sheet each screen sits on. It grows with the window up to a width
@@ -145,6 +146,7 @@ body {
   margin: 0 auto;
   padding: 28px 36px 36px;
   border-radius: 6px;
+  border: 1px solid var(--gold-deep);
   background: var(--paper);
   box-shadow:
     0 1px 2px rgb(0 0 0 / 0.25),
@@ -173,7 +175,16 @@ h1,
 h2 {
   font-family: var(--serif);
   font-weight: 600;
+  letter-spacing: 0.035em;
   color: var(--ink);
+}
+
+/* A gold rule under each screen's heading block. */
+.chapter-overview > header,
+.scene-detail > header,
+.import-report > header {
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--gold-deep);
 }
 
 /* Sidebar: library folder */
@@ -440,7 +451,7 @@ h2 {
   font-weight: 600;
   color: var(--ink-soft);
   vertical-align: bottom;
-  border-bottom-color: var(--rule-strong);
+  border-bottom: 2px solid var(--gold-deep);
 }
 
 .chapter-overview .beats-group {
@@ -454,7 +465,7 @@ h2 {
 
 .chapter-overview tfoot th,
 .chapter-overview tfoot td {
-  border-top: 2px solid var(--rule-strong);
+  border-top: 2px solid var(--gold-deep);
   border-bottom: 0;
   font-weight: 600;
 }
@@ -670,6 +681,9 @@ p.beat-summary {
 
 .link-button:hover {
   text-decoration: underline;
+  text-decoration-color: var(--gold);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
 }
 
 /* Scene prose viewer: a page of a book. Paragraphs run on as printed
@@ -693,7 +707,7 @@ p.beat-summary {
 .prose-viewer header {
   margin: 0 0 32px var(--prose-gutter);
   padding-bottom: 20px;
-  border-bottom: 1px solid var(--rule);
+  border-bottom: 2px solid var(--gold);
   text-align: center;
 }
 
@@ -842,7 +856,7 @@ p.beat-summary {
 }
 
 .import-report thead th {
-  border-bottom: 1px solid var(--rule-strong);
+  border-bottom: 2px solid var(--gold-deep);
   font-weight: 600;
 }
 
@@ -926,6 +940,7 @@ p.beat-summary {
 .beat-tools button:hover:not(:disabled),
 .add-beat:hover,
 .edit-button:hover {
+  border-color: var(--gold-deep);
   background: var(--paper-shade);
 }
 
@@ -935,9 +950,10 @@ p.beat-summary {
 }
 
 .edit-actions .button-primary {
-  border-color: var(--primary);
+  border-color: var(--gold-deep);
   background: var(--primary);
-  color: #fff;
+  color: var(--ink);
+  font-weight: 600;
 }
 
 .edit-actions .button-primary:hover:not(:disabled) {
