@@ -7,6 +7,26 @@ import { commands, createProseEditor, goToParagraph } from './proseEditor.js'
 import { countProse } from '../../main/prose.js'
 import { NoteParagraph, NoteStatus, openCount } from './EditNotes.jsx'
 
+// Moves the cursor to a note's paragraph, then makes sure that line isn't
+// hidden under what's pinned at the top of the pane: the toolbar, and the
+// notes panel too when it sits above the text (a narrow editor) rather
+// than beside it. Measured after CodeMirror has scrolled, once the pinned
+// pieces have settled where they stick.
+function jumpToNote(view, paragraph, panel) {
+  if (!goToParagraph(view, paragraph)) return
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      const pane = document.querySelector('.main-pane')
+      const line = view.coordsAtPos(view.state.selection.main.head)
+      const stacked = getComputedStyle(panel).order === '-1'
+      const cover = stacked ? panel : document.querySelector('.editor-bar')
+      if (!pane || !line || !cover) return
+      const hidden = cover.getBoundingClientRect().bottom + 16 - line.top
+      if (hidden > 0) pane.scrollBy(0, -hidden)
+    })
+  )
+}
+
 // The scene's edit notes beside the editor (spec: Scene prose editor).
 // Clicking a note moves the cursor to its paragraph, counted in the text
 // as it is now; setting a status saves that row straight away. Neither
@@ -15,6 +35,7 @@ function NotesPanel({ sceneId, viewRef, paragraphs }) {
   const [version, setVersion] = useState(0)
   const result = useQuery(() => window.ficBible.editNotes(sceneId), sceneId, version)
   const [showAll, setShowAll] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
   const refresh = () => setVersion((v) => v + 1)
 
   let body
@@ -36,7 +57,9 @@ function NotesPanel({ sceneId, viewRef, paragraphs }) {
                 className="editor-note-jump"
                 title={`Go to paragraph ${note.paragraph}`}
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => viewRef.current && goToParagraph(viewRef.current, note.paragraph)}
+                onClick={(e) =>
+                  viewRef.current && jumpToNote(viewRef.current, note.paragraph, e.currentTarget.closest('.editor-notes'))
+                }
               >
                 <span className="editor-note-meta">
                   <NoteParagraph value={note.paragraph} paragraphs={paragraphs} />
@@ -59,11 +82,20 @@ function NotesPanel({ sceneId, viewRef, paragraphs }) {
 
   const open = result.ok ? openCount(result.data) : null
   return (
-    <aside className="editor-notes" aria-label="Edit notes">
+    <aside className={`editor-notes${collapsed ? ' editor-notes-collapsed' : ''}`} aria-label="Edit notes">
       <h2>
-        Edit notes{open ? <span className="prose-note-count">{open}</span> : null}
+        <button
+          type="button"
+          className="editor-notes-heading"
+          aria-expanded={!collapsed}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => setCollapsed(!collapsed)}
+        >
+          <span aria-hidden="true">{collapsed ? '▸' : '▾'}</span> Edit notes
+          {open ? <span className="prose-note-count">{open}</span> : null}
+        </button>
       </h2>
-      {body}
+      {!collapsed && body}
     </aside>
   )
 }

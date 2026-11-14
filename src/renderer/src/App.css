@@ -1880,16 +1880,44 @@ select.edit-note-status-fixed {
   font-size: 13px;
 }
 
-@media (max-width: 1100px) {
+/* Narrow (judged by the editor's own width, since the sidebar takes a
+   share of the window): the panel sits above the text and sticks just
+   under the toolbar, so it stays reachable after a jump. Its heading
+   collapses it to one line. */
+.prose-editor {
+  container-type: inline-size;
+}
+
+.editor-notes-heading {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.editor-notes-collapsed h2 {
+  margin: 0;
+}
+
+@container (max-width: 800px) {
   .editor-layout {
     grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
   }
 
   .editor-notes {
-    position: static;
+    top: 58px;
+    z-index: 1;
     order: -1;
-    max-height: 220px;
+    max-height: 30vh;
     margin-left: var(--prose-gutter);
+    padding: 8px 12px;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 0.08);
   }
 }
 
