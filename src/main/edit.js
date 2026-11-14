@@ -147,3 +147,85 @@ export function deleteBeat(db, beatId) {
     for (const id of later) shift.run(id)
   })()
 }
+
+// --- scenes, chapters, works ------------------------------------------------
+
+// ISO date (YYYY-MM-DD) that is a real calendar date.
+function isoDate(value, label) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new Error(`${label} must be a date written YYYY-MM-DD`)
+  }
+  const date = new Date(`${value}T00:00:00Z`)
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
+    throw new Error(`${label} ${value} is not a real date`)
+  }
+  return value
+}
+
+// A blank link is stored as null, the same as "not posted".
+function optionalLine(value, label) {
+  if (value === null) return null
+  const trimmed = line(value, label, { allowBlank: true })
+  return trimmed === '' ? null : trimmed
+}
+
+const SCENE_FIELDS = {
+  title: ['title', line, 'Title'],
+  pov: ['pov', (v, l) => line(v, l, { allowBlank: true }), 'POV'],
+  status: ['status', (v, l) => oneOf(v, SCENE_STATUSES, l), 'Status'],
+  position: ['position', positiveInt, 'Position']
+}
+
+const CHAPTER_FIELDS = {
+  number: ['number', positiveInt, 'Chapter number'],
+  title: ['title', line, 'Title'],
+  status: ['status', (v, l) => oneOf(v, CHAPTER_STATUSES, l), 'Status'],
+  postedDate: ['posted_date', nullable(isoDate), 'Posted date'],
+  postedUrl: ['posted_url', optionalLine, 'AO3 link']
+}
+
+const WORK_FIELDS = {
+  title: ['title', line, 'Title']
+}
+
+// Positions and numbers are UNIQUE among siblings. A taken one is refused
+// with a message naming who has it, rather than swapping silently.
+function refuseTaken(db, sql, args, message) {
+  const holder = db.prepare(sql).get(...args)
+  if (holder) throw new Error(message(holder))
+}
+
+export function updateScene(db, sceneId, patch) {
+  const scene = mustExist(db, 'scenes', sceneId, 'Scene')
+  const cols = columns(patch, SCENE_FIELDS, 'Scene')
+  const position = cols.find(([column]) => column === 'position')?.[1]
+  if (position !== undefined) {
+    refuseTaken(
+      db,
+      'SELECT title FROM scenes WHERE chapter_id = ? AND position = ? AND id <> ?',
+      [scene.chapter_id, position, scene.id],
+      (other) => `Position ${position} is already used by the scene “${other.title}”`
+    )
+  }
+  update(db, 'scenes', scene.id, cols)
+}
+
+export function updateChapter(db, chapterId, patch) {
+  const chapter = mustExist(db, 'chapters', chapterId, 'Chapter')
+  const cols = columns(patch, CHAPTER_FIELDS, 'Chapter')
+  const number = cols.find(([column]) => column === 'number')?.[1]
+  if (number !== undefined) {
+    refuseTaken(
+      db,
+      'SELECT title FROM chapters WHERE work_id = ? AND number = ? AND id <> ?',
+      [chapter.work_id, number, chapter.id],
+      (other) => `Chapter ${number} already exists in this work: “${other.title}”`
+    )
+  }
+  update(db, 'chapters', chapter.id, cols)
+}
+
+export function updateWork(db, workId, patch) {
+  const work = mustExist(db, 'works', workId, 'Work')
+  update(db, 'works', work.id, columns(patch, WORK_FIELDS, 'Work'))
+}

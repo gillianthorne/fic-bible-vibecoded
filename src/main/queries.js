@@ -217,12 +217,14 @@ export function workWordcount(db, libraryRoot, workId) {
 }
 
 // Previously used beat kinds and POVs, most used first, ties alphabetical.
-// Case-sensitive, like the spec's DISTINCT.
+// Case-sensitive, like the spec's DISTINCT. Blank values (an imported
+// scene's POV before it's filled in) aren't suggestions.
 export function suggestions(db) {
   const usage = (column, table) =>
     db
       .prepare(
         `SELECT ${column} AS value, count(*) AS count FROM ${table}
+         WHERE ${column} <> ''
          GROUP BY ${column} ORDER BY count DESC, ${column}`
       )
       .all()
