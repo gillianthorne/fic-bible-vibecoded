@@ -9,7 +9,14 @@ import { MARKER } from '../scripts/seed/guard.mjs'
 import { DB_NAME, seed } from '../scripts/seed/seed.mjs'
 import { openSqlite } from '../src/main/sqlite.js'
 import { countProse } from '../src/main/prose.js'
-import { chapterOverview, navigationTree, sceneDetail, suggestions, workWordcount } from '../src/main/queries.js'
+import {
+  chapterOverview,
+  navigationTree,
+  sceneDetail,
+  sceneProse,
+  suggestions,
+  workWordcount
+} from '../src/main/queries.js'
 
 let root
 let db
@@ -133,4 +140,67 @@ test('suggestions are distinct, most used first', () => {
 test('unknown ids give null', () => {
   assert.equal(chapterOverview(db, root, 9999), null)
   assert.equal(sceneDetail(db, root, 9999), null)
+})
+
+const allSceneIds = () => db.prepare('SELECT id FROM scenes ORDER BY id').pluck().all()
+
+test('scene prose has exactly as many paragraphs as scene detail counts, for every scene', () => {
+  for (const id of allSceneIds()) {
+    const prose = sceneProse(db, root, id)
+    assert.equal(prose.fileError, null)
+    assert.equal(prose.paragraphs.length, sceneDetail(db, root, id).paragraphs, `scene ${id}`)
+  }
+})
+
+test('every seeded paragraph_ref points at a paragraph the viewer shows', () => {
+  let checked = 0
+  for (const id of allSceneIds()) {
+    const { paragraphs } = sceneProse(db, root, id)
+    for (const b of sceneDetail(db, root, id).beats) {
+      if (b.paragraphRef === null) continue
+      assert.ok(b.paragraphRef >= 1 && b.paragraphRef <= paragraphs.length, `scene ${id} ref ${b.paragraphRef}`)
+      checked++
+    }
+  }
+  assert.ok(checked > 0)
+})
+
+test('scene prose of the CRLF scene matches its LF text, with no CR left in', () => {
+  const prose = sceneProse(db, root, sceneId('The Lantern Road', 1, 2))
+  const raw = fs.readFileSync(prose.path, 'utf8')
+  assert.ok(raw.includes('\r\n'))
+  assert.ok(prose.paragraphs.length > 1)
+  assert.deepEqual(prose.paragraphs, raw.replace(/\r\n/g, '\n').split('\n\n').map((p) => p.trim()).filter(Boolean))
+  for (const p of prose.paragraphs) assert.ok(!p.includes('\r'))
+})
+
+test('scene prose of an empty file is an empty list, not an error', () => {
+  const prose = sceneProse(db, root, sceneId('Salt and Static', 5, 2))
+  assert.deepEqual(prose.paragraphs, [])
+  assert.equal(prose.fileError, null)
+})
+
+test('reading scene prose leaves the file byte-for-byte unchanged', () => {
+  for (const id of [sceneId('The Lantern Road', 1, 2), sceneId('Salt and Static', 5, 2)]) {
+    const file = sceneProse(db, root, id).path
+    const before = { bytes: fs.readFileSync(file), mtime: fs.statSync(file).mtimeMs }
+    sceneProse(db, root, id)
+    assert.deepEqual(fs.readFileSync(file), before.bytes)
+    assert.equal(fs.statSync(file).mtimeMs, before.mtime)
+  }
+})
+
+test('scene prose is null for an unknown scene and reports a missing file', () => {
+  assert.equal(sceneProse(db, root, 999999), null)
+  const id = sceneId('The Lantern Road', 3, 1)
+  const file = sceneProse(db, root, id).path
+  fs.renameSync(file, file + '.hidden')
+  try {
+    assert.deepEqual(
+      { paragraphs: sceneProse(db, root, id).paragraphs, fileError: sceneProse(db, root, id).fileError },
+      { paragraphs: null, fileError: 'ENOENT' }
+    )
+  } finally {
+    fs.renameSync(file + '.hidden', file)
+  }
 })
