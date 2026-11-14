@@ -1647,3 +1647,86 @@ p.beat-summary {
 .editor-host .cm-prose-link {
   color: var(--link);
 }
+
+/* Edit notes (scene detail): a table of per-paragraph corrections and
+   notes, each status a select that saves as it changes. Dealt-with notes
+   fade so the open ones stand out. */
+
+.edit-notes-section {
+  margin-top: 28px;
+}
+
+table.edit-notes {
+  width: 100%;
+  margin-top: 10px;
+  border-collapse: collapse;
+}
+
+table.edit-notes th,
+table.edit-notes td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: top;
+}
+
+table.edit-notes th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+table.edit-notes th:not(:nth-child(3)),
+table.edit-notes td:not(:nth-child(3)) {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.edit-note-text {
+  white-space: pre-wrap;
+}
+
+.edit-note-kind {
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.edit-note:not(.edit-note-open) :is(.edit-note-text, .edit-note-kind, .edit-note-paragraph) {
+  color: var(--ink-soft);
+  opacity: 0.7;
+}
+
+.edit-note-cut .edit-note-text {
+  text-decoration: line-through;
+}
+
+.edit-note:hover .beat-tools,
+.edit-note .beat-tools:focus-within {
+  opacity: 1;
+}
+
+.edit-note-editing td {
+  background: var(--paper-sunk);
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+select.edit-note-status {
+  padding: 1px 4px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--paper-sunk);
+}
+
+select.edit-note-status-open {
+  border-color: var(--amber);
+  background: var(--chip-drafting);
+  color: var(--chip-drafting-ink);
+}
+
+select.edit-note-status-fixed {
+  background: var(--chip-posted);
+  color: var(--chip-posted-ink);
+}

@@ -3,6 +3,7 @@ import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
 import { Status, Wordcount } from './labels.jsx'
 import BeatList from './Beats.jsx'
+import EditNotesTable from './EditNotes.jsx'
 import Notes from './Notes.jsx'
 import {
   EditButton,
@@ -145,7 +146,7 @@ function SceneFields({ scene, povs, onChanged }) {
 // after any edit so App can bump it (and refresh the sidebar).
 export default function SceneDetail({ sceneId, onOpenProse, onEditProse, refreshKey, onChanged }) {
   const result = useQuery(() => window.ficBible.sceneDetail(sceneId), sceneId, refreshKey)
-  const { kinds, povs } = useSuggestions(refreshKey)
+  const { kinds, editKinds, povs } = useSuggestions(refreshKey)
 
   if (result.loading) return <p className="muted">Loading…</p>
   if (result.ok === false) return <QueryError what="this scene" error={result.error} />
@@ -181,6 +182,11 @@ export default function SceneDetail({ sceneId, onOpenProse, onEditProse, refresh
         <h2>Beats</h2>
         <BeatSummary beats={scene.beats} />
         <BeatList scene={scene} kinds={kinds} onChanged={onChanged} />
+      </section>
+
+      <section aria-label="Edit notes" className="edit-notes-section">
+        <h2>Edit notes</h2>
+        <EditNotesTable scene={scene} editKinds={editKinds} onChanged={onChanged} />
       </section>
     </article>
   )

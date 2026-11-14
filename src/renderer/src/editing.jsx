@@ -7,12 +7,14 @@ import { useQuery } from './useQuery.js'
 export const BEAT_STATUSES = ['planned', 'in draft', 'cut']
 export const SCENE_STATUSES = ['outlined', 'drafting', 'drafted', 'revised']
 export const CHAPTER_STATUSES = ['drafting', 'ready to post', 'posted']
+export const EDIT_NOTE_STATUSES = ['open', 'fixed', 'ignored', 'cut']
 
-// Previously used kinds and POVs, and every fandom and ship, re-read
-// whenever refreshKey changes. A failed read just means no suggestions.
+// Previously used beat kinds, edit-note kinds and POVs, and every fandom
+// and ship, re-read whenever refreshKey changes. A failed read just means
+// no suggestions.
 export function useSuggestions(refreshKey) {
   const result = useQuery(() => window.ficBible.suggestions(), 'suggestions', refreshKey)
-  return result.ok ? result.data : { kinds: [], povs: [], fandoms: [], ships: [] }
+  return result.ok ? result.data : { kinds: [], editKinds: [], povs: [], fandoms: [], ships: [] }
 }
 
 // Runs a save call ({ ok, data } | { ok, error }) and tracks busy/error.
