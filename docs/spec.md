@@ -35,11 +35,13 @@ The app must be packaged and installable on both platforms — running it from a
 
 ## Screens
 
-Five views in v1. A persistent sidebar on the left, one main pane on the right.
+Six views in v1. A persistent sidebar on the left, one main pane on the right.
+
+Above the main pane, a Back button returns to the previous screen, and a breadcrumb (Home / work / chapter / scene) opens any level above the current one. History lasts until the app closes.
 
 ### 1. Navigation tree (sidebar, always visible)
 
-Works, expanding to chapters, expanding to scenes. Click a work to open the work overview; click a scene to open it in the main pane; click a chapter to open the chapter overview. Shows scene status at a glance. New works, chapters and scenes are created here.
+Works, expanding to chapters, expanding to scenes. Click a work to open the work overview; click a scene to open it in the main pane; click a chapter to open the chapter overview. Shows scene status at a glance. New works, chapters and scenes are created here. Home, above the works, opens the home page.
 
 ### 2. Scene detail (main pane)
 
@@ -55,13 +57,21 @@ Every scene in the chapter as a table: position, title, POV, status, wordcount, 
 
 The chapter's notes are shown and editable here.
 
+A Read chapter link opens the whole chapter's prose: every scene in order on one page, each numbered by paragraph from 1, with a jump list to each scene and links to the previous and next chapter.
+
 ### 4. Scene prose viewer (main pane)
 
 Read-only display of the scene's markdown file **with paragraph numbers shown**. This exists specifically so a paragraph reference can be located, and so a beat can be pointed at a real passage. No editing, no formatting toolbar.
 
+Previous and next links move through the work's scenes in reading order, across chapter ends.
+
 ### 5. Work overview (main pane)
 
 The work's home page. At the top: the title, a link to the work page if one is set, and the work's total wordcount. Below that, the work's notes. Then every chapter as a simple table: number, title, wordcount, status, and the chapter link if one is set. Clicking a chapter opens its chapter overview.
+
+### 6. Home page (main pane)
+
+The screen the app opens on. At the top, the total wordcount across every work. Below it, every work as a simple table: title, chapter count, wordcount, and the work link if one is set. Clicking a work opens its work overview.
 
 ### What the app does not have in v1
 
