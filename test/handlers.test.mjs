@@ -141,6 +141,14 @@ test('scene:prose returns the paragraphs scene:detail counts', () => {
   assert.equal(result.data.paragraphs.length, handlers['scene:detail'](id).data.paragraphs)
 })
 
+test('chapter:prose returns every scene, null for an unknown chapter, and refuses bad ids', () => {
+  const result = handlers['chapter:prose'](chapterId('Signal'))
+  assert.equal(result.ok, true)
+  assert.equal(result.data.scenes.length, handlers['chapter:overview'](chapterId('Signal')).data.scenes.length)
+  assert.deepEqual(handlers['chapter:prose'](999999), { ok: true, data: null })
+  assert.match(handlers['chapter:prose']('1').error, /chapterId must be a positive integer/)
+})
+
 test('scene:prose gives null data for an unknown scene and refuses bad ids', () => {
   assert.deepEqual(handlers['scene:prose'](999999), { ok: true, data: null })
   for (const bad of [0, -1, 1.5, '1', null, undefined, NaN, {}]) {

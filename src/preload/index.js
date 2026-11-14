@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('ficBible', {
   chapterOverview: (chapterId) => ipcRenderer.invoke('chapter:overview', chapterId),
   sceneDetail: (sceneId) => ipcRenderer.invoke('scene:detail', sceneId),
   sceneProse: (sceneId) => ipcRenderer.invoke('scene:prose', sceneId),
+  chapterProse: (chapterId) => ipcRenderer.invoke('chapter:prose', chapterId),
   createBeat: (sceneId, fields) => ipcRenderer.invoke('beat:create', sceneId, fields),
   updateBeat: (beatId, patch) => ipcRenderer.invoke('beat:update', beatId, patch),
   moveBeat: (beatId, direction) => ipcRenderer.invoke('beat:move', beatId, direction),

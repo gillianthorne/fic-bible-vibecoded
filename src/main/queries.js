@@ -154,6 +154,8 @@ export function sceneDetail(db, libraryRoot, sceneId) {
 // paragraph N here is what a beat's paragraph_ref N points at. Read-only:
 // the file is only ever read. The wordcount is counted from those same
 // paragraphs, as countProse does, so it matches the scene detail's.
+// previous and next are the scenes either side in the work's reading
+// order, crossing chapter ends; null at the work's first and last scene.
 // Returns null for an unknown scene; a file that can't be read gives
 // paragraphs: null and wordcount: null plus fileError.
 export function sceneProse(db, libraryRoot, sceneId) {
@@ -170,23 +172,81 @@ export function sceneProse(db, libraryRoot, sceneId) {
     .get(sceneId)
   if (!scene) return null
 
-  const file = scenePath(libraryRoot, scene.workFolder, scene.chapterFolder, scene.filename)
-  let paragraphs = null
-  let fileError = null
-  try {
-    paragraphs = splitParagraphs(fs.readFileSync(file, 'utf8'))
-  } catch (e) {
-    fileError = e.code ?? e.message
-  }
+  const order = workReadingOrder(db, scene.workId)
+  const at = order.findIndex((s) => s.id === scene.id)
   return {
     id: scene.id,
     title: scene.title,
     chapter: { id: scene.chapterId, number: scene.chapterNumber, title: scene.chapterTitle },
     work: { id: scene.workId, title: scene.workTitle },
-    path: file,
-    paragraphs,
-    wordcount: paragraphs === null ? null : paragraphs.reduce((sum, p) => sum + countWords(p), 0),
-    fileError
+    ...readProse(scenePath(libraryRoot, scene.workFolder, scene.chapterFolder, scene.filename)),
+    previous: order[at - 1] ?? null,
+    next: order[at + 1] ?? null
+  }
+}
+
+// A scene file's paragraphs and wordcount, for the prose viewers. Only
+// ever reads. A file that can't be read gives paragraphs: null and
+// wordcount: null plus fileError.
+function readProse(file) {
+  try {
+    const paragraphs = splitParagraphs(fs.readFileSync(file, 'utf8'))
+    return { path: file, paragraphs, wordcount: paragraphs.reduce((sum, p) => sum + countWords(p), 0), fileError: null }
+  } catch (e) {
+    return { path: file, paragraphs: null, wordcount: null, fileError: e.code ?? e.message }
+  }
+}
+
+// Every scene in a work in reading order: by chapter number, then by
+// position within the chapter. For flipping from scene to scene across
+// chapter ends.
+function workReadingOrder(db, workId) {
+  return db
+    .prepare(
+      `SELECT s.id, s.title, s.position, c.id AS chapterId, c.number AS chapterNumber
+       FROM scenes s JOIN chapters c ON c.id = s.chapter_id
+       WHERE c.work_id = ?
+       ORDER BY c.number, s.position`
+    )
+    .all(workId)
+}
+
+// Whole-chapter prose: every scene's file, in order, each split into
+// paragraphs exactly as sceneProse does, so paragraph numbers (which
+// restart per scene) match the single-scene viewer. previous and next are
+// the work's chapters either side, by number. Returns null for an unknown
+// chapter.
+export function chapterProse(db, libraryRoot, chapterId) {
+  const chapter = db
+    .prepare(
+      `SELECT c.id, c.number, c.title, c.folder, w.id AS workId, w.title AS workTitle, w.folder AS workFolder
+       FROM chapters c JOIN works w ON w.id = c.work_id
+       WHERE c.id = ?`
+    )
+    .get(chapterId)
+  if (!chapter) return null
+
+  const scenes = db
+    .prepare('SELECT id, position, title, filename FROM scenes WHERE chapter_id = ? ORDER BY position')
+    .all(chapterId)
+    .map(({ filename, ...scene }) => ({
+      ...scene,
+      ...readProse(scenePath(libraryRoot, chapter.workFolder, chapter.folder, filename))
+    }))
+
+  const chapters = db
+    .prepare('SELECT id, number, title FROM chapters WHERE work_id = ? ORDER BY number')
+    .all(chapter.workId)
+  const at = chapters.findIndex((c) => c.id === chapter.id)
+  return {
+    id: chapter.id,
+    number: chapter.number,
+    title: chapter.title,
+    work: { id: chapter.workId, title: chapter.workTitle },
+    scenes,
+    ...total(scenes),
+    previous: chapters[at - 1] ?? null,
+    next: chapters[at + 1] ?? null
   }
 }
 
