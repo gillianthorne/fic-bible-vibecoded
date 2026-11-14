@@ -19,7 +19,7 @@ Full design spec: `docs/spec.md`. Read it before making design decisions.
 
 ## Scope
 
-v1 is the five screens in the spec. Do not add search, settings UI,
+v1 is the six screens in the spec. Do not add search, settings UI,
 themes, or prose editing — those are explicitly deferred.
 
 ## Working style
