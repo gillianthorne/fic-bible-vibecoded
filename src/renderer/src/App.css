@@ -1138,3 +1138,42 @@ p.beat-summary {
     padding: 28px 32px 48px 16px;
   }
 }
+
+/* Notes on a work, chapter or scene */
+
+.notes {
+  margin-top: 18px;
+}
+
+.notes h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.notes > p {
+  margin: 4px 0 0;
+}
+
+.notes-text {
+  margin-top: 4px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.notes-form {
+  max-width: 640px;
+  margin-top: 6px;
+}
+
+/* Links that open in the default browser */
+
+.external-link {
+  color: var(--link);
+  text-decoration-color: var(--gold);
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+
+.external-link:hover {
+  text-decoration-thickness: 2px;
+}
