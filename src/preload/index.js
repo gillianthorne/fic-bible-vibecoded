@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('ficBible', {
   chooseLibrary: () => ipcRenderer.invoke('library:choose'),
   importLibrary: () => ipcRenderer.invoke('library:import'),
   navigationTree: () => ipcRenderer.invoke('nav:tree'),
+  workOverview: (workId) => ipcRenderer.invoke('work:overview', workId),
   chapterOverview: (chapterId) => ipcRenderer.invoke('chapter:overview', chapterId),
   sceneDetail: (sceneId) => ipcRenderer.invoke('scene:detail', sceneId),
   sceneProse: (sceneId) => ipcRenderer.invoke('scene:prose', sceneId),

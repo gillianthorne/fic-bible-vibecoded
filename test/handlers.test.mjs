@@ -32,6 +32,15 @@ test('nav:tree wraps the navigation tree', () => {
   assert.equal(result.data.length, 3)
 })
 
+test('work:overview returns chapters, null for an unknown work, and refuses bad ids', () => {
+  const workId = db.prepare("SELECT id FROM works WHERE title = 'Salt and Static'").pluck().get()
+  const result = handlers['work:overview'](workId)
+  assert.equal(result.ok, true)
+  assert.ok(result.data.chapters.length > 0)
+  assert.deepEqual(handlers['work:overview'](9999), { ok: true, data: null })
+  assert.equal(handlers['work:overview']('1').ok, false)
+})
+
 test('chapter:overview returns scenes and a file-derived total', () => {
   const result = handlers['chapter:overview'](chapterId('Signal'))
   assert.equal(result.ok, true)

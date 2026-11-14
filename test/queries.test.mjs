@@ -15,6 +15,7 @@ import {
   sceneDetail,
   sceneProse,
   suggestions,
+  workOverview,
   workWordcount
 } from '../src/main/queries.js'
 
@@ -128,6 +129,36 @@ test('work total is the sum of chapter totals; empty work is zero', () => {
   assert.deepEqual(workWordcount(db, root, empty), { workId: empty, wordcount: 0, uncounted: 0, chapters: [] })
 })
 
+test('work overview lists chapters in order with the same totals as their overviews', () => {
+  const workId = db.prepare("SELECT id FROM works WHERE title = 'Salt and Static'").pluck().get()
+  db.prepare("UPDATE works SET url = 'https://archiveofourown.org/works/1', notes = 'Inspo' WHERE id = ?").run(workId)
+  try {
+    const overview = workOverview(db, root, workId)
+    assert.deepEqual(overview.work, { id: workId, title: 'Salt and Static', url: 'https://archiveofourown.org/works/1', notes: 'Inspo' })
+    const chapterIds = db.prepare('SELECT id FROM chapters WHERE work_id = ? ORDER BY number').pluck().all(workId)
+    assert.deepEqual(overview.chapters.map((c) => c.id), chapterIds)
+    for (const ch of overview.chapters) {
+      const detail = chapterOverview(db, root, ch.id)
+      assert.deepEqual(
+        [ch.number, ch.title, ch.status, ch.postedUrl, ch.wordcount, ch.uncounted],
+        [detail.chapter.number, detail.chapter.title, detail.chapter.status, detail.chapter.postedUrl, detail.wordcount, detail.uncounted]
+      )
+    }
+    assert.equal(overview.wordcount, workWordcount(db, root, workId).wordcount)
+    assert.equal(overview.uncounted, 0)
+  } finally {
+    db.prepare('UPDATE works SET url = NULL, notes = NULL WHERE id = ?').run(workId)
+  }
+})
+
+test('work overview of an empty work has no chapters and zero words', () => {
+  const workId = db.prepare("SELECT id FROM works WHERE title = 'Untitled Orchard Idea'").pluck().get()
+  const overview = workOverview(db, root, workId)
+  assert.deepEqual(overview.chapters, [])
+  assert.equal(overview.wordcount, 0)
+  assert.equal(overview.work.url, null)
+})
+
 test('suggestions are distinct, most used first', () => {
   const { kinds, povs } = suggestions(db)
   for (const list of [kinds, povs]) {
@@ -140,6 +171,7 @@ test('suggestions are distinct, most used first', () => {
 test('unknown ids give null', () => {
   assert.equal(chapterOverview(db, root, 9999), null)
   assert.equal(sceneDetail(db, root, 9999), null)
+  assert.equal(workOverview(db, root, 9999), null)
 })
 
 const allSceneIds = () => db.prepare('SELECT id FROM scenes ORDER BY id').pluck().all()
