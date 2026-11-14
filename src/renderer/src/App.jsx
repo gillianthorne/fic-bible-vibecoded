@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Sidebar from './Sidebar.jsx'
 import HomePage from './HomePage.jsx'
 import NavBar from './NavBar.jsx'
@@ -6,12 +6,13 @@ import WorkOverview from './WorkOverview.jsx'
 import ChapterOverview from './ChapterOverview.jsx'
 import SceneDetail from './SceneDetail.jsx'
 import ProseViewer from './ProseViewer.jsx'
+import ChapterProse from './ChapterProse.jsx'
 import ImportReport from './ImportReport.jsx'
 import SidebarHandle, { useSidebarWidth } from './SidebarHandle.jsx'
 
 // Each screen sits on a sheet of paper; the kind sets how wide it may grow.
 function sheetKind(selection) {
-  if (selection.kind === 'scene') return selection.view === 'prose' ? 'prose' : 'scene'
+  if (selection.view === 'prose') return 'prose'
   return selection.kind
 }
 
@@ -19,11 +20,12 @@ const HOME = { kind: 'home' }
 
 const sameScreen = (a, b) => a.kind === b.kind && a.id === b.id && a.view === b.view
 
-// selection is { kind: 'home' }, { kind: 'work', id }, { kind: 'chapter', id },
+// selection is { kind: 'home' }, { kind: 'work', id }, { kind: 'chapter', id, view },
 // { kind: 'scene', id, view }
 // or { kind: 'import', report } for the result of the last import.
-// view is 'prose' for the prose viewer; anything else is scene detail. The
-// sidebar selects with no view, so a sidebar click always opens detail.
+// view is 'prose' for the prose viewer (a scene's, or the whole chapter's);
+// anything else is the scene detail or chapter overview. The sidebar
+// selects with no view, so a sidebar click always opens those.
 //
 // history is the screens opened before this one, oldest first, for the
 // back button. Every way of opening a screen goes through navigate(), so
@@ -43,6 +45,13 @@ export default function App() {
   const [sidebarWidth, setSidebarWidth] = useSidebarWidth()
   const changed = () => setLibraryVersion((v) => v + 1)
   const { selection, history } = nav
+
+  // Each new screen starts at its top, as a new page does in a browser,
+  // even when it was opened from the bottom of a long one.
+  const mainPane = useRef(null)
+  useEffect(() => {
+    mainPane.current?.scrollTo(0, 0)
+  }, [selection])
 
   // Opening the screen that's already open adds nothing to history.
   const navigate = (next) =>
@@ -91,6 +100,13 @@ export default function App() {
     navigate({ kind: 'scene', id: sceneId })
   }
 
+  // Flipping to another scene's prose opens its chapter in the sidebar,
+  // so the scene shows there as selected.
+  const openSceneProse = (sceneId, chapterId) => {
+    setExpanded((prev) => ({ ...prev, [`chapter:${chapterId}`]: true }))
+    navigate({ kind: 'scene', id: sceneId, view: 'prose' })
+  }
+
   // Opening a chapter from the work overview also opens its work in the
   // sidebar, so the chapter shows there as selected.
   const openChapter = (chapterId, workId) => {
@@ -109,7 +125,7 @@ export default function App() {
         onImported={showImport}
       />
       <SidebarHandle width={sidebarWidth} onResize={setSidebarWidth} />
-      <main className="main-pane">
+      <main className="main-pane" ref={mainPane}>
         <NavBar
           selection={selection}
           canGoBack={history.length > 0}
@@ -131,12 +147,21 @@ export default function App() {
             />
           )}
           {selection.kind === 'import' && <ImportReport report={selection.report} />}
-          {selection.kind === 'chapter' && (
+          {selection.kind === 'chapter' && selection.view !== 'prose' && (
             <ChapterOverview
               chapterId={selection.id}
               refreshKey={libraryVersion}
               onChanged={changed}
               onOpenScene={openScene}
+              onOpenProse={() => navigate({ kind: 'chapter', id: selection.id, view: 'prose' })}
+            />
+          )}
+          {selection.kind === 'chapter' && selection.view === 'prose' && (
+            <ChapterProse
+              chapterId={selection.id}
+              onBack={() => backTo({ kind: 'chapter', id: selection.id })}
+              onOpenScene={openScene}
+              onOpenChapter={(chapter) => navigate({ kind: 'chapter', id: chapter.id, view: 'prose' })}
             />
           )}
           {selection.kind === 'scene' && selection.view !== 'prose' && (
@@ -148,7 +173,11 @@ export default function App() {
             />
           )}
           {selection.kind === 'scene' && selection.view === 'prose' && (
-            <ProseViewer sceneId={selection.id} onBack={() => backTo({ kind: 'scene', id: selection.id })} />
+            <ProseViewer
+              sceneId={selection.id}
+              onBack={() => backTo({ kind: 'scene', id: selection.id })}
+              onOpenScene={(scene) => openSceneProse(scene.id, scene.chapterId)}
+            />
           )}
         </div>
       </main>

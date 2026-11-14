@@ -973,6 +973,91 @@ p.beat-summary {
   margin-top: 10px;
 }
 
+.chapter-overview .view-prose {
+  margin-top: 12px;
+}
+
+/* Previous / next, under the prose header and again after the prose. */
+.prose-flip {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+  font-size: 15px;
+  text-align: left;
+}
+
+.prose-viewer header .prose-flip .link-button {
+  display: inline;
+  margin: 0;
+}
+
+.prose-flip-next {
+  margin-left: auto;
+  text-align: right;
+}
+
+.prose-footer {
+  margin: 36px 0 0 var(--prose-gutter);
+  padding-top: 16px;
+  border-top: 2px solid var(--gold);
+}
+
+.prose-footer .prose-flip {
+  margin-top: 0;
+}
+
+/* Whole-chapter prose: a jump list under the title, and a heading over
+   each scene that opens it. */
+.prose-jump {
+  margin-top: 14px;
+  font-size: 15px;
+}
+
+.prose-jump ol {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.prose-jump li {
+  display: inline;
+}
+
+.prose-jump li + li::before {
+  content: '·';
+  padding: 0 8px;
+  color: var(--page-margin);
+}
+
+.prose-jump > .muted {
+  margin-right: 8px;
+}
+
+.prose-viewer header .prose-jump .link-button {
+  display: inline;
+  margin: 0;
+}
+
+.chapter-prose-scene {
+  scroll-margin-top: 16px;
+}
+
+.chapter-prose-scene + .chapter-prose-scene {
+  margin-top: 40px;
+}
+
+.chapter-prose-scene h2 {
+  margin: 0 0 16px var(--prose-gutter);
+  font-size: 20px;
+  text-align: center;
+}
+
+.chapter-prose-scene h2 .link-button {
+  color: var(--page-ink);
+}
+
 /* Import report */
 
 .import-report h1 {
