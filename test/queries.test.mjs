@@ -9,8 +9,10 @@ import { MARKER } from '../scripts/seed/guard.mjs'
 import { DB_NAME, seed } from '../scripts/seed/seed.mjs'
 import { openSqlite } from '../src/main/sqlite.js'
 import { countProse } from '../src/main/prose.js'
+import { migrate } from '../src/main/migrate.js'
 import {
   chapterOverview,
+  libraryOverview,
   navigationTree,
   sceneDetail,
   sceneProse,
@@ -157,6 +159,30 @@ test('work overview of an empty work has no chapters and zero words', () => {
   assert.deepEqual(overview.chapters, [])
   assert.equal(overview.wordcount, 0)
   assert.equal(overview.work.url, null)
+})
+
+test('library overview lists every work in sidebar order with its own total', () => {
+  const library = libraryOverview(db, root)
+  assert.deepEqual(library.works.map((w) => w.title), navigationTree(db).map((w) => w.title))
+  for (const work of library.works) {
+    const own = workWordcount(db, root, work.id)
+    assert.deepEqual([work.wordcount, work.uncounted], [own.wordcount, own.uncounted])
+    assert.equal(work.chapterCount, own.chapters.length)
+    assert.equal(work.url, null)
+  }
+  assert.equal(library.wordcount, library.works.reduce((sum, w) => sum + w.wordcount, 0))
+  assert.ok(library.wordcount > 0)
+  assert.equal(library.uncounted, 0)
+})
+
+test('library overview of an empty library is zero, not an error', () => {
+  const empty = openSqlite(':memory:')
+  try {
+    migrate(empty, path.join(import.meta.dirname, '..', 'migrations'))
+    assert.deepEqual(libraryOverview(empty, root), { works: [], wordcount: 0, uncounted: 0 })
+  } finally {
+    empty.close()
+  }
 })
 
 test('suggestions are distinct, most used first', () => {

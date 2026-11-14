@@ -32,6 +32,13 @@ test('nav:tree wraps the navigation tree', () => {
   assert.equal(result.data.length, 3)
 })
 
+test('library:overview returns every work and the total across them', () => {
+  const result = handlers['library:overview']()
+  assert.equal(result.ok, true)
+  assert.equal(result.data.works.length, 3)
+  assert.equal(result.data.wordcount, result.data.works.reduce((sum, w) => sum + w.wordcount, 0))
+})
+
 test('work:overview returns chapters, null for an unknown work, and refuses bad ids', () => {
   const workId = db.prepare("SELECT id FROM works WHERE title = 'Salt and Static'").pluck().get()
   const result = handlers['work:overview'](workId)

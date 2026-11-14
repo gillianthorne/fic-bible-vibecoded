@@ -242,6 +242,26 @@ export function workOverview(db, libraryRoot, workId) {
   return { work, chapters, wordcount: sum('wordcount'), uncounted: sum('uncounted') }
 }
 
+// Home page: every work with its link and file-derived total, in the
+// sidebar's order, plus the total across all of them. A work's uncounted
+// scenes are left out of both totals and reported, as on its overview.
+export function libraryOverview(db, libraryRoot) {
+  const works = db
+    .prepare(
+      `SELECT w.id, w.title, w.url, count(c.id) AS chapterCount
+       FROM works w LEFT JOIN chapters c ON c.work_id = w.id
+       GROUP BY w.id
+       ORDER BY w.title COLLATE NOCASE, w.id`
+    )
+    .all()
+    .map((work) => {
+      const { wordcount, uncounted } = workWordcount(db, libraryRoot, work.id)
+      return { ...work, wordcount, uncounted }
+    })
+  const sum = (key) => works.reduce((acc, w) => acc + w[key], 0)
+  return { works, wordcount: sum('wordcount'), uncounted: sum('uncounted') }
+}
+
 // Previously used beat kinds and POVs, most used first, ties alphabetical.
 // Case-sensitive, like the spec's DISTINCT. Blank values (an imported
 // scene's POV before it's filled in) aren't suggestions.
