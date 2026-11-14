@@ -38,4 +38,5 @@ linux:
     - AppImage
     - deb
   category: Office
-  maintainer: Fic Bible
+  # Debian expects "Name <email>". Placeholder: replace with a real address.
+  maintainer: Fic Bible <maintainer@example.invalid>
