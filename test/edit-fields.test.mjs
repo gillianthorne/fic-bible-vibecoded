@@ -29,7 +29,7 @@ test('updateScene edits title, POV, status and position; never filename', () => 
   const db = setup()
   updateScene(db, 1, { title: '  New title ', pov: ' Mara ', status: 'drafted', position: 5 })
   assert.deepEqual(row(db, 'scenes', 1), {
-    id: 1, chapter_id: 1, position: 5, title: 'New title', filename: '01-s1.md', pov: 'Mara', status: 'drafted'
+    id: 1, chapter_id: 1, position: 5, title: 'New title', filename: '01-s1.md', pov: 'Mara', status: 'drafted', notes: null
   })
   updateScene(db, 1, { pov: '' })
   assert.equal(row(db, 'scenes', 1).pov, '')
@@ -74,7 +74,7 @@ test('a chapter number used in the same work is refused', () => {
 test('updateWork edits the title only', () => {
   const db = setup()
   updateWork(db, 1, { title: 'Renamed work' })
-  assert.deepEqual(row(db, 'works', 1), { id: 1, title: 'Renamed work', folder: 'W-folder' })
+  assert.deepEqual(row(db, 'works', 1), { id: 1, title: 'Renamed work', folder: 'W-folder', url: null, notes: null })
   assert.throws(() => updateWork(db, 1, { folder: 'x' }), /no editable field/)
   assert.throws(() => updateWork(db, 9, { title: 'x' }), /Work 9 not found/)
 })
