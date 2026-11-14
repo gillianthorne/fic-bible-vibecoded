@@ -4,6 +4,7 @@ import ChapterOverview from './ChapterOverview.jsx'
 import SceneDetail from './SceneDetail.jsx'
 import ProseViewer from './ProseViewer.jsx'
 import ImportReport from './ImportReport.jsx'
+import SidebarHandle, { useSidebarWidth } from './SidebarHandle.jsx'
 
 // Each screen sits on a sheet of paper; the kind sets how wide it may grow.
 function sheetKind(selection) {
@@ -27,6 +28,7 @@ export default function App() {
   // Bumped after each import or edit so the sidebar and the open screen
   // read the library again.
   const [libraryVersion, setLibraryVersion] = useState(0)
+  const [sidebarWidth, setSidebarWidth] = useSidebarWidth()
   const changed = () => setLibraryVersion((v) => v + 1)
 
   // An import can clear works, so whatever was open may be gone: show the
@@ -40,7 +42,7 @@ export default function App() {
   const toggle = (key) => setExpanded((prev) => ({ ...prev, [key]: !(prev[key] ?? key.startsWith('work:')) }))
 
   return (
-    <div className="layout">
+    <div className="layout" style={{ '--sidebar-width': `${sidebarWidth}px` }}>
       <Sidebar
         selection={selection}
         onSelect={setSelection}
@@ -49,6 +51,7 @@ export default function App() {
         refreshKey={libraryVersion}
         onImported={showImport}
       />
+      <SidebarHandle width={sidebarWidth} onResize={setSidebarWidth} />
       <main className="main-pane">
         <div className={`sheet sheet-${sheetKind(selection)}`}>
           {selection === null && <p className="muted">Pick a chapter or scene from the sidebar.</p>}
