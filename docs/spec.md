@@ -67,11 +67,11 @@ Previous and next links move through the work's scenes in reading order, across 
 
 ### 5. Work overview (main pane)
 
-The work's home page. At the top: the title, a link to the work page if one is set, and the work's total wordcount. Below that, the work's notes. Then every chapter as a simple table: number, title, wordcount, status, and the chapter link if one is set. Clicking a chapter opens its chapter overview.
+The work's home page. At the top: the title, a link to the work page if one is set, its fandom and ship (or gen), and the work's total wordcount. Below that, the work's notes. Then every chapter as a simple table: number, title, wordcount, status, and the chapter link if one is set. Clicking a chapter opens its chapter overview.
 
 ### 6. Home page (main pane)
 
-The screen the app opens on. At the top, the total wordcount across every work. Below it, every work as a simple table: title, chapter count, wordcount, and the work link if one is set. Clicking a work opens its work overview.
+The screen the app opens on. At the top, the total wordcount across every work. Below it, every work, grouped by fandom (works with none last), each group with its own wordcount, as a simple table: title, ship, chapter count, wordcount, and the work link if one is set. Clicking a work opens its work overview.
 
 ### What the app does not have in v1
 
@@ -101,7 +101,7 @@ A scene's full path is assembled at runtime from those four parts. Absolute path
 
 ## Data model
 
-Four tables in a straight chain: a work has chapters, a chapter has scenes, a scene has beats. Every relationship is one-to-many downward; nothing is many-to-many.
+Four tables in a straight chain: a work has chapters, a chapter has scenes, a scene has beats. Beside the chain, two small tables name each work's fandom and ship. Every relationship is one-to-many; nothing is many-to-many.
 
 | Table | Field | Notes |
 | --- | --- | --- |
@@ -109,6 +109,8 @@ Four tables in a straight chain: a work has chapters, a chapter has scenes, a sc
 | works | folder | Relative to the library root in config |
 | works | url | Link to the work page (e.g. AO3), null until set |
 | works | notes | Free text: inspiration, anything general |
+| works | fandom_id | FK to fandoms, null until set |
+| works | ship_id | FK to ships, null for gen or until set; always a ship in the work's fandom |
 | chapters | work_id | FK to works |
 | chapters | number | Chapter number |
 | chapters | title | |
@@ -130,6 +132,9 @@ Four tables in a straight chain: a work has chapters, a chapter has scenes, a sc
 | beats | content | The beat itself — free text |
 | beats | status | Fixed vocabulary — see below |
 | beats | paragraph_ref | Nullable paragraph number within the scene file |
+| fandoms | name | Unique, ignoring case |
+| ships | fandom_id | FK to fandoms |
+| ships | name | Unique within its fandom, ignoring case |
 
 ### Notes are about the prose, not prose
 
@@ -180,6 +185,10 @@ Only the status fields have a closed set of values. Each describes progress rath
 `beats.kind` and `scenes.pov` are free text. The app offers previously-used values as suggestions, pulled live from existing rows with a DISTINCT query.
 
 There is no lookup table for either. The vocabulary emerges from use rather than being declared up front, there is nothing to maintain, and a new kind of beat never requires a schema change. A "kinds I have used, and how often" view falls out of the same query for free.
+
+### Fandoms and ships
+
+Unlike kinds and POVs, fandoms and ships are tables, because a ship belongs to a fandom. They're still typed as free text in the work form, offered from existing names; a new name adds a row, and a name no work uses any more is removed.
 
 ## File handling
 

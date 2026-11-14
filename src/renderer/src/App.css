@@ -546,6 +546,32 @@ h2 {
   white-space: normal;
 }
 
+/* Home page: a heading and total over each fandom's table. */
+.home-fandom + .home-fandom {
+  margin-top: 28px;
+}
+
+.home-fandom-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.home-fandom-heading h2 {
+  margin: 0;
+  font-size: 19px;
+}
+
+.home-page .home-fandom table {
+  margin-top: 8px;
+}
+
+.work-overview .work-fandom {
+  margin: 0 0 4px;
+}
+
 /* On the home page the title is the first column. */
 .home-page td:nth-child(1),
 .home-page th:nth-child(1) {

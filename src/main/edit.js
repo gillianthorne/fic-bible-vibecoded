@@ -236,7 +236,61 @@ export function updateChapter(db, chapterId, patch) {
   update(db, 'chapters', chapter.id, cols)
 }
 
+// fandom and ship are names, not ids: the form sends what was typed, and
+// the row is found (case-insensitively) or created here. Blank or null
+// means none. A ship belongs to a fandom, so:
+// - a ship needs the work to have a fandom, and is looked up in that one
+// - changing the fandom without giving a ship clears the ship
+// - clearing the fandom clears the ship
+// Afterwards, fandoms and ships no work uses are deleted, so the
+// suggestions don't fill up with old typos.
 export function updateWork(db, workId, patch) {
   const work = mustExist(db, 'works', workId, 'Work')
-  update(db, 'works', work.id, columns(patch, WORK_FIELDS, 'Work'))
+  if (patch === null || typeof patch !== 'object' || Array.isArray(patch)) {
+    throw new Error('Work changes must be an object')
+  }
+  const { fandom, ship, ...rest } = patch
+  const hasFandom = 'fandom' in patch
+  const hasShip = 'ship' in patch
+  // columns() refuses an empty patch, so only ask it when there's more than
+  // fandom and ship, or nothing at all.
+  const onlyNames = Object.keys(rest).length === 0 && (hasFandom || hasShip)
+  const cols = onlyNames ? [] : columns(rest, WORK_FIELDS, 'Work')
+  const fandomName = hasFandom ? optionalLine(fandom, 'Fandom') : undefined
+  const shipName = hasShip ? optionalLine(ship, 'Ship') : undefined
+
+  db.transaction(() => {
+    let fandomId = work.fandom_id
+    if (hasFandom) fandomId = fandomName === null ? null : findOrCreate(db, 'fandoms', {}, fandomName)
+    let shipId = work.ship_id
+    if (hasShip) {
+      if (shipName !== null && fandomId === null) throw new Error('A ship needs a fandom: set the fandom first')
+      shipId = shipName === null ? null : findOrCreate(db, 'ships', { fandom_id: fandomId }, shipName)
+    } else if (fandomId !== work.fandom_id) {
+      shipId = null
+    }
+    update(db, 'works', work.id, [...cols, ['fandom_id', fandomId], ['ship_id', shipId]])
+    pruneUnused(db)
+  })()
+}
+
+// The id of the row in `table` with this name (and these other columns),
+// matched case-insensitively; a new row if there's none.
+function findOrCreate(db, table, scope, name) {
+  const keys = Object.keys(scope)
+  const where = keys.map((k) => ` AND ${k} = ?`).join('')
+  const found = db
+    .prepare(`SELECT id FROM ${table} WHERE name = ? COLLATE NOCASE${where}`)
+    .pluck()
+    .get(name, ...Object.values(scope))
+  if (found !== undefined) return found
+  const info = db
+    .prepare(`INSERT INTO ${table} (${[...keys, 'name'].join(', ')}) VALUES (${[...keys, 'name'].map(() => '?').join(', ')})`)
+    .run(...Object.values(scope), name)
+  return Number(info.lastInsertRowid)
+}
+
+function pruneUnused(db) {
+  db.prepare('DELETE FROM ships WHERE id NOT IN (SELECT ship_id FROM works WHERE ship_id IS NOT NULL)').run()
+  db.prepare('DELETE FROM fandoms WHERE id NOT IN (SELECT fandom_id FROM works WHERE fandom_id IS NOT NULL)').run()
 }

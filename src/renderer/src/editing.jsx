@@ -8,11 +8,11 @@ export const BEAT_STATUSES = ['planned', 'in draft', 'cut']
 export const SCENE_STATUSES = ['outlined', 'drafting', 'drafted', 'revised']
 export const CHAPTER_STATUSES = ['drafting', 'ready to post', 'posted']
 
-// Previously used kinds and POVs, re-read whenever refreshKey changes.
-// A failed read just means no suggestions.
+// Previously used kinds and POVs, and every fandom and ship, re-read
+// whenever refreshKey changes. A failed read just means no suggestions.
 export function useSuggestions(refreshKey) {
   const result = useQuery(() => window.ficBible.suggestions(), 'suggestions', refreshKey)
-  return result.ok ? result.data : { kinds: [], povs: [] }
+  return result.ok ? result.data : { kinds: [], povs: [], fandoms: [], ships: [] }
 }
 
 // Runs a save call ({ ok, data } | { ok, error }) and tracks busy/error.
@@ -46,7 +46,8 @@ export function Field({ label, children, wide }) {
   )
 }
 
-// A text input offering previously used values (most used first).
+// A text input offering previously used values (most used first). Each
+// option is { value, count }; count is optional, and shown when given.
 export function SuggestInput({ id, value, onChange, options, required }) {
   const listId = `${id}-options`
   return (
@@ -55,7 +56,7 @@ export function SuggestInput({ id, value, onChange, options, required }) {
       <datalist id={listId}>
         {options.map((o) => (
           <option key={o.value} value={o.value}>
-            {`used ${o.count}×`}
+            {o.count === undefined ? '' : `used ${o.count}×`}
           </option>
         ))}
       </datalist>

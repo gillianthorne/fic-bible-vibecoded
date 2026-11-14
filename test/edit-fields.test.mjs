@@ -74,7 +74,7 @@ test('a chapter number used in the same work is refused', () => {
 test('updateWork edits the title, link and notes; never folder', () => {
   const db = setup()
   updateWork(db, 1, { title: 'Renamed work' })
-  assert.deepEqual(row(db, 'works', 1), { id: 1, title: 'Renamed work', folder: 'W-folder', url: null, notes: null })
+  assert.deepEqual(row(db, 'works', 1), { id: 1, title: 'Renamed work', folder: 'W-folder', url: null, notes: null, fandom_id: null, ship_id: null })
   assert.throws(() => updateWork(db, 1, { folder: 'x' }), /no editable field/)
   assert.throws(() => updateWork(db, 9, { title: 'x' }), /Work 9 not found/)
   updateWork(db, 1, { url: ' https://archiveofourown.org/works/42 ', notes: 'Inspired by a song.\n\nSecond line.' })
@@ -84,6 +84,65 @@ test('updateWork edits the title, link and notes; never folder', () => {
   assert.equal(row(db, 'works', 1).url, null)
   assert.equal(row(db, 'works', 1).notes, null)
   assert.throws(() => updateWork(db, 1, { notes: 5 }), /Notes must be text/)
+})
+
+const names = (db, id) =>
+  db
+    .prepare(
+      `SELECT f.name AS fandom, s.name AS ship FROM works w
+       LEFT JOIN fandoms f ON f.id = w.fandom_id LEFT JOIN ships s ON s.id = w.ship_id WHERE w.id = ?`
+    )
+    .get(id)
+
+test('updateWork sets a fandom and ship by name, creating them once', () => {
+  const db = setup()
+  updateWork(db, 1, { fandom: ' Good Omens ', ship: 'Aziraphale/Crowley' })
+  assert.deepEqual(names(db, 1), { fandom: 'Good Omens', ship: 'Aziraphale/Crowley' })
+  // Another work typing the same names (in any case) reuses the rows.
+  updateWork(db, 2, { fandom: 'good omens', ship: 'aziraphale/crowley' })
+  assert.deepEqual(names(db, 2), { fandom: 'Good Omens', ship: 'Aziraphale/Crowley' })
+  assert.equal(db.prepare('SELECT count(*) FROM fandoms').pluck().get(), 1)
+  assert.equal(db.prepare('SELECT count(*) FROM ships').pluck().get(), 1)
+})
+
+test('a blank ship is gen; a ship needs a fandom', () => {
+  const db = setup()
+  updateWork(db, 1, { fandom: 'Good Omens', ship: '' })
+  assert.deepEqual(names(db, 1), { fandom: 'Good Omens', ship: null })
+  assert.throws(() => updateWork(db, 2, { fandom: null, ship: 'X/Y' }), /A ship needs a fandom/)
+  assert.throws(() => updateWork(db, 2, { ship: 'X/Y' }), /A ship needs a fandom/)
+  assert.deepEqual(names(db, 2), { fandom: null, ship: null })
+})
+
+test('changing or clearing the fandom clears a ship that is not given', () => {
+  const db = setup()
+  updateWork(db, 1, { fandom: 'Good Omens', ship: 'Aziraphale/Crowley' })
+  updateWork(db, 1, { fandom: 'Other Fandom' })
+  assert.deepEqual(names(db, 1), { fandom: 'Other Fandom', ship: null })
+  updateWork(db, 1, { fandom: 'Good Omens', ship: 'Aziraphale/Crowley' })
+  updateWork(db, 1, { title: 'Just the title' })
+  assert.deepEqual(names(db, 1), { fandom: 'Good Omens', ship: 'Aziraphale/Crowley' })
+  updateWork(db, 1, { fandom: '' })
+  assert.deepEqual(names(db, 1), { fandom: null, ship: null })
+})
+
+test('fandoms and ships no work uses are removed', () => {
+  const db = setup()
+  updateWork(db, 1, { fandom: 'Typo Fandmo', ship: 'A/B' })
+  updateWork(db, 1, { fandom: 'Typo Fandom', ship: 'A/B' })
+  assert.deepEqual(db.prepare('SELECT name FROM fandoms').pluck().all(), ['Typo Fandom'])
+  assert.equal(db.prepare('SELECT count(*) FROM ships').pluck().get(), 1)
+})
+
+test('updateWork with fandom and other fields saves them together, or not at all', () => {
+  const db = setup()
+  updateWork(db, 1, { title: 'New', url: '', fandom: 'F', ship: 'S' })
+  assert.equal(row(db, 'works', 1).title, 'New')
+  assert.throws(() => updateWork(db, 1, { title: '', fandom: 'G' }), /Title can’t be blank/)
+  assert.deepEqual(names(db, 1), { fandom: 'F', ship: 'S' })
+  assert.throws(() => updateWork(db, 1, { fandom: 5 }), /Fandom must be text/)
+  assert.throws(() => updateWork(db, 1, null), /must be an object/)
+  assert.throws(() => updateWork(db, 1, {}), /No Work changes given/)
 })
 
 test('chapter and scene notes keep line breaks; blank clears them', () => {

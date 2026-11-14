@@ -28,13 +28,13 @@ function seed(db) {
   ).run()
 }
 
-test('creates exactly the four spec tables, with no wordcount column', () => {
+test('creates exactly the spec tables, with no wordcount column', () => {
   const db = freshDb()
   const tables = db
     .prepare("SELECT name FROM sqlite_schema WHERE type = 'table' ORDER BY name")
     .pluck()
     .all()
-  assert.deepEqual(tables, ['beats', 'chapters', 'scenes', 'works'])
+  assert.deepEqual(tables, ['beats', 'chapters', 'fandoms', 'scenes', 'ships', 'works'])
   for (const t of tables) {
     const cols = db.prepare(`SELECT name FROM pragma_table_info(?)`).pluck().all(t)
     assert.ok(!cols.some((c) => /word/i.test(c)), `${t} has a wordcount-like column`)
@@ -117,9 +117,32 @@ test('only the spec-nullable columns accept NULL', () => {
     'chapters.posted_date',
     'chapters.posted_url',
     'scenes.notes',
+    'works.fandom_id',
     'works.notes',
+    'works.ship_id',
     'works.url'
   ])
+})
+
+test('fandom and ship names are unique case-insensitively, and never blank', () => {
+  const db = freshDb()
+  db.exec("INSERT INTO fandoms (id, name) VALUES (1, 'Good Omens'), (2, 'Other')")
+  assert.throws(() => db.exec("INSERT INTO fandoms (name) VALUES ('good omens')"), /UNIQUE/)
+  assert.throws(() => db.exec("INSERT INTO fandoms (name) VALUES ('  ')"), /CHECK/)
+  db.exec("INSERT INTO ships (fandom_id, name) VALUES (1, 'Aziraphale/Crowley')")
+  assert.throws(() => db.exec("INSERT INTO ships (fandom_id, name) VALUES (1, 'aziraphale/crowley')"), /UNIQUE/)
+  // The same ship name can exist in two fandoms.
+  db.exec("INSERT INTO ships (fandom_id, name) VALUES (2, 'Aziraphale/Crowley')")
+})
+
+test('deleting a fandom leaves its works with no fandom and no ship', () => {
+  const db = freshDb()
+  seed(db)
+  db.exec("INSERT INTO fandoms (id, name) VALUES (1, 'F'); INSERT INTO ships (id, fandom_id, name) VALUES (1, 1, 'S')")
+  db.exec('UPDATE works SET fandom_id = 1, ship_id = 1')
+  db.exec('DELETE FROM fandoms')
+  assert.deepEqual(db.prepare('SELECT fandom_id, ship_id FROM works').get(), { fandom_id: null, ship_id: null })
+  assert.equal(db.prepare('SELECT count(*) FROM ships').pluck().get(), 0)
 })
 
 test('notes and the work link start out null', () => {
