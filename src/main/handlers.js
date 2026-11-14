@@ -1,5 +1,6 @@
 import { chapterOverview, navigationTree, sceneDetail, sceneProse } from './queries.js'
 import { deleteWorks, importLibrary, worksMissingFrom } from './import.js'
+import { createBeat, deleteBeat, moveBeat, updateBeat } from './edit.js'
 
 // What the renderer can ask for, one function per IPC channel. No Electron
 // imports, so these are tested with plain `node --test`.
@@ -101,6 +102,13 @@ export function createHandlers(open, library = null) {
         const { db, libraryRoot } = open()
         return sceneDetail(db, libraryRoot, id)
       }),
+
+    // Beat edits. Each returns the beat's id (create) or null; the screen
+    // reads the scene again afterwards.
+    'beat:create': (sceneId, fields) => respond(() => createBeat(open().db, sceneId, fields)),
+    'beat:update': (beatId, patch) => respond(() => (updateBeat(open().db, beatId, patch), null)),
+    'beat:move': (beatId, direction) => respond(() => (moveBeat(open().db, beatId, direction), null)),
+    'beat:delete': (beatId) => respond(() => (deleteBeat(open().db, beatId), null)),
 
     // data is null for a scene that doesn't exist.
     'scene:prose': (sceneId) =>
