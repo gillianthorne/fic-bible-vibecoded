@@ -145,8 +145,17 @@ export function sceneDetail(db, libraryRoot, sceneId) {
     wordcount: file.wordcount,
     paragraphs: file.paragraphs,
     fileError: file.fileError,
-    beats
+    beats,
+    editNotes: editNotes(db, sceneId)
   }
+}
+
+// A scene's edit notes: by paragraph, then in the order they were added.
+// Reads no files. An unknown scene just has none.
+export function editNotes(db, sceneId) {
+  return db
+    .prepare('SELECT id, paragraph, kind, note, status FROM edit_notes WHERE scene_id = ? ORDER BY paragraph, id')
+    .all(sceneId)
 }
 
 // Prose viewer: the scene's file split into paragraphs, in order. The
@@ -181,7 +190,8 @@ export function sceneProse(db, libraryRoot, sceneId) {
     work: { id: scene.workId, title: scene.workTitle },
     ...readProse(scenePath(libraryRoot, scene.workFolder, scene.chapterFolder, scene.filename)),
     previous: order[at - 1] ?? null,
-    next: order[at + 1] ?? null
+    next: order[at + 1] ?? null,
+    editNotes: editNotes(db, sceneId)
   }
 }
 
@@ -354,5 +364,11 @@ export function suggestions(db) {
        ORDER BY s.name COLLATE NOCASE`
     )
     .all()
-  return { kinds: usage('kind', 'beats'), povs: usage('pov', 'scenes'), fandoms, ships }
+  return {
+    kinds: usage('kind', 'beats'),
+    editKinds: usage('kind', 'edit_notes'),
+    povs: usage('pov', 'scenes'),
+    fandoms,
+    ships
+  }
 }

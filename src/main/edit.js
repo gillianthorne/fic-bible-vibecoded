@@ -13,6 +13,7 @@
 export const BEAT_STATUSES = ['planned', 'in draft', 'cut']
 export const SCENE_STATUSES = ['outlined', 'drafting', 'drafted', 'revised']
 export const CHAPTER_STATUSES = ['drafting', 'ready to post', 'posted']
+export const EDIT_NOTE_STATUSES = ['open', 'fixed', 'ignored', 'cut']
 
 // --- validation -----------------------------------------------------------
 
@@ -146,6 +147,40 @@ export function deleteBeat(db, beatId) {
     const shift = db.prepare('UPDATE beats SET position = position - 1 WHERE id = ?')
     for (const id of later) shift.run(id)
   })()
+}
+
+// --- edit notes -----------------------------------------------------------
+
+// No position: notes are listed by paragraph, then in the order added, so
+// there is nothing to reorder or renumber.
+const EDIT_NOTE_FIELDS = {
+  paragraph: ['paragraph', positiveInt, 'Paragraph'],
+  kind: ['kind', (v, l) => line(v, l, { allowBlank: true }), 'Kind'],
+  note: ['note', text, 'Note'],
+  status: ['status', (v, l) => oneOf(v, EDIT_NOTE_STATUSES, l), 'Status']
+}
+
+// Adds an edit note to a scene. Returns the new note's id.
+export function createEditNote(db, sceneId, fields) {
+  mustExist(db, 'scenes', sceneId, 'Scene')
+  const values = Object.fromEntries(columns(fields, EDIT_NOTE_FIELDS, 'Edit note'))
+  for (const required of ['paragraph', 'note']) {
+    if (!(required in values)) throw new Error(`A new edit note needs a ${required}`)
+  }
+  const info = db
+    .prepare('INSERT INTO edit_notes (scene_id, paragraph, kind, note, status) VALUES (?, ?, ?, ?, ?)')
+    .run(sceneId, values.paragraph, values.kind ?? '', values.note, values.status ?? 'open')
+  return Number(info.lastInsertRowid)
+}
+
+export function updateEditNote(db, noteId, patch) {
+  mustExist(db, 'edit_notes', noteId, 'Edit note')
+  update(db, 'edit_notes', noteId, columns(patch, EDIT_NOTE_FIELDS, 'Edit note'))
+}
+
+export function deleteEditNote(db, noteId) {
+  mustExist(db, 'edit_notes', noteId, 'Edit note')
+  db.prepare('DELETE FROM edit_notes WHERE id = ?').run(noteId)
 }
 
 // --- scenes, chapters, works ------------------------------------------------
