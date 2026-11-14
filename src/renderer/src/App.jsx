@@ -56,7 +56,14 @@ export default function App() {
         <div className={`sheet sheet-${sheetKind(selection)}`}>
           {selection === null && <p className="muted">Pick a chapter or scene from the sidebar.</p>}
           {selection?.kind === 'import' && <ImportReport report={selection.report} />}
-          {selection?.kind === 'chapter' && <ChapterOverview chapterId={selection.id} refreshKey={libraryVersion} onChanged={changed} />}
+          {selection?.kind === 'chapter' && (
+            <ChapterOverview
+              chapterId={selection.id}
+              refreshKey={libraryVersion}
+              onChanged={changed}
+              onOpenScene={(id) => setSelection({ kind: 'scene', id })}
+            />
+          )}
           {selection?.kind === 'scene' && selection.view !== 'prose' && (
             <SceneDetail
               sceneId={selection.id}

@@ -137,7 +137,8 @@ function ChapterHeader({ chapter, onChanged }) {
 
 // refreshKey re-reads the chapter without blanking it; onChanged() is
 // called after an edit so App can bump it (and refresh the sidebar).
-export default function ChapterOverview({ chapterId, refreshKey, onChanged }) {
+// onOpenScene(id) opens a scene's detail; any click on its row does it.
+export default function ChapterOverview({ chapterId, refreshKey, onChanged, onOpenScene }) {
   const result = useQuery(() => window.ficBible.chapterOverview(chapterId), chapterId, refreshKey)
 
   if (result.loading) return <p className="muted">Loading…</p>
@@ -171,9 +172,16 @@ export default function ChapterOverview({ chapterId, refreshKey, onChanged }) {
           </thead>
           <tbody>
             {scenes.map((scene) => (
-              <tr key={scene.id}>
+              <tr key={scene.id} onClick={() => onOpenScene(scene.id)}>
                 <td className="num">{scene.position}</td>
-                <td>{scene.title}</td>
+                <td>
+                  {/* No handler of its own: its click, from the mouse or
+                      Enter/Space, reaches the row's. The button is what
+                      makes the row reachable by keyboard. */}
+                  <button type="button" className="link-button scene-link">
+                    {scene.title}
+                  </button>
+                </td>
                 <td>{scene.pov}</td>
                 <td>
                   <Status value={scene.status} />
