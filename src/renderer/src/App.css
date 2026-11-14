@@ -187,13 +187,7 @@ h1,
 h2 {
   font-family: var(--serif);
   font-weight: 600;
-  letter-spacing: 0.05em;
   color: var(--ink);
-}
-
-/* Big titles on the sheets need less spacing than small headings. */
-.sheet h1 {
-  letter-spacing: 0.02em;
 }
 
 /* A gold rule under each screen's heading block. */
