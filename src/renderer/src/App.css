@@ -632,93 +632,139 @@ p.beat-summary {
   text-decoration: underline;
 }
 
-/* Scene prose viewer */
+/* Scene prose viewer: a page of a book. Paragraphs run on as printed
+   prose does, first lines indented, with no rules or gaps between them.
+   Each paragraph number sits in the left margin, level with the
+   paragraph's first line, so a beat's paragraph_ref can still be found. */
+
+.sheet-prose {
+  max-width: 860px;
+  padding: 36px 72px 72px 44px;
+  background: var(--page);
+  color: var(--page-ink);
+}
+
+.prose-viewer {
+  --prose-size: 18px;
+  --prose-leading: 1.7;
+  --prose-gutter: 3.2rem;
+}
+
+.prose-viewer header {
+  margin: 0 0 32px var(--prose-gutter);
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--rule);
+  text-align: center;
+}
 
 .prose-viewer header p {
   margin: 0;
 }
 
 .prose-viewer header .link-button {
-  margin-bottom: 8px;
+  display: block;
+  margin-bottom: 14px;
+  text-align: left;
 }
 
 .prose-viewer h1 {
-  margin: 2px 0 4px;
-  font-size: 24px;
+  margin: 6px 0 6px;
+  font-size: 28px;
+  color: var(--page-ink);
 }
 
 .prose {
   list-style: none;
-  margin: 16px 0 0;
+  margin: 0;
   padding: 0;
   font-family: var(--serif);
-  font-size: 15px;
-  line-height: 1.55;
+  font-size: var(--prose-size);
+  line-height: var(--prose-leading);
+  color: var(--page-ink);
 }
 
 .prose-paragraph {
   display: grid;
-  grid-template-columns: 3.5em 1fr;
-  gap: 0 12px;
-  padding: 6px 0;
-  border-top: 1px solid var(--rule);
+  grid-template-columns: var(--prose-gutter) minmax(0, 1fr);
 }
 
 .prose-number {
+  padding-right: 1.1rem;
   font-family: var(--sans);
-  font-size: 12px;
+  font-size: 11px;
   font-variant-numeric: tabular-nums;
-  line-height: 2.2;
+  line-height: calc(var(--prose-size) * var(--prose-leading));
   text-align: right;
-  color: var(--ink-soft);
+  color: var(--page-margin);
+  opacity: 0.75;
   user-select: all;
 }
 
-.prose-text > :first-child {
-  margin-top: 0;
+.prose-paragraph:hover .prose-number {
+  color: var(--ink-soft);
+  opacity: 1;
 }
 
-.prose-text > :last-child {
-  margin-bottom: 0;
+.prose-text p {
+  margin: 0;
+  text-indent: 1.5em;
 }
 
-.prose-text p,
-.prose-text blockquote,
-.prose-list {
-  margin: 0 0 4px;
+/* No indent where a new passage starts: the first paragraph, and the
+   one after a heading or scene break. */
+.prose-paragraph:first-child .prose-text > p:first-child,
+.prose-paragraph:has(.prose-heading, .prose-break) + .prose-paragraph .prose-text > p:first-child {
+  text-indent: 0;
 }
 
 .prose-heading {
-  margin: 0 0 4px;
-  font-size: 16px;
+  margin: 1.2em 0 0.6em;
+  font-size: 1.1em;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+.prose-paragraph:first-child .prose-heading {
+  margin-top: 0;
 }
 
 .prose-text blockquote {
-  padding-left: 10px;
-  border-left: 3px solid var(--rule);
-  color: var(--ink-soft);
+  margin: 0.5em 2em;
+  padding: 0;
+  text-align: left;
 }
 
 .prose-list {
   list-style: none;
+  margin: 0.4em 0 0.4em 1.5em;
   padding: 0;
+  text-align: left;
 }
 
 .prose-list-marker {
-  color: var(--ink-soft);
+  color: var(--page-margin);
 }
 
 .prose-text code {
-  font-size: 13px;
+  font-size: 0.85em;
   background: var(--paper-shade);
   padding: 0 3px;
   border-radius: 3px;
 }
 
+/* A scene break, set as a row of asterisks. */
 .prose-break {
-  margin: 0.75em 25%;
+  height: auto;
+  margin: 0.9em 0;
   border: 0;
-  border-top: 1px solid var(--rule-strong);
+  overflow: visible;
+  text-align: center;
+  color: var(--page-margin);
+}
+
+.prose-break::before {
+  content: '*   *   *';
+  white-space: pre;
 }
 
 .scene-detail .view-prose {
