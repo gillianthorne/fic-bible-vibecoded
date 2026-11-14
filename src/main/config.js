@@ -1,6 +1,7 @@
 import { app } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
+import { writeLibraryRoot } from './config-file.js'
 
 // Hardcoded fallback for the spike: the library/ folder next to the app.
 // In dev that's the repo's library/. In a packaged build it doesn't exist,
@@ -13,8 +14,8 @@ export function configPath() {
   return path.join(app.getPath('userData'), 'config.json')
 }
 
-// Reads config.json from the userData folder. The app never creates or
-// writes this file. A missing file or a missing libraryRoot means the
+// Reads config.json from the userData folder. The app writes this file
+// only when the author picks a library folder (saveLibraryRoot). A missing file or a missing libraryRoot means the
 // fallback is used. A file that exists but is broken is an error: silently
 // ignoring it would hide the mistake.
 export function resolveLibraryRoot() {
@@ -44,4 +45,9 @@ export function resolveLibraryRoot() {
     throw new Error(`libraryRoot in ${file} must be an absolute path`)
   }
   return { libraryRoot: path.normalize(config.libraryRoot), source: 'config.json', configPath: file }
+}
+
+// Saves the library folder the author picked. Returns the saved path.
+export function saveLibraryRoot(libraryRoot) {
+  return writeLibraryRoot(configPath(), libraryRoot)
 }

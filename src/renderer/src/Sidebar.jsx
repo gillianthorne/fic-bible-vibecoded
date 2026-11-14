@@ -1,5 +1,6 @@
 import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
+import LibraryBar from './LibraryBar.jsx'
 
 // The navigation tree: works, expanding to chapters, expanding to scenes.
 // Clicking a chapter opens its overview and clicking a scene opens its
@@ -146,11 +147,13 @@ function Work({ work, selection, onSelect, isExpanded, onToggle }) {
   )
 }
 
-export default function Sidebar({ selection, onSelect, isExpanded, onToggle }) {
-  const tree = useQuery(() => window.ficBible.navigationTree(), 'tree')
+// refreshKey changes after an import, so the tree is read again.
+export default function Sidebar({ selection, onSelect, isExpanded, onToggle, refreshKey, onImported }) {
+  const tree = useQuery(() => window.ficBible.navigationTree(), `tree:${refreshKey}`)
 
   return (
     <nav className="sidebar" aria-label="Works, chapters and scenes">
+      <LibraryBar refreshKey={refreshKey} onImported={onImported} />
       {tree.loading && <p className="muted">Loading…</p>}
       {tree.ok === false && <QueryError what="the library" error={tree.error} />}
       {tree.ok && tree.data.length === 0 && <p className="muted">No works yet.</p>}

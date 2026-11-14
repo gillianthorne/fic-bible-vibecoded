@@ -41,6 +41,57 @@ body {
   padding: 16px 24px;
 }
 
+/* Sidebar: library folder */
+
+.library-bar {
+  margin: 0 0 12px;
+  padding: 0 8px 12px;
+  border-bottom: 1px solid #ddd;
+}
+
+.library-label {
+  margin: 0 0 2px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #777;
+}
+
+.library-path {
+  margin: 0;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.library-note {
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+
+.library-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.sidebar .library-actions button {
+  padding: 3px 8px;
+  border: 1px solid #ccc;
+  background: #fff;
+  font-size: 12px;
+}
+
+.sidebar .library-actions button:hover:not(:disabled) {
+  background: #e9e9e5;
+}
+
+.sidebar .library-actions button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
 /* Sidebar: navigation tree */
 
 .sidebar > .muted {
@@ -567,4 +618,43 @@ p.beat-summary {
 
 .scene-detail .view-prose {
   margin-top: 10px;
+}
+
+/* Import report */
+
+.import-report {
+  max-width: 760px;
+}
+
+.import-report h1 {
+  margin: 0 0 2px;
+}
+
+.import-root,
+.import-path {
+  overflow-wrap: anywhere;
+}
+
+.import-report h2 {
+  margin: 20px 0 4px;
+  font-size: 15px;
+}
+
+.import-report table {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+}
+
+.import-report th,
+.import-report td {
+  padding: 4px 8px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+  vertical-align: top;
+}
+
+.import-report thead th {
+  border-bottom: 1px solid #ccc;
+  font-weight: 600;
 }

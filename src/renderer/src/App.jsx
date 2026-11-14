@@ -3,8 +3,10 @@ import Sidebar from './Sidebar.jsx'
 import ChapterOverview from './ChapterOverview.jsx'
 import SceneDetail from './SceneDetail.jsx'
 import ProseViewer from './ProseViewer.jsx'
+import ImportReport from './ImportReport.jsx'
 
-// selection is null, { kind: 'chapter', id } or { kind: 'scene', id, view }.
+// selection is null, { kind: 'chapter', id }, { kind: 'scene', id, view }
+// or { kind: 'import', report } for the result of the last import.
 // view is 'prose' for the prose viewer; anything else is scene detail. The
 // sidebar selects with no view, so a sidebar click always opens detail.
 //
@@ -15,15 +17,32 @@ import ProseViewer from './ProseViewer.jsx'
 export default function App() {
   const [selection, setSelection] = useState(null)
   const [expanded, setExpanded] = useState({})
+  // Bumped after each import so the sidebar reads the library again.
+  const [libraryVersion, setLibraryVersion] = useState(0)
+
+  // An import can clear works, so whatever was open may be gone: show the
+  // report instead.
+  const showImport = (report) => {
+    setLibraryVersion((v) => v + 1)
+    setSelection({ kind: 'import', report })
+  }
 
   const isExpanded = (key) => expanded[key] ?? key.startsWith('work:')
   const toggle = (key) => setExpanded((prev) => ({ ...prev, [key]: !(prev[key] ?? key.startsWith('work:')) }))
 
   return (
     <div className="layout">
-      <Sidebar selection={selection} onSelect={setSelection} isExpanded={isExpanded} onToggle={toggle} />
+      <Sidebar
+        selection={selection}
+        onSelect={setSelection}
+        isExpanded={isExpanded}
+        onToggle={toggle}
+        refreshKey={libraryVersion}
+        onImported={showImport}
+      />
       <main className="main-pane">
         {selection === null && <p className="muted">Pick a chapter or scene from the sidebar.</p>}
+        {selection?.kind === 'import' && <ImportReport report={selection.report} />}
         {selection?.kind === 'chapter' && <ChapterOverview chapterId={selection.id} />}
         {selection?.kind === 'scene' && selection.view !== 'prose' && (
           <SceneDetail

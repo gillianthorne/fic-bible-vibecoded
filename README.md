@@ -86,8 +86,10 @@ folder, not inside the installed app:
 | Linux | `~/.config/Fic Bible/` |
 
 - `fic-bible.sqlite` is the database. It is created and migrated on first start.
-- `config.json` gives the location of your library folder. The app never
-  writes this file, so create it yourself:
+- `config.json` gives the location of your library folder. Use
+  **Choose folder…** at the top of the sidebar to pick it, and the app
+  saves it here. That's the only time the app writes this file. You can
+  also write it yourself:
 
   ```json
   { "libraryRoot": "C:\\Users\\you\\Documents\\fic-library" }
@@ -95,6 +97,32 @@ folder, not inside the installed app:
 
   The path must be absolute. On Linux, write it as `"/home/you/fic-library"`.
   Without this file the app still starts, but it can't find any prose.
+
+## Library folder layout
+
+Choosing a folder imports it. **Re-import** picks up files you've added
+since then. The import reads the folders and adds database rows. It never
+creates, renames or changes a file.
+
+```
+fic-library/
+  The Long Winter/          a work, titled "The Long Winter"
+    01-First Snow/          chapter 1, "First Snow"
+      01-arrival.md         scene 1, "arrival"
+      02-the cabin.md       scene 2, "the cabin"
+    02-Thaw/                chapter 2, "Thaw"
+```
+
+- The number before the hyphen sets the order. The title is everything after `##-`.
+- Rows that already exist are left as they are, so edits made in the app survive a re-import.
+- Anything that doesn't fit this layout is skipped and listed with a reason. That includes:
+  - files without a `##-` prefix
+  - files that aren't `.md`
+  - two items with the same number
+  - folders nested inside a chapter
+- Hidden files and folders (starting with `.`) are ignored.
+
+If you choose a folder that's missing some works already in the database, the app asks whether to keep those works or clear them. Clearing deletes their database rows, including beats. It doesn't delete files.
 
 `npm run dev` uses the **same** folder, so the dev app and the installed app
 share one database and one `config.json`.
