@@ -106,8 +106,8 @@ export function chapterOverview(db, libraryRoot, chapterId) {
     }
   })
 
-  const { workId, workTitle, workFolder, folder, ...rest } = chapter
-  return { chapter: { ...rest, work: { id: workId, title: workTitle } }, scenes, ...total(scenes) }
+  const { workId, workTitle, workFolder, ...rest } = chapter
+  return { chapter: { ...rest, work: { id: workId, title: workTitle, folder: workFolder } }, scenes, ...total(scenes) }
 }
 
 // Scene detail: the scene's fields, its file-derived counts, and its beats

@@ -45,7 +45,7 @@ export default function App() {
       <main className="main-pane">
         {selection === null && <p className="muted">Pick a chapter or scene from the sidebar.</p>}
         {selection?.kind === 'import' && <ImportReport report={selection.report} />}
-        {selection?.kind === 'chapter' && <ChapterOverview chapterId={selection.id} />}
+        {selection?.kind === 'chapter' && <ChapterOverview chapterId={selection.id} refreshKey={libraryVersion} onChanged={changed} />}
         {selection?.kind === 'scene' && selection.view !== 'prose' && (
           <SceneDetail
             sceneId={selection.id}
