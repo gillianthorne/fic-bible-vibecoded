@@ -3,11 +3,12 @@ import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
 import { number, Status, Wordcount } from './labels.jsx'
 import { CHAPTER_STATUSES, EditButton, Field, FormActions, NumberInput, SaveError, Select, toNumber, useSave } from './editing.jsx'
+import Notes, { ExternalLink } from './Notes.jsx'
 
 // Every scene in the chapter, so its shape is readable without clicking
 // into anything. Wordcounts come from the scene files, read by the main
-// process on every load. The header's fields can be edited, and so can the
-// work's title, since works have no screen of their own.
+// process on every load. The header's fields and the chapter's notes can
+// be edited, and so can the work's title, as on the work overview.
 
 function WorkTitle({ work, onChanged }) {
   const [editing, setEditing] = useState(false)
@@ -51,7 +52,7 @@ function WorkTitle({ work, onChanged }) {
 }
 
 // A posted date and AO3 link are stored as given; leaving them blank
-// stores null. The link is shown as text, never opened by the app.
+// stores null. The link opens in the default browser.
 function ChapterForm({ chapter, onDone, onCancel }) {
   const [num, setNum] = useState(String(chapter.number))
   const [title, setTitle] = useState(chapter.title)
@@ -123,7 +124,11 @@ function ChapterHeader({ chapter, onChanged }) {
             <Status value={chapter.status} />
             {chapter.postedDate && <span className="muted"> on {chapter.postedDate}</span>}
           </p>
-          {chapter.postedUrl && <p className="muted posted-url">{chapter.postedUrl}</p>}
+          {chapter.postedUrl && (
+            <p className="posted-url">
+              <ExternalLink href={chapter.postedUrl} />
+            </p>
+          )}
         </>
       )}
     </header>
@@ -145,6 +150,14 @@ export default function ChapterOverview({ chapterId, refreshKey, onChanged, onOp
   return (
     <article className="chapter-overview">
       <ChapterHeader key={chapter.id} chapter={chapter} onChanged={onChanged} />
+
+      <Notes
+        key={`notes-${chapter.id}`}
+        notes={chapter.notes}
+        what="chapter"
+        saveNotes={(notes) => window.ficBible.updateChapter(chapter.id, { notes })}
+        onChanged={onChanged}
+      />
 
       {scenes.length === 0 ? (
         <p className="muted">No scenes in this chapter.</p>
