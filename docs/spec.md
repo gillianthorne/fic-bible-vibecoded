@@ -231,5 +231,6 @@ Explicitly not in v1:
 1. In-app prose editing — the riskiest change, since it gives the app write access to real drafts
 2. Wordcount history — a snapshots table, written on a scan the user triggers
 3. Cross-reference views — every scene where a given beat kind or POV appears
+4. Synced database — keep the database in the library folder so a cloud folder (e.g. OneDrive) carries it between laptops with the prose. Replaces "the data is per-machine"; a cloud service can't merge a database, so the app would need to warn when it finds a conflict copy
 
 Anything added in v2 must not break the two rules this model rests on: no field in both stores, and no stored wordcounts outside a snapshots table.
