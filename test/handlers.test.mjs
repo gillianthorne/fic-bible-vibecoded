@@ -116,3 +116,20 @@ test('scene:detail refuses anything but a positive integer', () => {
     assert.match(result.error, /sceneId must be a positive integer/)
   }
 })
+
+test('scene:prose returns the paragraphs scene:detail counts', () => {
+  const id = firstSceneId('Signal')
+  const result = handlers['scene:prose'](id)
+  assert.equal(result.ok, true)
+  assert.equal(result.data.fileError, null)
+  assert.equal(result.data.paragraphs.length, handlers['scene:detail'](id).data.paragraphs)
+})
+
+test('scene:prose gives null data for an unknown scene and refuses bad ids', () => {
+  assert.deepEqual(handlers['scene:prose'](999999), { ok: true, data: null })
+  for (const bad of [0, -1, 1.5, '1', null, undefined, NaN, {}]) {
+    const result = handlers['scene:prose'](bad)
+    assert.equal(result.ok, false, `accepted ${String(bad)}`)
+    assert.match(result.error, /sceneId must be a positive integer/)
+  }
+})
