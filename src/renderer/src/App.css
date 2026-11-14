@@ -564,3 +564,7 @@ p.beat-summary {
   border: 0;
   border-top: 1px solid #ccc;
 }
+
+.scene-detail .view-prose {
+  margin-top: 10px;
+}
