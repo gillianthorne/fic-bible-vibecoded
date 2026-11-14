@@ -1,7 +1,7 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import path from 'node:path'
 import { closeDatabase, databasePath, openDatabase, schemaVersion, sqliteVersion } from './db.js'
-import { resolveLibraryRoot } from './config.js'
+import { resolveLibraryRoot, saveLibraryRoot } from './config.js'
 import { readTestScene } from './scene.js'
 import { createHandlers } from './handlers.js'
 import { openSqlite } from './sqlite.js'
@@ -84,7 +84,47 @@ function openLibrary() {
   return { db: openDatabase(), libraryRoot: resolveLibraryRoot().libraryRoot }
 }
 
-for (const [channel, handler] of Object.entries(createHandlers(openLibrary))) {
+// What changing the library needs from Electron: native dialogs and the
+// config file. Not offered with a test library.
+const MAX_LISTED = 10
+
+const library = testLibraryEnv
+  ? null
+  : {
+      current: () => resolveLibraryRoot(),
+      chooseFolder: async () => {
+        const result = await dialog.showOpenDialog(BrowserWindow.getFocusedWindow(), {
+          title: 'Choose library folder',
+          properties: ['openDirectory']
+        })
+        return result.canceled ? null : result.filePaths[0] ?? null
+      },
+      confirmMissing: async (works, root) => {
+        const listed = works.slice(0, MAX_LISTED).map((w) => `  • ${w.title}`)
+        if (works.length > MAX_LISTED) listed.push(`  …and ${works.length - MAX_LISTED} more`)
+        const buttons = ['Keep them', 'Clear them', 'Cancel']
+        const { response } = await dialog.showMessageBox(BrowserWindow.getFocusedWindow(), {
+          type: 'question',
+          title: 'Works not in this folder',
+          message: `${works.length === 1 ? '1 work' : `${works.length} works`} in the database ${
+            works.length === 1 ? 'has' : 'have'
+          } no folder in ${root}.`,
+          detail:
+            `${listed.join('\n')}\n\n` +
+            'Keep them: they stay in the sidebar, and their scenes show as missing files.\n' +
+            'Clear them: their chapters, scenes and beats are deleted from the database. ' +
+            'No files are touched.',
+          buttons,
+          defaultId: 0,
+          cancelId: 2,
+          noLink: true
+        })
+        return ['keep', 'clear', 'cancel'][response]
+      },
+      save: (root) => saveLibraryRoot(root)
+    }
+
+for (const [channel, handler] of Object.entries(createHandlers(openLibrary, library))) {
   ipcMain.handle(channel, (_event, ...args) => handler(...args))
 }
 

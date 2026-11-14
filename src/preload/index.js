@@ -4,6 +4,9 @@ import { contextBridge, ipcRenderer } from 'electron'
 // to { ok: true, data } or { ok: false, error }.
 contextBridge.exposeInMainWorld('ficBible', {
   getStatus: () => ipcRenderer.invoke('status:get'),
+  libraryInfo: () => ipcRenderer.invoke('library:info'),
+  chooseLibrary: () => ipcRenderer.invoke('library:choose'),
+  importLibrary: () => ipcRenderer.invoke('library:import'),
   navigationTree: () => ipcRenderer.invoke('nav:tree'),
   chapterOverview: (chapterId) => ipcRenderer.invoke('chapter:overview', chapterId),
   sceneDetail: (sceneId) => ipcRenderer.invoke('scene:detail', sceneId),
