@@ -15,14 +15,14 @@
   --gold-deep: #a8792f;
   --desk-accent: var(--gold);
 
-  /* Paper: every screen but the prose page, a darker tan. */
-  --paper: #d4bb93;
-  --paper-shade: #c6aa7e;
-  --paper-sunk: #ddc7a3;
-  --ink: #22180f;
-  --ink-soft: #58442f;
-  --rule: #bb9e73;
-  --rule-strong: #9c7c50;
+  /* Paper: every screen. */
+  --paper: #f5ecdc;
+  --paper-shade: #ece0ca;
+  --paper-sunk: #fbf6ec;
+  --ink: #2b221c;
+  --ink-soft: #6e5c4b;
+  --rule: #e0d0b5;
+  --rule-strong: #c7b08e;
 
   /* The prose page: lighter paper, near-black ink. */
   --page: #faf4e8;
@@ -30,7 +30,7 @@
   --page-margin: #a8957d;
 
   /* Actions. */
-  --link: #6e470f;
+  --link: #7a4e12;
   --primary: var(--gold);
   --primary-hover: #c18d3c;
   --danger: #a3372b;
@@ -38,17 +38,26 @@
 
   /* Status hues: warm, but each still distinct. */
   --amber: #d4932a;
-  --amber-soft: #ebc684;
-  --amber-ink: #6e4506;
+  --amber-ink: #8a5a0c;
   --blue: #5a82a6;
-  --blue-soft: #c4d0d4;
   --green: #5d8c4c;
-  --green-soft: #c6d4a4;
-  --green-ink: #34571f;
-  --plum-soft: #d4bfcc;
-  --red-ink: #7a221b;
-  --red-soft: #ecc9bd;
-  --red-line: #c98e7e;
+  --green-ink: #3f6a31;
+  /* Status chips: earthy, one hue per status. */
+  --chip-outlined: #e6dccb;
+  --chip-outlined-ink: #5a4a38;
+  --chip-drafting: #ecd29a;
+  --chip-drafting-ink: #6e4a0c;
+  --chip-drafted: #d3d8d4;
+  --chip-drafted-ink: #3e4c52;
+  --chip-revised: #d6dcb4;
+  --chip-revised-ink: #46521f;
+  --chip-ready: #e8c9b8;
+  --chip-ready-ink: #7a3a22;
+  --chip-posted: #c5d1a6;
+  --chip-posted-ink: #34481c;
+  --red-ink: #8e2a22;
+  --red-soft: #f6e1da;
+  --red-line: #e2b4a8;
 
   --serif: Georgia, 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
   --sans: system-ui, 'Segoe UI', sans-serif;
@@ -175,7 +184,7 @@ h1,
 h2 {
   font-family: var(--serif);
   font-weight: 600;
-  letter-spacing: 0.035em;
+  letter-spacing: 0.05em;
   color: var(--ink);
 }
 
@@ -442,8 +451,28 @@ h2 {
   white-space: normal;
 }
 
+/* Each scene row opens the scene. The title is a button, so the row can
+   be reached with the keyboard too. */
+.chapter-overview tbody tr {
+  cursor: pointer;
+}
+
 .chapter-overview tbody tr:hover {
   background: var(--paper-sunk);
+  box-shadow: inset 3px 0 0 var(--gold);
+}
+
+.chapter-overview .scene-link {
+  color: var(--ink);
+  text-align: left;
+}
+
+.chapter-overview tbody tr:hover .scene-link {
+  color: var(--link);
+  text-decoration: underline;
+  text-decoration-color: var(--gold);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
 }
 
 .chapter-overview thead th {
@@ -619,29 +648,33 @@ p.beat-summary {
 
 .status {
   display: inline-block;
-  padding: 1px 7px;
+  padding: 1px 8px;
   border-radius: 10px;
   font-size: 12px;
-  background: var(--paper-shade);
+  font-weight: 500;
+  background: var(--chip-outlined);
+  color: var(--chip-outlined-ink);
 }
 
-.status-outlined {
-  background: var(--paper-shade);
-}
 .status-drafting {
-  background: var(--amber-soft);
+  background: var(--chip-drafting);
+  color: var(--chip-drafting-ink);
 }
 .status-drafted {
-  background: var(--blue-soft);
+  background: var(--chip-drafted);
+  color: var(--chip-drafted-ink);
 }
 .status-revised {
-  background: var(--green-soft);
+  background: var(--chip-revised);
+  color: var(--chip-revised-ink);
 }
 .status-ready-to-post {
-  background: var(--plum-soft);
+  background: var(--chip-ready);
+  color: var(--chip-ready-ink);
 }
 .status-posted {
-  background: var(--green-soft);
+  background: var(--chip-posted);
+  color: var(--chip-posted-ink);
 }
 
 /* Errors */
