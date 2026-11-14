@@ -1,6 +1,9 @@
 import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
 import Markdown from './Markdown.jsx'
+import { number } from './labels.jsx'
+
+const count = (n, noun) => `${number(n)} ${noun}${n === 1 ? '' : 's'}`
 
 // Read-only view of a scene's file, numbered by paragraph so a beat's
 // paragraph_ref can be found. The paragraphs come from the main process
@@ -62,7 +65,7 @@ export default function ProseViewer({ sceneId, onBack }) {
         <h1>{scene.title}</h1>
         {scene.paragraphs?.length > 0 && (
           <p className="muted">
-            {scene.paragraphs.length} paragraph{scene.paragraphs.length === 1 ? '' : 's'}
+            {count(scene.paragraphs.length, 'paragraph')} · {count(scene.wordcount, 'word')}
           </p>
         )}
       </header>
