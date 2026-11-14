@@ -9,8 +9,11 @@ import { MARKER } from '../scripts/seed/guard.mjs'
 import { DB_NAME, seed } from '../scripts/seed/seed.mjs'
 import { openSqlite } from '../src/main/sqlite.js'
 import { countProse } from '../src/main/prose.js'
+import { migrate } from '../src/main/migrate.js'
 import {
   chapterOverview,
+  chapterProse,
+  libraryOverview,
   navigationTree,
   sceneDetail,
   sceneProse,
@@ -159,6 +162,30 @@ test('work overview of an empty work has no chapters and zero words', () => {
   assert.equal(overview.work.url, null)
 })
 
+test('library overview lists every work in sidebar order with its own total', () => {
+  const library = libraryOverview(db, root)
+  assert.deepEqual(library.works.map((w) => w.title), navigationTree(db).map((w) => w.title))
+  for (const work of library.works) {
+    const own = workWordcount(db, root, work.id)
+    assert.deepEqual([work.wordcount, work.uncounted], [own.wordcount, own.uncounted])
+    assert.equal(work.chapterCount, own.chapters.length)
+    assert.equal(work.url, null)
+  }
+  assert.equal(library.wordcount, library.works.reduce((sum, w) => sum + w.wordcount, 0))
+  assert.ok(library.wordcount > 0)
+  assert.equal(library.uncounted, 0)
+})
+
+test('library overview of an empty library is zero, not an error', () => {
+  const empty = openSqlite(':memory:')
+  try {
+    migrate(empty, path.join(import.meta.dirname, '..', 'migrations'))
+    assert.deepEqual(libraryOverview(empty, root), { works: [], wordcount: 0, uncounted: 0 })
+  } finally {
+    empty.close()
+  }
+})
+
 test('suggestions are distinct, most used first', () => {
   const { kinds, povs } = suggestions(db)
   for (const list of [kinds, povs]) {
@@ -201,6 +228,51 @@ test('every seeded paragraph_ref points at a paragraph the viewer shows', () => 
     }
   }
   assert.ok(checked > 0)
+})
+
+test('scene prose links each scene to its neighbours, across chapter ends', () => {
+  const workId = db.prepare("SELECT id FROM works WHERE title = 'The Lantern Road'").pluck().get()
+  const order = db
+    .prepare(
+      `SELECT s.id FROM scenes s JOIN chapters c ON c.id = s.chapter_id
+       WHERE c.work_id = ? ORDER BY c.number, s.position`
+    )
+    .pluck()
+    .all(workId)
+  assert.ok(order.length > 2)
+  order.forEach((id, i) => {
+    const { previous, next } = sceneProse(db, root, id)
+    assert.equal(previous?.id ?? null, order[i - 1] ?? null, `scene ${id} previous`)
+    assert.equal(next?.id ?? null, order[i + 1] ?? null, `scene ${id} next`)
+  })
+  // Chapter 1's last scene leads into chapter 2's first.
+  const lastOfOne = sceneProse(db, root, sceneId('The Lantern Road', 1, 4))
+  assert.deepEqual([lastOfOne.next.chapterNumber, lastOfOne.next.position], [2, 1])
+})
+
+test('chapter prose has every scene in order, matching the single-scene viewer', () => {
+  const chapterId = db.prepare("SELECT id FROM chapters WHERE title = 'Signal'").pluck().get()
+  const prose = chapterProse(db, root, chapterId)
+  const overview = chapterOverview(db, root, chapterId)
+  assert.deepEqual(prose.scenes.map((s) => s.id), overview.scenes.map((s) => s.id))
+  for (const scene of prose.scenes) {
+    const single = sceneProse(db, root, scene.id)
+    assert.deepEqual([scene.paragraphs, scene.wordcount, scene.fileError], [single.paragraphs, single.wordcount, single.fileError])
+  }
+  assert.deepEqual([prose.wordcount, prose.uncounted], [overview.wordcount, overview.uncounted])
+})
+
+test('chapter prose links to the chapters either side', () => {
+  const ids = db
+    .prepare("SELECT c.id FROM chapters c JOIN works w ON w.id = c.work_id WHERE w.title = 'Salt and Static' ORDER BY c.number")
+    .pluck()
+    .all()
+  ids.forEach((id, i) => {
+    const { previous, next } = chapterProse(db, root, id)
+    assert.equal(previous?.id ?? null, ids[i - 1] ?? null)
+    assert.equal(next?.id ?? null, ids[i + 1] ?? null)
+  })
+  assert.equal(chapterProse(db, root, 9999), null)
 })
 
 test('scene prose of the CRLF scene matches its LF text, with no CR left in', () => {

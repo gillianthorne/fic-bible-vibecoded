@@ -1,4 +1,4 @@
-import { chapterOverview, navigationTree, sceneDetail, sceneProse, suggestions, workOverview } from './queries.js'
+import { chapterOverview, chapterProse, libraryOverview, navigationTree, sceneDetail, sceneProse, suggestions, workOverview } from './queries.js'
 import { checkLink } from './links.js'
 import { deleteWorks, importLibrary, worksMissingFrom } from './import.js'
 import { createBeat, deleteBeat, moveBeat, updateBeat, updateChapter, updateScene, updateWork } from './edit.js'
@@ -100,6 +100,13 @@ export function createHandlers(open, library = null, links = null) {
 
     'nav:tree': () => respond(() => navigationTree(open().db)),
 
+    // The home page: every work and the total across them.
+    'library:overview': () =>
+      respond(() => {
+        const { db, libraryRoot } = open()
+        return libraryOverview(db, libraryRoot)
+      }),
+
     // data is null for a work that doesn't exist.
     'work:overview': (workId) =>
       respond(() => {
@@ -137,6 +144,14 @@ export function createHandlers(open, library = null, links = null) {
 
     // Previously used beat kinds and POVs, for the inputs' suggestions.
     suggestions: () => respond(() => suggestions(open().db)),
+
+    // data is null for a chapter that doesn't exist.
+    'chapter:prose': (chapterId) =>
+      respond(() => {
+        const id = requireId(chapterId, 'chapterId')
+        const { db, libraryRoot } = open()
+        return chapterProse(db, libraryRoot, id)
+      }),
 
     // data is null for a scene that doesn't exist.
     'scene:prose': (sceneId) =>

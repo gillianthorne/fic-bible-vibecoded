@@ -139,7 +139,8 @@ function ChapterHeader({ chapter, onChanged }) {
 // called after an edit so App can bump it (and refresh the sidebar).
 // onOpenScene(sceneId, chapterId, workId) opens a scene's detail; any
 // click on its row does it.
-export default function ChapterOverview({ chapterId, refreshKey, onChanged, onOpenScene }) {
+// onOpenProse() opens the whole chapter's prose.
+export default function ChapterOverview({ chapterId, refreshKey, onChanged, onOpenScene, onOpenProse }) {
   const result = useQuery(() => window.ficBible.chapterOverview(chapterId), chapterId, refreshKey)
 
   if (result.loading) return <p className="muted">Loading…</p>
@@ -150,6 +151,11 @@ export default function ChapterOverview({ chapterId, refreshKey, onChanged, onOp
   return (
     <article className="chapter-overview">
       <ChapterHeader key={chapter.id} chapter={chapter} onChanged={onChanged} />
+      {scenes.length > 0 && (
+        <button type="button" className="link-button view-prose" onClick={onOpenProse}>
+          Read chapter →
+        </button>
+      )}
 
       <Notes
         key={`notes-${chapter.id}`}

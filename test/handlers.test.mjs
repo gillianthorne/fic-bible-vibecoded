@@ -32,6 +32,13 @@ test('nav:tree wraps the navigation tree', () => {
   assert.equal(result.data.length, 3)
 })
 
+test('library:overview returns every work and the total across them', () => {
+  const result = handlers['library:overview']()
+  assert.equal(result.ok, true)
+  assert.equal(result.data.works.length, 3)
+  assert.equal(result.data.wordcount, result.data.works.reduce((sum, w) => sum + w.wordcount, 0))
+})
+
 test('work:overview returns chapters, null for an unknown work, and refuses bad ids', () => {
   const workId = db.prepare("SELECT id FROM works WHERE title = 'Salt and Static'").pluck().get()
   const result = handlers['work:overview'](workId)
@@ -132,6 +139,14 @@ test('scene:prose returns the paragraphs scene:detail counts', () => {
   assert.equal(result.ok, true)
   assert.equal(result.data.fileError, null)
   assert.equal(result.data.paragraphs.length, handlers['scene:detail'](id).data.paragraphs)
+})
+
+test('chapter:prose returns every scene, null for an unknown chapter, and refuses bad ids', () => {
+  const result = handlers['chapter:prose'](chapterId('Signal'))
+  assert.equal(result.ok, true)
+  assert.equal(result.data.scenes.length, handlers['chapter:overview'](chapterId('Signal')).data.scenes.length)
+  assert.deepEqual(handlers['chapter:prose'](999999), { ok: true, data: null })
+  assert.match(handlers['chapter:prose']('1').error, /chapterId must be a positive integer/)
 })
 
 test('scene:prose gives null data for an unknown scene and refuses bad ids', () => {

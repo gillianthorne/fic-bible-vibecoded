@@ -10,7 +10,7 @@ const count = (n, noun) => `${number(n)} ${noun}${n === 1 ? '' : 's'}`
 // already split by splitParagraphs, the same split the paragraph count
 // uses; the number shown is the paragraph's place in that list, 1-based.
 
-function Body({ scene }) {
+export function Body({ scene }) {
   if (scene.fileError !== null) {
     const what = scene.fileError === 'ENOENT' ? 'The scene file is missing' : "The scene file couldn't be read"
     return (
@@ -35,7 +35,33 @@ function Body({ scene }) {
   )
 }
 
-export default function ProseViewer({ sceneId, onBack }) {
+// Previous / next links, above and below the prose. Either side is null
+// at the start or end; that side is left empty so the other stays put.
+// label(item) is the link's text.
+export function Flip({ previous, next, label, onOpen, what }) {
+  return (
+    <nav className="prose-flip" aria-label={`Previous and next ${what}`}>
+      {previous ? (
+        <button type="button" className="link-button prose-flip-previous" onClick={() => onOpen(previous)}>
+          ← {label(previous)}
+        </button>
+      ) : (
+        <span />
+      )}
+      {next && (
+        <button type="button" className="link-button prose-flip-next" onClick={() => onOpen(next)}>
+          {label(next)} →
+        </button>
+      )}
+    </nav>
+  )
+}
+
+const sceneLabel = (s) => `Ch ${s.chapterNumber}, scene ${s.position}: ${s.title}`
+
+// onOpenScene(scene) opens another scene's prose: scene is
+// { id, chapterId, ... } from previous or next.
+export default function ProseViewer({ sceneId, onBack, onOpenScene }) {
   const result = useQuery(() => window.ficBible.sceneProse(sceneId), sceneId)
 
   const back = (
@@ -68,8 +94,12 @@ export default function ProseViewer({ sceneId, onBack }) {
             {count(scene.paragraphs.length, 'paragraph')} · {count(scene.wordcount, 'word')}
           </p>
         )}
+        <Flip previous={scene.previous} next={scene.next} label={sceneLabel} onOpen={onOpenScene} what="scene" />
       </header>
       <Body scene={scene} />
+      <footer className="prose-footer">
+        <Flip previous={scene.previous} next={scene.next} label={sceneLabel} onOpen={onOpenScene} what="scene" />
+      </footer>
     </article>
   )
 }
