@@ -51,6 +51,8 @@ Beats are editable in place: add, edit, reorder, change kind or status, set or c
 
 The scene's notes are shown and editable here.
 
+Below the beats, the scene's edit notes (v2) as a table: paragraph, kind, note, status, in paragraph order. Each is editable in place — change its paragraph, kind, note or status — and can be added or deleted here. The count of open edit notes shows what revising this scene still has left to do.
+
 ### 3. Chapter overview (main pane)
 
 Every scene in the chapter as a table: position, title, POV, status, wordcount, and a count of its beats by status. Chapter wordcount as a total. This is the view that replaces reading across spreadsheet rows — the shape of the chapter should be readable without clicking into anything.
@@ -63,6 +65,8 @@ A Read chapter link opens the whole chapter's prose: every scene in order on one
 
 Read-only display of the scene's markdown file **with paragraph numbers shown**. This exists specifically so a paragraph reference can be located, and so a beat can be pointed at a real passage. No editing, no formatting toolbar: editing is a separate screen, opened from an Edit prose button here and on the scene detail.
 
+Clicking a paragraph number opens a small form to add an edit note at that paragraph (v2): a correction or a note to self, for the next revising pass. Paragraphs with open edit notes show how many beside their number. Adding a note changes a database row only; the prose stays read-only.
+
 Previous and next links move through the work's scenes in reading order, across chapter ends.
 
 ### 4a. Scene prose editor (main pane, v2)
@@ -72,6 +76,8 @@ Edits one scene's markdown file. It is a separate screen from the viewer, so rea
 The editor shows the markdown source, with its markers (`**`, `*`, `#`, `>`) left visible, and styles the text as it would read: bold text is bold, italic text is italic, headings are larger. Paragraph numbers, counted exactly as the viewer counts them, are shown in the margin, and the scene's paragraph count and wordcount update as you type.
 
 A toolbar formats the selection: bold, italic, strikethrough, heading, blockquote, bulleted and numbered list, and a scene break. Bold and italic also have Ctrl-B and Ctrl-I (Cmd on a Mac). Each toggles: applied to text that already has it, it takes it off. Typing the markdown by hand works the same as using the buttons. No images.
+
+Beside the editor, a panel lists the scene's edit notes in paragraph order. Clicking one moves the cursor to its paragraph. Each note's status can be set from the panel (open, fixed, ignored, cut), and the change is saved straight away, separately from the prose: it is a database row, not part of the file, so it neither needs Save nor counts as an unsaved change.
 
 Saving is explicit, with a Save button or Ctrl-S. There is no autosave. Leaving the editor, or closing the app, with unsaved changes asks first. The chapter read view stays read-only.
 
@@ -111,7 +117,7 @@ A scene's full path is assembled at runtime from those four parts. Absolute path
 
 ## Data model
 
-Four tables in a straight chain: a work has chapters, a chapter has scenes, a scene has beats. Beside the chain, two small tables name each work's fandom and ship. Every relationship is one-to-many; nothing is many-to-many.
+Four tables in a straight chain: a work has chapters, a chapter has scenes, a scene has beats. A scene also has edit notes (v2), beside its beats. Beside the chain, two small tables name each work's fandom and ship. Every relationship is one-to-many; nothing is many-to-many.
 
 | Table | Field | Notes |
 | --- | --- | --- |
@@ -142,6 +148,11 @@ Four tables in a straight chain: a work has chapters, a chapter has scenes, a sc
 | beats | content | The beat itself — free text |
 | beats | status | Fixed vocabulary — see below |
 | beats | paragraph_ref | Nullable paragraph number within the scene file |
+| edit_notes | scene_id | FK to scenes (v2) |
+| edit_notes | paragraph | Paragraph number within the scene file; required |
+| edit_notes | kind | Free text, suggestion-sourced; may be blank |
+| edit_notes | note | The correction or note itself — free text |
+| edit_notes | status | Fixed vocabulary — see below |
 | fandoms | name | Unique, ignoring case |
 | ships | fandom_id | FK to fandoms |
 | ships | name | Unique within its fandom, ignoring case |
@@ -155,6 +166,10 @@ Four tables in a straight chain: a work has chapters, a chapter has scenes, a sc
 A beat is any thing that belongs in a scene: a plot point, a line, an image, a continuity note. One table handles all of them, distinguished by `kind`, because all of them are text that belongs somewhere in a scene. No separate tables per category.
 
 The pairing of `status` and `paragraph_ref` is what makes the app better than the spreadsheet: a scene can report how many of its planned beats have actually landed in the draft, and where.
+
+### Edit notes are for revising, beats for planning
+
+A beat says what a scene should contain; an edit note says what to change in what's already written ("tense slips here", "cut this line", "check her eye colour"). Edit notes are their own table rather than a beat kind because they have their own lifecycle — open until dealt with, then fixed, ignored or cut — and because they always point at a paragraph. They have no order of their own: they're listed by paragraph, then in the order they were added. Like beats, they describe the prose and never hold it.
 
 ### Scene ordering
 
@@ -189,10 +204,11 @@ Only the status fields have a closed set of values. Each describes progress rath
 | scenes.status | Outlined → drafting → drafted → revised |
 | beats.status | Planned → in draft → cut |
 | chapters.status | Drafting → ready to post → posted |
+| edit_notes.status | Open → fixed / ignored / cut |
 
 ### Suggestion-sourced free text
 
-`beats.kind` and `scenes.pov` are free text. The app offers previously-used values as suggestions, pulled live from existing rows with a DISTINCT query.
+`beats.kind`, `edit_notes.kind` and `scenes.pov` are free text. Beat kinds and edit-note kinds are suggested separately. The app offers previously-used values as suggestions, pulled live from existing rows with a DISTINCT query.
 
 There is no lookup table for either. The vocabulary emerges from use rather than being declared up front, there is nothing to maintain, and a new kind of beat never requires a schema change. A "kinds I have used, and how often" view falls out of the same query for free.
 
@@ -251,5 +267,6 @@ Explicitly not in v1:
 2. Wordcount history — a snapshots table, written on a scan the user triggers
 3. Cross-reference views — every scene where a given beat kind or POV appears
 4. Synced database — keep the database in the library folder so a cloud folder (e.g. OneDrive) carries it between laptops with the prose. Replaces "the data is per-machine"; a cloud service can't merge a database, so the app would need to warn when it finds a conflict copy
+5. Edit notes — per-paragraph corrections and notes for revising, added from the prose viewer and worked through in the editor. Built: see Scene detail, Scene prose viewer, Scene prose editor, and the edit_notes table
 
 Anything added in v2 must not break the two rules this model rests on: no field in both stores, and no stored wordcounts outside a snapshots table.
