@@ -143,7 +143,7 @@ function SceneFields({ scene, povs, onChanged }) {
 
 // refreshKey re-reads the scene without blanking it; onChanged() is called
 // after any edit so App can bump it (and refresh the sidebar).
-export default function SceneDetail({ sceneId, onOpenProse, refreshKey, onChanged }) {
+export default function SceneDetail({ sceneId, onOpenProse, onEditProse, refreshKey, onChanged }) {
   const result = useQuery(() => window.ficBible.sceneDetail(sceneId), sceneId, refreshKey)
   const { kinds, povs } = useSuggestions(refreshKey)
 
@@ -159,9 +159,14 @@ export default function SceneDetail({ sceneId, onOpenProse, refreshKey, onChange
           {scene.work.title} · Chapter {scene.chapter.number}: {scene.chapter.title}
         </p>
         <SceneFields key={scene.id} scene={scene} povs={povs} onChanged={onChanged} />
-        <button type="button" className="link-button view-prose" onClick={onOpenProse}>
-          View prose →
-        </button>
+        <div className="prose-links">
+          <button type="button" className="link-button view-prose" onClick={onOpenProse}>
+            View prose →
+          </button>
+          <button type="button" className="link-button view-prose" onClick={onEditProse}>
+            Edit prose →
+          </button>
+        </div>
       </header>
 
       <Notes
