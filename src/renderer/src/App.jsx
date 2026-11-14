@@ -5,6 +5,13 @@ import SceneDetail from './SceneDetail.jsx'
 import ProseViewer from './ProseViewer.jsx'
 import ImportReport from './ImportReport.jsx'
 
+// Each screen sits on a sheet of paper; the kind sets how wide it may grow.
+function sheetKind(selection) {
+  if (selection === null) return 'empty'
+  if (selection.kind === 'scene') return selection.view === 'prose' ? 'prose' : 'scene'
+  return selection.kind
+}
+
 // selection is null, { kind: 'chapter', id }, { kind: 'scene', id, view }
 // or { kind: 'import', report } for the result of the last import.
 // view is 'prose' for the prose viewer; anything else is scene detail. The
@@ -43,20 +50,22 @@ export default function App() {
         onImported={showImport}
       />
       <main className="main-pane">
-        {selection === null && <p className="muted">Pick a chapter or scene from the sidebar.</p>}
-        {selection?.kind === 'import' && <ImportReport report={selection.report} />}
-        {selection?.kind === 'chapter' && <ChapterOverview chapterId={selection.id} refreshKey={libraryVersion} onChanged={changed} />}
-        {selection?.kind === 'scene' && selection.view !== 'prose' && (
-          <SceneDetail
-            sceneId={selection.id}
-            refreshKey={libraryVersion}
-            onChanged={changed}
-            onOpenProse={() => setSelection({ kind: 'scene', id: selection.id, view: 'prose' })}
-          />
-        )}
-        {selection?.kind === 'scene' && selection.view === 'prose' && (
-          <ProseViewer sceneId={selection.id} onBack={() => setSelection({ kind: 'scene', id: selection.id })} />
-        )}
+        <div className={`sheet sheet-${sheetKind(selection)}`}>
+          {selection === null && <p className="muted">Pick a chapter or scene from the sidebar.</p>}
+          {selection?.kind === 'import' && <ImportReport report={selection.report} />}
+          {selection?.kind === 'chapter' && <ChapterOverview chapterId={selection.id} refreshKey={libraryVersion} onChanged={changed} />}
+          {selection?.kind === 'scene' && selection.view !== 'prose' && (
+            <SceneDetail
+              sceneId={selection.id}
+              refreshKey={libraryVersion}
+              onChanged={changed}
+              onOpenProse={() => setSelection({ kind: 'scene', id: selection.id, view: 'prose' })}
+            />
+          )}
+          {selection?.kind === 'scene' && selection.view === 'prose' && (
+            <ProseViewer sceneId={selection.id} onBack={() => setSelection({ kind: 'scene', id: selection.id })} />
+          )}
+        </div>
       </main>
     </div>
   )
