@@ -169,11 +169,19 @@ function optionalLine(value, label) {
   return trimmed === '' ? null : trimmed
 }
 
+// Notes: multi-line, kept as written. Blank is stored as null, "no notes".
+function optionalText(value, label) {
+  if (value === null) return null
+  if (typeof value !== 'string') throw new Error(`${label} must be text`)
+  return value.trim() === '' ? null : value
+}
+
 const SCENE_FIELDS = {
   title: ['title', line, 'Title'],
   pov: ['pov', (v, l) => line(v, l, { allowBlank: true }), 'POV'],
   status: ['status', (v, l) => oneOf(v, SCENE_STATUSES, l), 'Status'],
-  position: ['position', positiveInt, 'Position']
+  position: ['position', positiveInt, 'Position'],
+  notes: ['notes', optionalText, 'Notes']
 }
 
 const CHAPTER_FIELDS = {
@@ -181,11 +189,14 @@ const CHAPTER_FIELDS = {
   title: ['title', line, 'Title'],
   status: ['status', (v, l) => oneOf(v, CHAPTER_STATUSES, l), 'Status'],
   postedDate: ['posted_date', nullable(isoDate), 'Posted date'],
-  postedUrl: ['posted_url', optionalLine, 'AO3 link']
+  postedUrl: ['posted_url', optionalLine, 'AO3 link'],
+  notes: ['notes', optionalText, 'Notes']
 }
 
 const WORK_FIELDS = {
-  title: ['title', line, 'Title']
+  title: ['title', line, 'Title'],
+  url: ['url', optionalLine, 'Work link'],
+  notes: ['notes', optionalText, 'Notes']
 }
 
 // Positions and numbers are UNIQUE among siblings. A taken one is refused

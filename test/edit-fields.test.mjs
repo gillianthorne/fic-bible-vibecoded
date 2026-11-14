@@ -71,12 +71,32 @@ test('a chapter number used in the same work is refused', () => {
   assert.equal(row(db, 'chapters', 3).number, 2)
 })
 
-test('updateWork edits the title only', () => {
+test('updateWork edits the title, link and notes; never folder', () => {
   const db = setup()
   updateWork(db, 1, { title: 'Renamed work' })
   assert.deepEqual(row(db, 'works', 1), { id: 1, title: 'Renamed work', folder: 'W-folder', url: null, notes: null })
   assert.throws(() => updateWork(db, 1, { folder: 'x' }), /no editable field/)
   assert.throws(() => updateWork(db, 9, { title: 'x' }), /Work 9 not found/)
+  updateWork(db, 1, { url: ' https://archiveofourown.org/works/42 ', notes: 'Inspired by a song.\n\nSecond line.' })
+  assert.equal(row(db, 'works', 1).url, 'https://archiveofourown.org/works/42')
+  assert.equal(row(db, 'works', 1).notes, 'Inspired by a song.\n\nSecond line.')
+  updateWork(db, 1, { url: '', notes: '  \n ' })
+  assert.equal(row(db, 'works', 1).url, null)
+  assert.equal(row(db, 'works', 1).notes, null)
+  assert.throws(() => updateWork(db, 1, { notes: 5 }), /Notes must be text/)
+})
+
+test('chapter and scene notes keep line breaks; blank clears them', () => {
+  const db = setup()
+  const notes = '  Workskin CSS: html/ch2-skin.css\nHTML: html/ch2-s3.html\n'
+  updateScene(db, 1, { notes })
+  updateChapter(db, 1, { notes: 'Chapter note' })
+  assert.equal(row(db, 'scenes', 1).notes, notes)
+  assert.equal(row(db, 'chapters', 1).notes, 'Chapter note')
+  updateScene(db, 1, { notes: '' })
+  updateChapter(db, 1, { notes: null })
+  assert.equal(row(db, 'scenes', 1).notes, null)
+  assert.equal(row(db, 'chapters', 1).notes, null)
 })
 
 test('handlers: field updates and suggestions without blank POVs', () => {
