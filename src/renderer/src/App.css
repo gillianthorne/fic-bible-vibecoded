@@ -469,10 +469,7 @@ h2 {
 
 .chapter-overview tbody tr:hover .scene-link {
   color: var(--link);
-  text-decoration: underline;
-  text-decoration-color: var(--gold);
-  text-decoration-thickness: 2px;
-  text-underline-offset: 3px;
+  background-size: 100% 2px;
 }
 
 .chapter-overview thead th {
@@ -712,11 +709,26 @@ p.beat-summary {
   cursor: pointer;
 }
 
-.link-button:hover {
-  text-decoration: underline;
-  text-decoration-color: var(--gold);
-  text-decoration-thickness: 2px;
-  text-underline-offset: 3px;
+/* The gold underline is a background image, 2px tall, sized 0% wide
+   until hover, so it can grow from the left instead of popping in. */
+.link-button {
+  padding-bottom: 2px;
+  background-image: linear-gradient(var(--gold), var(--gold));
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 0% 2px;
+  transition: background-size 0.2s ease-out;
+}
+
+.link-button:hover,
+.link-button:focus-visible {
+  background-size: 100% 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link-button {
+    transition: none;
+  }
 }
 
 /* Scene prose viewer: a page of a book. Paragraphs run on as printed
@@ -750,6 +762,7 @@ p.beat-summary {
 
 .prose-viewer header .link-button {
   display: block;
+  width: fit-content;
   margin-bottom: 14px;
   text-align: left;
 }
