@@ -4,6 +4,14 @@ import ChapterOverview from './ChapterOverview.jsx'
 import SceneDetail from './SceneDetail.jsx'
 import ProseViewer from './ProseViewer.jsx'
 import ImportReport from './ImportReport.jsx'
+import SidebarHandle, { useSidebarWidth } from './SidebarHandle.jsx'
+
+// Each screen sits on a sheet of paper; the kind sets how wide it may grow.
+function sheetKind(selection) {
+  if (selection === null) return 'empty'
+  if (selection.kind === 'scene') return selection.view === 'prose' ? 'prose' : 'scene'
+  return selection.kind
+}
 
 // selection is null, { kind: 'chapter', id }, { kind: 'scene', id, view }
 // or { kind: 'import', report } for the result of the last import.
@@ -20,6 +28,7 @@ export default function App() {
   // Bumped after each import or edit so the sidebar and the open screen
   // read the library again.
   const [libraryVersion, setLibraryVersion] = useState(0)
+  const [sidebarWidth, setSidebarWidth] = useSidebarWidth()
   const changed = () => setLibraryVersion((v) => v + 1)
 
   // An import can clear works, so whatever was open may be gone: show the
@@ -32,8 +41,15 @@ export default function App() {
   const isExpanded = (key) => expanded[key] ?? key.startsWith('work:')
   const toggle = (key) => setExpanded((prev) => ({ ...prev, [key]: !(prev[key] ?? key.startsWith('work:')) }))
 
+  // Opening a scene from the chapter overview also opens its work and
+  // chapter in the sidebar, so the scene shows there as selected.
+  const openScene = (sceneId, chapterId, workId) => {
+    setExpanded((prev) => ({ ...prev, [`work:${workId}`]: true, [`chapter:${chapterId}`]: true }))
+    setSelection({ kind: 'scene', id: sceneId })
+  }
+
   return (
-    <div className="layout">
+    <div className="layout" style={{ '--sidebar-width': `${sidebarWidth}px` }}>
       <Sidebar
         selection={selection}
         onSelect={setSelection}
@@ -42,21 +58,31 @@ export default function App() {
         refreshKey={libraryVersion}
         onImported={showImport}
       />
+      <SidebarHandle width={sidebarWidth} onResize={setSidebarWidth} />
       <main className="main-pane">
-        {selection === null && <p className="muted">Pick a chapter or scene from the sidebar.</p>}
-        {selection?.kind === 'import' && <ImportReport report={selection.report} />}
-        {selection?.kind === 'chapter' && <ChapterOverview chapterId={selection.id} refreshKey={libraryVersion} onChanged={changed} />}
-        {selection?.kind === 'scene' && selection.view !== 'prose' && (
-          <SceneDetail
-            sceneId={selection.id}
-            refreshKey={libraryVersion}
-            onChanged={changed}
-            onOpenProse={() => setSelection({ kind: 'scene', id: selection.id, view: 'prose' })}
-          />
-        )}
-        {selection?.kind === 'scene' && selection.view === 'prose' && (
-          <ProseViewer sceneId={selection.id} onBack={() => setSelection({ kind: 'scene', id: selection.id })} />
-        )}
+        <div className={`sheet sheet-${sheetKind(selection)}`}>
+          {selection === null && <p className="muted">Pick a chapter or scene from the sidebar.</p>}
+          {selection?.kind === 'import' && <ImportReport report={selection.report} />}
+          {selection?.kind === 'chapter' && (
+            <ChapterOverview
+              chapterId={selection.id}
+              refreshKey={libraryVersion}
+              onChanged={changed}
+              onOpenScene={openScene}
+            />
+          )}
+          {selection?.kind === 'scene' && selection.view !== 'prose' && (
+            <SceneDetail
+              sceneId={selection.id}
+              refreshKey={libraryVersion}
+              onChanged={changed}
+              onOpenProse={() => setSelection({ kind: 'scene', id: selection.id, view: 'prose' })}
+            />
+          )}
+          {selection?.kind === 'scene' && selection.view === 'prose' && (
+            <ProseViewer sceneId={selection.id} onBack={() => setSelection({ kind: 'scene', id: selection.id })} />
+          )}
+        </div>
       </main>
     </div>
   )

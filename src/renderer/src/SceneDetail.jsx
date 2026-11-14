@@ -4,6 +4,7 @@ import { QueryError } from './QueryError.jsx'
 import { Status, Wordcount } from './labels.jsx'
 import BeatList from './Beats.jsx'
 import {
+  EditButton,
   Field,
   FormActions,
   NumberInput,
@@ -105,9 +106,7 @@ function SceneFields({ scene, povs, onChanged }) {
     <>
       <div className="title-row">
         <h1>{scene.title}</h1>
-        <button type="button" className="edit-button" onClick={() => setEditing(true)}>
-          Edit scene
-        </button>
+        <EditButton label="Edit scene" onClick={() => setEditing(true)} />
       </div>
       <dl className="scene-fields">
         <div>

@@ -1,5 +1,5 @@
 import fs from 'node:fs'
-import { countProse, splitParagraphs } from './prose.js'
+import { countProse, countWords, splitParagraphs } from './prose.js'
 import { scenePath } from './paths.js'
 
 // Read-only data access for the four v1 screens. No Electron imports, so
@@ -152,8 +152,10 @@ export function sceneDetail(db, libraryRoot, sceneId) {
 // Prose viewer: the scene's file split into paragraphs, in order. The
 // split is splitParagraphs, the same function countProse counts with, so
 // paragraph N here is what a beat's paragraph_ref N points at. Read-only:
-// the file is only ever read. Returns null for an unknown scene; a file
-// that can't be read gives paragraphs: null plus fileError.
+// the file is only ever read. The wordcount is counted from those same
+// paragraphs, as countProse does, so it matches the scene detail's.
+// Returns null for an unknown scene; a file that can't be read gives
+// paragraphs: null and wordcount: null plus fileError.
 export function sceneProse(db, libraryRoot, sceneId) {
   const scene = db
     .prepare(
@@ -183,6 +185,7 @@ export function sceneProse(db, libraryRoot, sceneId) {
     work: { id: scene.workId, title: scene.workTitle },
     path: file,
     paragraphs,
+    wordcount: paragraphs === null ? null : paragraphs.reduce((sum, p) => sum + countWords(p), 0),
     fileError
   }
 }

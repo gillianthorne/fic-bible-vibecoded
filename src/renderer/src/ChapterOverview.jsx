@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
 import { number, Status, Wordcount } from './labels.jsx'
-import { CHAPTER_STATUSES, Field, FormActions, NumberInput, SaveError, Select, toNumber, useSave } from './editing.jsx'
+import { CHAPTER_STATUSES, EditButton, Field, FormActions, NumberInput, SaveError, Select, toNumber, useSave } from './editing.jsx'
 
 // Every scene in the chapter, so its shape is readable without clicking
 // into anything. Wordcounts come from the scene files, read by the main
@@ -18,16 +18,13 @@ function WorkTitle({ work, onChanged }) {
     return (
       <div className="title-row work-title-row">
         <p className="muted">{work.title}</p>
-        <button
-          type="button"
-          className="edit-button"
+        <EditButton
+          label="Edit work title"
           onClick={() => {
             setTitle(work.title)
             setEditing(true)
           }}
-        >
-          Edit work title
-        </button>
+        />
       </div>
     )
   }
@@ -120,9 +117,7 @@ function ChapterHeader({ chapter, onChanged }) {
             <h1>
               Chapter {chapter.number}: {chapter.title}
             </h1>
-            <button type="button" className="edit-button" onClick={() => setEditing(true)}>
-              Edit chapter
-            </button>
+            <EditButton label="Edit chapter" onClick={() => setEditing(true)} />
           </div>
           <p>
             <Status value={chapter.status} />
@@ -137,7 +132,9 @@ function ChapterHeader({ chapter, onChanged }) {
 
 // refreshKey re-reads the chapter without blanking it; onChanged() is
 // called after an edit so App can bump it (and refresh the sidebar).
-export default function ChapterOverview({ chapterId, refreshKey, onChanged }) {
+// onOpenScene(sceneId, chapterId, workId) opens a scene's detail; any
+// click on its row does it.
+export default function ChapterOverview({ chapterId, refreshKey, onChanged, onOpenScene }) {
   const result = useQuery(() => window.ficBible.chapterOverview(chapterId), chapterId, refreshKey)
 
   if (result.loading) return <p className="muted">Loading…</p>
@@ -171,9 +168,16 @@ export default function ChapterOverview({ chapterId, refreshKey, onChanged }) {
           </thead>
           <tbody>
             {scenes.map((scene) => (
-              <tr key={scene.id}>
+              <tr key={scene.id} onClick={() => onOpenScene(scene.id, chapter.id, chapter.work.id)}>
                 <td className="num">{scene.position}</td>
-                <td>{scene.title}</td>
+                <td>
+                  {/* No handler of its own: its click, from the mouse or
+                      Enter/Space, reaches the row's. The button is what
+                      makes the row reachable by keyboard. */}
+                  <button type="button" className="link-button scene-link">
+                    {scene.title}
+                  </button>
+                </td>
                 <td>{scene.pov}</td>
                 <td>
                   <Status value={scene.status} />

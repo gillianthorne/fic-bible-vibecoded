@@ -152,6 +152,12 @@ test('scene prose has exactly as many paragraphs as scene detail counts, for eve
   }
 })
 
+test('scene prose has the same wordcount as scene detail, for every scene', () => {
+  for (const id of allSceneIds()) {
+    assert.equal(sceneProse(db, root, id).wordcount, sceneDetail(db, root, id).wordcount, `scene ${id}`)
+  }
+})
+
 test('every seeded paragraph_ref points at a paragraph the viewer shows', () => {
   let checked = 0
   for (const id of allSceneIds()) {
