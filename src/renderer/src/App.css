@@ -148,6 +148,81 @@ body {
   background: radial-gradient(ellipse at top, #3d2b1f, var(--desk) 70%);
 }
 
+/* Above the sheet, on the desk: a back button and the breadcrumb. Both
+   use the sidebar's colours, since they sit on the same wood. */
+.nav-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: 1000px;
+  margin: 0 auto 14px;
+  color: var(--desk-text);
+}
+
+.main-pane .nav-back {
+  flex: none;
+  padding: 4px 12px;
+  border: 1px solid var(--desk-line);
+  border-radius: 4px;
+  background: var(--desk-deep);
+  color: var(--desk-text);
+  cursor: pointer;
+}
+
+.main-pane .nav-back:hover:not(:disabled) {
+  border-color: var(--gold-deep);
+  color: var(--gold);
+}
+
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A slash between parts, drawn by CSS so it isn't read out. */
+.breadcrumb li {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  max-width: 28ch;
+}
+
+.breadcrumb li + li::before {
+  content: '/';
+  padding: 0 8px;
+  color: var(--desk-muted);
+}
+
+.crumb {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.main-pane button.crumb {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--desk-muted);
+  cursor: pointer;
+}
+
+.main-pane button.crumb:hover,
+.main-pane button.crumb:focus-visible {
+  color: var(--gold);
+  text-decoration: underline;
+}
+
+.crumb-current {
+  color: var(--desk-text);
+  font-weight: 600;
+}
+
 /* The sheet each screen sits on. It grows with the window up to a width
    that suits the screen, then stays centred. */
 .sheet {
@@ -180,7 +255,8 @@ body {
 }
 
 .sheet-chapter,
-.sheet-work {
+.sheet-work,
+.sheet-home {
   max-width: 900px;
 }
 
@@ -194,6 +270,7 @@ h2 {
 /* A gold rule under each screen's heading block. */
 .chapter-overview > header,
 .work-overview > header,
+.home-page > header,
 .scene-detail > header,
 .import-report > header {
   padding-bottom: 14px;
@@ -276,6 +353,13 @@ h2 {
 
 .sidebar button:hover {
   background: var(--desk-hover-solid);
+}
+
+.sidebar .tree-home {
+  margin-bottom: 10px;
+  padding: 4px 8px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
 }
 
 .tree-work + .tree-work {
@@ -426,23 +510,23 @@ h2 {
 
 /* Chapter overview */
 
-:is(.chapter-overview, .work-overview) header p {
+:is(.chapter-overview, .work-overview, .home-page) header p {
   margin: 0;
 }
 
-:is(.chapter-overview, .work-overview) h1 {
+:is(.chapter-overview, .work-overview, .home-page) h1 {
   margin: 2px 0 6px;
   font-size: 24px;
 }
 
-:is(.chapter-overview, .work-overview) table {
+:is(.chapter-overview, .work-overview, .home-page) table {
   margin-top: 18px;
   border-collapse: collapse;
   width: 100%;
 }
 
-:is(.chapter-overview, .work-overview) th,
-:is(.chapter-overview, .work-overview) td {
+:is(.chapter-overview, .work-overview, .home-page) th,
+:is(.chapter-overview, .work-overview, .home-page) td {
   padding: 6px 10px;
   border-bottom: 1px solid var(--rule);
   text-align: left;
@@ -451,8 +535,8 @@ h2 {
 
 /* Every column but the title shrinks to its contents; the title takes
    whatever room is left, so the numbers stay close together. */
-:is(.chapter-overview, .work-overview) th,
-:is(.chapter-overview, .work-overview) td {
+:is(.chapter-overview, .work-overview, .home-page) th,
+:is(.chapter-overview, .work-overview, .home-page) td {
   width: 1%;
 }
 
@@ -462,28 +546,35 @@ h2 {
   white-space: normal;
 }
 
+/* On the home page the title is the first column. */
+.home-page td:nth-child(1),
+.home-page th:nth-child(1) {
+  width: auto;
+  white-space: normal;
+}
+
 /* Each scene row opens the scene. The title is a button, so the row can
    be reached with the keyboard too. */
-:is(.chapter-overview, .work-overview) tbody tr {
+:is(.chapter-overview, .work-overview, .home-page) tbody tr {
   cursor: pointer;
 }
 
-:is(.chapter-overview, .work-overview) tbody tr:hover {
+:is(.chapter-overview, .work-overview, .home-page) tbody tr:hover {
   background: var(--paper-sunk);
   box-shadow: inset 3px 0 0 var(--gold);
 }
 
-:is(.chapter-overview, .work-overview) .scene-link {
+:is(.chapter-overview, .work-overview, .home-page) .scene-link {
   color: var(--ink);
   text-align: left;
 }
 
-:is(.chapter-overview, .work-overview) tbody tr:hover .scene-link {
+:is(.chapter-overview, .work-overview, .home-page) tbody tr:hover .scene-link {
   color: var(--link);
   background-size: 100% 2px;
 }
 
-:is(.chapter-overview, .work-overview) thead th {
+:is(.chapter-overview, .work-overview, .home-page) thead th {
   font-size: 12px;
   font-weight: 600;
   color: var(--ink-soft);
@@ -491,17 +582,17 @@ h2 {
   border-bottom: 2px solid var(--gold-deep);
 }
 
-:is(.chapter-overview, .work-overview) .beats-group {
+:is(.chapter-overview, .work-overview, .home-page) .beats-group {
   text-align: center;
 }
 
-:is(.chapter-overview, .work-overview) .num {
+:is(.chapter-overview, .work-overview, .home-page) .num {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-:is(.chapter-overview, .work-overview) tfoot th,
-:is(.chapter-overview, .work-overview) tfoot td {
+:is(.chapter-overview, .work-overview, .home-page) tfoot th,
+:is(.chapter-overview, .work-overview, .home-page) tfoot td {
   border-top: 2px solid var(--gold-deep);
   border-bottom: 0;
   font-weight: 600;

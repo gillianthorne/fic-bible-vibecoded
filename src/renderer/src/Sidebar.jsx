@@ -4,7 +4,7 @@ import LibraryBar from './LibraryBar.jsx'
 
 // The navigation tree: works, expanding to chapters, expanding to scenes.
 // Clicking a work opens its overview, a chapter its overview, and a scene
-// its detail.
+// its detail. Home, above the tree, opens the home page.
 //
 // Built as nested lists with disclosure buttons (aria-expanded), not an
 // ARIA tree: role="tree" promises arrow-key navigation, which v1 doesn't
@@ -164,6 +164,9 @@ export default function Sidebar({ selection, onSelect, isExpanded, onToggle, ref
   return (
     <nav className="sidebar" aria-label="Works, chapters and scenes">
       <LibraryBar refreshKey={refreshKey} onImported={onImported} />
+      <Item kind="home" selection={selection} onSelect={onSelect} className="tree-home">
+        <span className="tree-title">Home</span>
+      </Item>
       {tree.loading && <p className="muted">Loading…</p>}
       {tree.ok === false && <QueryError what="the library" error={tree.error} />}
       {tree.ok && tree.data.length === 0 && <p className="muted">No works yet.</p>}
