@@ -3,8 +3,70 @@ import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
 import { SaveError } from './editing.jsx'
 import { number } from './labels.jsx'
-import { commands, createProseEditor } from './proseEditor.js'
+import { commands, createProseEditor, goToParagraph } from './proseEditor.js'
 import { countProse } from '../../main/prose.js'
+import { NoteParagraph, NoteStatus, openCount } from './EditNotes.jsx'
+
+// The scene's edit notes beside the editor (spec: Scene prose editor).
+// Clicking a note moves the cursor to its paragraph, counted in the text
+// as it is now; setting a status saves that row straight away. Neither
+// touches the prose, so neither is an unsaved change.
+function NotesPanel({ sceneId, viewRef, paragraphs }) {
+  const [version, setVersion] = useState(0)
+  const result = useQuery(() => window.ficBible.editNotes(sceneId), sceneId, version)
+  const [showAll, setShowAll] = useState(false)
+  const refresh = () => setVersion((v) => v + 1)
+
+  let body
+  if (result.loading) body = <p className="muted">Loading…</p>
+  else if (result.ok === false) body = <QueryError what="the edit notes" error={result.error} />
+  else if (result.data.length === 0)
+    body = <p className="muted">No edit notes. Add them from View prose, by clicking a paragraph number.</p>
+  else {
+    const notes = showAll ? result.data : result.data.filter((n) => n.status === 'open')
+    const hidden = result.data.length - openCount(result.data)
+    body = (
+      <>
+        {notes.length === 0 && <p className="muted">Every note has been dealt with.</p>}
+        <ul className="editor-notes-list">
+          {notes.map((note) => (
+            <li key={note.id} className={`editor-note edit-note-${note.status}`}>
+              <button
+                type="button"
+                className="editor-note-jump"
+                title={`Go to paragraph ${note.paragraph}`}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => viewRef.current && goToParagraph(viewRef.current, note.paragraph)}
+              >
+                <span className="editor-note-meta">
+                  <NoteParagraph value={note.paragraph} paragraphs={paragraphs} />
+                  {note.kind && <span className="edit-note-kind"> · {note.kind}</span>}
+                </span>
+                <span className="edit-note-text">{note.note}</span>
+              </button>
+              <NoteStatus note={note} onChanged={refresh} label={`Status of the note at paragraph ${note.paragraph}`} />
+            </li>
+          ))}
+        </ul>
+        {hidden > 0 && (
+          <button type="button" className="link-button editor-notes-toggle" onClick={() => setShowAll(!showAll)}>
+            {showAll ? 'Show open notes only' : `Show ${hidden} dealt with`}
+          </button>
+        )}
+      </>
+    )
+  }
+
+  const open = result.ok ? openCount(result.data) : null
+  return (
+    <aside className="editor-notes" aria-label="Edit notes">
+      <h2>
+        Edit notes{open ? <span className="prose-note-count">{open}</span> : null}
+      </h2>
+      {body}
+    </aside>
+  )
+}
 
 // Edits one scene's file (spec: Scene prose editor). The markdown source
 // is shown with its marks, styled as it reads. Saving is explicit; the
@@ -178,7 +240,10 @@ function Editor({ scene, onBack, onDirtyChange, onSaved }) {
       </div>
       <SaveError error={status.error} />
 
-      <div className="editor-host" ref={host} title={scene.path} />
+      <div className="editor-layout">
+        <div className="editor-host" ref={host} title={scene.path} />
+        <NotesPanel sceneId={scene.id} viewRef={viewRef} paragraphs={counts.paragraphs} />
+      </div>
     </article>
   )
 }

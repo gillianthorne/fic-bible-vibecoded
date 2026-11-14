@@ -78,6 +78,24 @@ const paragraphField = StateField.define({
   update: (markers, tr) => (tr.docChanged ? paragraphMarkers(tr.state.doc) : markers)
 })
 
+// Moves the cursor to the start of paragraph n (1-based), scrolled into
+// view near the top. Returns false, changing nothing, if the text has
+// fewer paragraphs than that.
+export function goToParagraph(view, n) {
+  const doc = view.state.doc
+  const lines = []
+  for (let i = 1; i <= doc.lines; i++) lines.push(doc.line(i).text)
+  const line = paragraphStartLines(lines)[n - 1]
+  if (line === undefined) return false
+  const pos = doc.line(line).from
+  view.dispatch({
+    selection: EditorSelection.cursor(pos),
+    effects: EditorView.scrollIntoView(pos, { y: 'start', yMargin: 80 })
+  })
+  view.focus()
+  return true
+}
+
 const paragraphGutter = [
   paragraphField,
   gutter({
