@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Sidebar from './Sidebar.jsx'
+import WorkOverview from './WorkOverview.jsx'
 import ChapterOverview from './ChapterOverview.jsx'
 import SceneDetail from './SceneDetail.jsx'
 import ProseViewer from './ProseViewer.jsx'
@@ -13,7 +14,8 @@ function sheetKind(selection) {
   return selection.kind
 }
 
-// selection is null, { kind: 'chapter', id }, { kind: 'scene', id, view }
+// selection is null, { kind: 'work', id }, { kind: 'chapter', id },
+// { kind: 'scene', id, view }
 // or { kind: 'import', report } for the result of the last import.
 // view is 'prose' for the prose viewer; anything else is scene detail. The
 // sidebar selects with no view, so a sidebar click always opens detail.
@@ -48,6 +50,13 @@ export default function App() {
     setSelection({ kind: 'scene', id: sceneId })
   }
 
+  // Opening a chapter from the work overview also opens its work in the
+  // sidebar, so the chapter shows there as selected.
+  const openChapter = (chapterId, workId) => {
+    setExpanded((prev) => ({ ...prev, [`work:${workId}`]: true }))
+    setSelection({ kind: 'chapter', id: chapterId })
+  }
+
   return (
     <div className="layout" style={{ '--sidebar-width': `${sidebarWidth}px` }}>
       <Sidebar
@@ -61,7 +70,15 @@ export default function App() {
       <SidebarHandle width={sidebarWidth} onResize={setSidebarWidth} />
       <main className="main-pane">
         <div className={`sheet sheet-${sheetKind(selection)}`}>
-          {selection === null && <p className="muted">Pick a chapter or scene from the sidebar.</p>}
+          {selection === null && <p className="muted">Pick a work, chapter or scene from the sidebar.</p>}
+          {selection?.kind === 'work' && (
+            <WorkOverview
+              workId={selection.id}
+              refreshKey={libraryVersion}
+              onChanged={changed}
+              onOpenChapter={openChapter}
+            />
+          )}
           {selection?.kind === 'import' && <ImportReport report={selection.report} />}
           {selection?.kind === 'chapter' && (
             <ChapterOverview
