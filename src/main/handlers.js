@@ -1,5 +1,6 @@
 import { chapterOverview, chapterProse, libraryOverview, navigationTree, sceneDetail, sceneProse, suggestions, workOverview } from './queries.js'
 import { checkLink } from './links.js'
+import { createChapter, createScene, createWork } from './create.js'
 import { deleteWorks, importLibrary, worksMissingFrom } from './import.js'
 import { createBeat, deleteBeat, moveBeat, updateBeat, updateChapter, updateScene, updateWork } from './edit.js'
 
@@ -140,6 +141,24 @@ export function createHandlers(open, library = null, links = null) {
 
     'scene:update': (sceneId, patch) => respond(() => (updateScene(open().db, sceneId, patch), null)),
     'chapter:update': (chapterId, patch) => respond(() => (updateChapter(open().db, chapterId, patch), null)),
+    // Creating: a row plus an empty folder or scene file, at the end.
+    // Each returns the new row's id.
+    'work:create': (title) =>
+      respond(() => {
+        const { db, libraryRoot } = open()
+        return createWork(db, libraryRoot, title)
+      }),
+    'chapter:create': (workId, title) =>
+      respond(() => {
+        const { db, libraryRoot } = open()
+        return createChapter(db, libraryRoot, workId, title)
+      }),
+    'scene:create': (chapterId, title) =>
+      respond(() => {
+        const { db, libraryRoot } = open()
+        return createScene(db, libraryRoot, chapterId, title)
+      }),
+
     'work:update': (workId, patch) => respond(() => (updateWork(open().db, workId, patch), null)),
 
     // Previously used beat kinds and POVs, for the inputs' suggestions.
