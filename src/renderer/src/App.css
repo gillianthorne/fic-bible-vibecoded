@@ -1730,3 +1730,59 @@ select.edit-note-status-fixed {
   background: var(--chip-posted);
   color: var(--chip-posted-ink);
 }
+
+/* Prose viewer: each paragraph number is a button that opens a form to
+   add an edit note there. It keeps the number's quiet look until hovered.
+   A small count beside it shows the paragraph's open notes. */
+
+.prose-number-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.prose-number-button:hover,
+.prose-number-button:focus-visible,
+.prose-number-active {
+  color: var(--link);
+  text-decoration: underline;
+}
+
+.prose-number:has(.prose-note-count) {
+  opacity: 1;
+}
+
+.prose-note-count {
+  display: inline-block;
+  min-width: 15px;
+  margin-left: 3px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background: var(--chip-drafting);
+  color: var(--chip-drafting-ink);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 15px;
+  text-align: center;
+  vertical-align: 1px;
+}
+
+.prose-viewer header .prose-note-hint {
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.prose-add-note {
+  grid-column: 2;
+  margin: 8px 0 14px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--primary);
+  border-radius: 4px;
+  background: var(--paper-sunk);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.4;
+}
