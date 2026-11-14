@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import path from 'node:path'
 import { closeDatabase, databasePath, openDatabase, schemaVersion, sqliteVersion } from './db.js'
 import { resolveLibraryRoot, saveLibraryRoot } from './config.js'
@@ -124,7 +124,11 @@ const library = testLibraryEnv
       save: (root) => saveLibraryRoot(root)
     }
 
-for (const [channel, handler] of Object.entries(createHandlers(openLibrary, library))) {
+// Links go to the default browser through the OS. The handler has already
+// refused anything but http(s).
+const links = { openExternal: (url) => shell.openExternal(url) }
+
+for (const [channel, handler] of Object.entries(createHandlers(openLibrary, library, links))) {
   ipcMain.handle(channel, (_event, ...args) => handler(...args))
 }
 

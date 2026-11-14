@@ -1,4 +1,5 @@
 import { chapterOverview, navigationTree, sceneDetail, sceneProse, suggestions, workOverview } from './queries.js'
+import { checkLink } from './links.js'
 import { deleteWorks, importLibrary, worksMissingFrom } from './import.js'
 import { createBeat, deleteBeat, moveBeat, updateBeat, updateChapter, updateScene, updateWork } from './edit.js'
 
@@ -48,8 +49,20 @@ function requireId(value, name) {
   return value
 }
 
-export function createHandlers(open, library = null) {
+// `links` is how a link reaches the browser, injected so tests can fake
+// it: { openExternal(url) -> Promise }. null means links can't be opened.
+export function createHandlers(open, library = null, links = null) {
   return {
+    // Hands an http(s) link to the default browser. Anything else is
+    // refused here, in the main process, whatever the renderer sent.
+    'link:open': (url) =>
+      respondAsync(async () => {
+        const href = checkLink(url)
+        if (!links) throw new Error('Links can’t be opened here.')
+        await links.openExternal(href)
+        return null
+      }),
+
     'library:info': () =>
       respond(() =>
         library
