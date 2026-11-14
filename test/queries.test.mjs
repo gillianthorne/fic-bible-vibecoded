@@ -10,6 +10,7 @@ import { DB_NAME, seed } from '../scripts/seed/seed.mjs'
 import { openSqlite } from '../src/main/sqlite.js'
 import { countProse } from '../src/main/prose.js'
 import { migrate } from '../src/main/migrate.js'
+import { updateWork } from '../src/main/edit.js'
 import {
   chapterOverview,
   chapterProse,
@@ -137,7 +138,14 @@ test('work overview lists chapters in order with the same totals as their overvi
   db.prepare("UPDATE works SET url = 'https://archiveofourown.org/works/1', notes = 'Inspo' WHERE id = ?").run(workId)
   try {
     const overview = workOverview(db, root, workId)
-    assert.deepEqual(overview.work, { id: workId, title: 'Salt and Static', url: 'https://archiveofourown.org/works/1', notes: 'Inspo' })
+    assert.deepEqual(overview.work, {
+      id: workId,
+      title: 'Salt and Static',
+      url: 'https://archiveofourown.org/works/1',
+      notes: 'Inspo',
+      fandom: null,
+      ship: null
+    })
     const chapterIds = db.prepare('SELECT id FROM chapters WHERE work_id = ? ORDER BY number').pluck().all(workId)
     assert.deepEqual(overview.chapters.map((c) => c.id), chapterIds)
     for (const ch of overview.chapters) {
@@ -184,6 +192,30 @@ test('library overview of an empty library is zero, not an error', () => {
   } finally {
     empty.close()
   }
+})
+
+test('library overview groups works by fandom, with no fandom last, and names their ships', () => {
+  const ids = Object.fromEntries(db.prepare('SELECT title, id FROM works').all().map((w) => [w.title, w.id]))
+  updateWork(db, ids['Untitled Orchard Idea'], { fandom: 'Alpha Fandom', ship: 'A/B' })
+  updateWork(db, ids['The Lantern Road'], { fandom: 'Alpha Fandom' })
+  try {
+    const { works } = libraryOverview(db, root)
+    assert.deepEqual(
+      works.map((w) => [w.title, w.fandom, w.ship]),
+      [
+        ['The Lantern Road', 'Alpha Fandom', null],
+        ['Untitled Orchard Idea', 'Alpha Fandom', 'A/B'],
+        ['Salt and Static', null, null]
+      ]
+    )
+    assert.equal(workOverview(db, root, ids['Untitled Orchard Idea']).work.ship, 'A/B')
+    const { fandoms, ships } = suggestions(db)
+    assert.deepEqual(fandoms, ['Alpha Fandom'])
+    assert.deepEqual(ships, [{ name: 'A/B', fandom: 'Alpha Fandom' }])
+  } finally {
+    for (const id of Object.values(ids)) updateWork(db, id, { fandom: null })
+  }
+  assert.deepEqual(suggestions(db).fandoms, [])
 })
 
 test('suggestions are distinct, most used first', () => {

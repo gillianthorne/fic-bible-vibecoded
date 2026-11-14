@@ -283,7 +283,13 @@ export function workWordcount(db, libraryRoot, workId) {
 // chapter with its number, title, status, link and wordcount. Returns null
 // for an unknown work.
 export function workOverview(db, libraryRoot, workId) {
-  const work = db.prepare('SELECT id, title, url, notes FROM works WHERE id = ?').get(workId)
+  const work = db
+    .prepare(
+      `SELECT w.id, w.title, w.url, w.notes, f.name AS fandom, s.name AS ship
+       FROM works w LEFT JOIN fandoms f ON f.id = w.fandom_id LEFT JOIN ships s ON s.id = w.ship_id
+       WHERE w.id = ?`
+    )
+    .get(workId)
   if (!work) return null
 
   const counts = new Map(workWordcount(db, libraryRoot, workId).chapters.map((ch) => [ch.id, ch]))
@@ -302,16 +308,21 @@ export function workOverview(db, libraryRoot, workId) {
   return { work, chapters, wordcount: sum('wordcount'), uncounted: sum('uncounted') }
 }
 
-// Home page: every work with its link and file-derived total, in the
-// sidebar's order, plus the total across all of them. A work's uncounted
-// scenes are left out of both totals and reported, as on its overview.
+// Home page: every work with its fandom, ship, link and file-derived
+// total, plus the total across all of them. Works are grouped by fandom,
+// fandoms in name order with works that have none last; within a fandom,
+// in the sidebar's order. A work's uncounted scenes are left out of the
+// totals and reported, as on its overview.
 export function libraryOverview(db, libraryRoot) {
   const works = db
     .prepare(
-      `SELECT w.id, w.title, w.url, count(c.id) AS chapterCount
-       FROM works w LEFT JOIN chapters c ON c.work_id = w.id
+      `SELECT w.id, w.title, w.url, f.name AS fandom, s.name AS ship, count(c.id) AS chapterCount
+       FROM works w
+       LEFT JOIN fandoms f ON f.id = w.fandom_id
+       LEFT JOIN ships s ON s.id = w.ship_id
+       LEFT JOIN chapters c ON c.work_id = w.id
        GROUP BY w.id
-       ORDER BY w.title COLLATE NOCASE, w.id`
+       ORDER BY f.name IS NULL, f.name COLLATE NOCASE, w.title COLLATE NOCASE, w.id`
     )
     .all()
     .map((work) => {
@@ -334,5 +345,14 @@ export function suggestions(db) {
          GROUP BY ${column} ORDER BY count DESC, ${column}`
       )
       .all()
-  return { kinds: usage('kind', 'beats'), povs: usage('pov', 'scenes') }
+  // Fandoms and ships hold only names some work uses (edit.js removes the
+  // rest), so these are every row, alphabetical.
+  const fandoms = db.prepare('SELECT name FROM fandoms ORDER BY name COLLATE NOCASE').pluck().all()
+  const ships = db
+    .prepare(
+      `SELECT s.name, f.name AS fandom FROM ships s JOIN fandoms f ON f.id = s.fandom_id
+       ORDER BY s.name COLLATE NOCASE`
+    )
+    .all()
+  return { kinds: usage('kind', 'beats'), povs: usage('pov', 'scenes'), fandoms, ships }
 }
