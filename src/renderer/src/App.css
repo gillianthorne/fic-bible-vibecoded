@@ -508,6 +508,63 @@ h2 {
   font-size: 13px;
 }
 
+/* "+ New …" at the end of each level: quieter than the rows above it,
+   indented to the level it adds to. */
+.sidebar .tree-new {
+  display: block;
+  width: 100%;
+  padding: 3px 6px;
+  font-size: 13px;
+  color: var(--desk-muted);
+}
+
+.sidebar .tree-new:hover,
+.sidebar .tree-new:focus-visible {
+  color: var(--gold);
+}
+
+.tree-new-form {
+  padding: 3px 6px;
+}
+
+.tree-new-form input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 3px 6px;
+  border: 1px solid var(--gold-deep);
+  border-radius: 4px;
+  background: var(--desk);
+  color: var(--desk-text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.tree-new-hint,
+.tree-new-error {
+  margin: 3px 0 0;
+  font-size: 12px;
+}
+
+.tree-new-hint {
+  color: var(--desk-muted);
+}
+
+.tree-new-error {
+  color: #f0a08f;
+}
+
+.sidebar .tree-new-chapter {
+  padding-left: 22px;
+}
+
+.sidebar .tree-new-scene {
+  padding-left: 40px;
+}
+
+.sidebar .tree-new-work {
+  margin-top: 12px;
+}
+
 /* Chapter overview */
 
 :is(.chapter-overview, .work-overview, .home-page) header p {

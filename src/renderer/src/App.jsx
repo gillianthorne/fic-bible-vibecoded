@@ -87,6 +87,14 @@ export default function App() {
   const isExpanded = (key) => expanded[key] ?? key.startsWith('work:')
   const toggle = (key) => setExpanded((prev) => ({ ...prev, [key]: !(prev[key] ?? key.startsWith('work:')) }))
 
+  // After the sidebar creates something: read the library again, unfold
+  // the rows above it so it shows, and open it.
+  const openCreated = (next, expandKeys) => {
+    changed()
+    setExpanded((prev) => ({ ...prev, ...Object.fromEntries(expandKeys.map((key) => [key, true])) }))
+    navigate(next)
+  }
+
   // Opening a work from the home page also opens it in the sidebar.
   const openWork = (workId) => {
     setExpanded((prev) => ({ ...prev, [`work:${workId}`]: true }))
@@ -123,6 +131,7 @@ export default function App() {
         onToggle={toggle}
         refreshKey={libraryVersion}
         onImported={showImport}
+        onCreated={openCreated}
       />
       <SidebarHandle width={sidebarWidth} onResize={setSidebarWidth} />
       <main className="main-pane" ref={mainPane}>

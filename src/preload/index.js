@@ -21,6 +21,9 @@ contextBridge.exposeInMainWorld('ficBible', {
   updateScene: (sceneId, patch) => ipcRenderer.invoke('scene:update', sceneId, patch),
   updateChapter: (chapterId, patch) => ipcRenderer.invoke('chapter:update', chapterId, patch),
   updateWork: (workId, patch) => ipcRenderer.invoke('work:update', workId, patch),
+  createWork: (title) => ipcRenderer.invoke('work:create', title),
+  createChapter: (workId, title) => ipcRenderer.invoke('chapter:create', workId, title),
+  createScene: (chapterId, title) => ipcRenderer.invoke('scene:create', chapterId, title),
   suggestions: () => ipcRenderer.invoke('suggestions'),
   openLink: (url) => ipcRenderer.invoke('link:open', url)
 })

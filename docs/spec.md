@@ -41,7 +41,7 @@ Above the main pane, a Back button returns to the previous screen, and a breadcr
 
 ### 1. Navigation tree (sidebar, always visible)
 
-Works, expanding to chapters, expanding to scenes. Click a work to open the work overview; click a scene to open it in the main pane; click a chapter to open the chapter overview. Shows scene status at a glance. New works, chapters and scenes are created here. Home, above the works, opens the home page.
+Works, expanding to chapters, expanding to scenes. Click a work to open the work overview; click a scene to open it in the main pane; click a chapter to open the chapter overview. Shows scene status at a glance. New works, chapters and scenes are created here. Each is added at the end: the next chapter number, or the next scene position in its chapter. Home, above the works, opens the home page.
 
 ### 2. Scene detail (main pane)
 
@@ -195,7 +195,7 @@ Unlike kinds and POVs, fandoms and ships are tables, because a ship belongs to a
 The v1 write boundary, stated precisely because it is easy to widen by accident:
 
 - The app **may read** any file under the library root
-- The app **may create** a new empty scene file when a scene is created
+- The app **may create** a new empty folder when a work or chapter is created, and a new empty scene file when a scene is created. Each is named as import expects (a work's folder is its title; a chapter is `##-title`; a scene is `##-title.md`) and always comes after the existing ones. If the name is already taken on disk, nothing is created.
 - The app **must never write to a file that has content**
 
 Creating a scene creates its file immediately, empty. A scene therefore always has a file and always has a wordcount, which is zero until it is written. This keeps outlining ahead of drafting possible without making `filename` nullable or special-casing missing files everywhere.

@@ -11,8 +11,9 @@ Full design spec: `docs/spec.md`. Read it before making design decisions.
 - No field lives in both stores. Files own the prose; SQLite owns
   everything about the prose. Never store scene text in a column.
 - Wordcounts are computed at read time, never stored.
-- Never write to a file that has content. Creating an empty scene file
-  is the only permitted write.
+- Never write to a file that has content. Creating an empty scene file,
+  or an empty folder for a new work or chapter, are the only permitted
+  writes.
 - All paths go through Node's `path` module. No hardcoded separators.
 - No network requests, ever.
 - Scene files are addressed by scene + paragraph number, never line number.
