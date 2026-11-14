@@ -41,6 +41,13 @@ export default function App() {
   const isExpanded = (key) => expanded[key] ?? key.startsWith('work:')
   const toggle = (key) => setExpanded((prev) => ({ ...prev, [key]: !(prev[key] ?? key.startsWith('work:')) }))
 
+  // Opening a scene from the chapter overview also opens its work and
+  // chapter in the sidebar, so the scene shows there as selected.
+  const openScene = (sceneId, chapterId, workId) => {
+    setExpanded((prev) => ({ ...prev, [`work:${workId}`]: true, [`chapter:${chapterId}`]: true }))
+    setSelection({ kind: 'scene', id: sceneId })
+  }
+
   return (
     <div className="layout" style={{ '--sidebar-width': `${sidebarWidth}px` }}>
       <Sidebar
@@ -61,7 +68,7 @@ export default function App() {
               chapterId={selection.id}
               refreshKey={libraryVersion}
               onChanged={changed}
-              onOpenScene={(id) => setSelection({ kind: 'scene', id })}
+              onOpenScene={openScene}
             />
           )}
           {selection?.kind === 'scene' && selection.view !== 'prose' && (
