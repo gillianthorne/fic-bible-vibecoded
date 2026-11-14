@@ -1,8 +1,22 @@
+import { useState } from 'react'
 import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
 import { Status, Wordcount } from './labels.jsx'
+import BeatList from './Beats.jsx'
+import {
+  Field,
+  FormActions,
+  NumberInput,
+  SaveError,
+  SCENE_STATUSES,
+  Select,
+  SuggestInput,
+  toNumber,
+  useSave,
+  useSuggestions
+} from './editing.jsx'
 
-// Read-only. One scene's fields, then its beats in order. Planned beats are
+// One scene's fields, then its beats in order, editable in place. Planned beats are
 // what the scene is still missing; "in draft" beats have landed; cut beats
 // stay in their place in the order but drop out of the count.
 
@@ -40,35 +54,98 @@ function BeatSummary({ beats }) {
   )
 }
 
-function ParagraphRef({ value, paragraphs }) {
-  if (value === null) return null
-  const outside = paragraphs !== null && value > paragraphs
-  return (
-    <span className="beat-ref">
-      ¶ {value}
-      {outside && <span className="file-error"> (file has {plural(paragraphs, 'paragraph')})</span>}
-    </span>
-  )
-}
+// The scene's own fields, with an Edit button that turns them into a
+// form. The filename is shown but can't be changed: the app never renames
+// files. Title and position may differ from the ##-title filename.
+function SceneForm({ scene, povs, onDone, onCancel }) {
+  const [title, setTitle] = useState(scene.title)
+  const [pov, setPov] = useState(scene.pov)
+  const [status, setStatus] = useState(scene.status)
+  const [position, setPosition] = useState(String(scene.position))
+  const { busy, error, save } = useSave()
 
-function Beat({ beat, paragraphs }) {
+  function submit(e) {
+    e.preventDefault()
+    save(() => window.ficBible.updateScene(scene.id, { title, pov, status, position: toNumber(position) }), onDone)
+  }
+
   return (
-    <li className={`beat beat-${beat.status.replace(/\s+/g, '-')}`}>
-      <span className="beat-marker" aria-hidden="true" />
-      <div>
-        <div className="beat-meta">
-          <span className="beat-kind">{beat.kind}</span>
-          <span className="beat-status">{beat.status}</span>
-          <ParagraphRef value={beat.paragraphRef} paragraphs={paragraphs} />
-        </div>
-        <p className="beat-content">{beat.content}</p>
+    <form className="edit-form scene-form" onSubmit={submit}>
+      <Field label="Title" wide>
+        {(id) => <input id={id} type="text" value={title} required autoFocus onChange={(e) => setTitle(e.target.value)} />}
+      </Field>
+      <div className="edit-row">
+        <Field label="POV">{(id) => <SuggestInput id={id} value={pov} onChange={setPov} options={povs} />}</Field>
+        <Field label="Status">{(id) => <Select id={id} value={status} onChange={setStatus} options={SCENE_STATUSES} />}</Field>
+        <Field label="Position">{(id) => <NumberInput id={id} value={position} onChange={setPosition} required />}</Field>
       </div>
-    </li>
+      <p className="muted edit-note">File: {scene.filename} (the app doesn’t rename files)</p>
+      <SaveError error={error} />
+      <FormActions busy={busy} onCancel={onCancel} />
+    </form>
   )
 }
 
-export default function SceneDetail({ sceneId, onOpenProse }) {
-  const result = useQuery(() => window.ficBible.sceneDetail(sceneId), sceneId)
+function SceneFields({ scene, povs, onChanged }) {
+  const [editing, setEditing] = useState(false)
+  if (editing) {
+    return (
+      <SceneForm
+        scene={scene}
+        povs={povs}
+        onCancel={() => setEditing(false)}
+        onDone={() => {
+          setEditing(false)
+          onChanged()
+        }}
+      />
+    )
+  }
+  return (
+    <>
+      <div className="title-row">
+        <h1>{scene.title}</h1>
+        <button type="button" className="edit-button" onClick={() => setEditing(true)}>
+          Edit scene
+        </button>
+      </div>
+      <dl className="scene-fields">
+        <div>
+          <dt>POV</dt>
+          <dd>{scene.pov}</dd>
+        </div>
+        <div>
+          <dt>Status</dt>
+          <dd>
+            <Status value={scene.status} />
+          </dd>
+        </div>
+        <div>
+          <dt>Position</dt>
+          {/* Not "N of M": a position override can leave gaps. */}
+          <dd>
+            Scene {scene.position}{' '}
+            <span className="muted">
+              ({scene.chapterSceneCount} {scene.chapterSceneCount === 1 ? 'scene' : 'scenes'} in chapter)
+            </span>
+          </dd>
+        </div>
+        <div>
+          <dt>Words</dt>
+          <dd className="num">
+            <Wordcount scene={scene} />
+          </dd>
+        </div>
+      </dl>
+    </>
+  )
+}
+
+// refreshKey re-reads the scene without blanking it; onChanged() is called
+// after any edit so App can bump it (and refresh the sidebar).
+export default function SceneDetail({ sceneId, onOpenProse, refreshKey, onChanged }) {
+  const result = useQuery(() => window.ficBible.sceneDetail(sceneId), sceneId, refreshKey)
+  const { kinds, povs } = useSuggestions(refreshKey)
 
   if (result.loading) return <p className="muted">Loading…</p>
   if (result.ok === false) return <QueryError what="this scene" error={result.error} />
@@ -81,31 +158,7 @@ export default function SceneDetail({ sceneId, onOpenProse }) {
         <p className="muted">
           {scene.work.title} · Chapter {scene.chapter.number}: {scene.chapter.title}
         </p>
-        <h1>{scene.title}</h1>
-        <dl className="scene-fields">
-          <div>
-            <dt>POV</dt>
-            <dd>{scene.pov}</dd>
-          </div>
-          <div>
-            <dt>Status</dt>
-            <dd>
-              <Status value={scene.status} />
-            </dd>
-          </div>
-          <div>
-            <dt>Position</dt>
-            <dd>
-              Scene {scene.position} of {scene.chapterSceneCount}
-            </dd>
-          </div>
-          <div>
-            <dt>Words</dt>
-            <dd className="num">
-              <Wordcount scene={scene} />
-            </dd>
-          </div>
-        </dl>
+        <SceneFields key={scene.id} scene={scene} povs={povs} onChanged={onChanged} />
         <button type="button" className="link-button view-prose" onClick={onOpenProse}>
           View prose →
         </button>
@@ -114,13 +167,7 @@ export default function SceneDetail({ sceneId, onOpenProse }) {
       <section aria-label="Beats">
         <h2>Beats</h2>
         <BeatSummary beats={scene.beats} />
-        {scene.beats.length > 0 && (
-          <ol className="beats">
-            {scene.beats.map((beat) => (
-              <Beat key={beat.id} beat={beat} paragraphs={scene.paragraphs} />
-            ))}
-          </ol>
-        )}
+        <BeatList scene={scene} kinds={kinds} onChanged={onChanged} />
       </section>
     </article>
   )

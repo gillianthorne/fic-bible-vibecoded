@@ -10,5 +10,13 @@ contextBridge.exposeInMainWorld('ficBible', {
   navigationTree: () => ipcRenderer.invoke('nav:tree'),
   chapterOverview: (chapterId) => ipcRenderer.invoke('chapter:overview', chapterId),
   sceneDetail: (sceneId) => ipcRenderer.invoke('scene:detail', sceneId),
-  sceneProse: (sceneId) => ipcRenderer.invoke('scene:prose', sceneId)
+  sceneProse: (sceneId) => ipcRenderer.invoke('scene:prose', sceneId),
+  createBeat: (sceneId, fields) => ipcRenderer.invoke('beat:create', sceneId, fields),
+  updateBeat: (beatId, patch) => ipcRenderer.invoke('beat:update', beatId, patch),
+  moveBeat: (beatId, direction) => ipcRenderer.invoke('beat:move', beatId, direction),
+  deleteBeat: (beatId) => ipcRenderer.invoke('beat:delete', beatId),
+  updateScene: (sceneId, patch) => ipcRenderer.invoke('scene:update', sceneId, patch),
+  updateChapter: (chapterId, patch) => ipcRenderer.invoke('chapter:update', chapterId, patch),
+  updateWork: (workId, patch) => ipcRenderer.invoke('work:update', workId, patch),
+  suggestions: () => ipcRenderer.invoke('suggestions')
 })
