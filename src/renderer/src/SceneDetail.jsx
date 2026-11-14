@@ -1,8 +1,10 @@
 import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
 import { Status, Wordcount } from './labels.jsx'
+import BeatList from './Beats.jsx'
+import { useSuggestions } from './editing.jsx'
 
-// Read-only. One scene's fields, then its beats in order. Planned beats are
+// One scene's fields, then its beats in order, editable in place. Planned beats are
 // what the scene is still missing; "in draft" beats have landed; cut beats
 // stay in their place in the order but drop out of the count.
 
@@ -40,35 +42,11 @@ function BeatSummary({ beats }) {
   )
 }
 
-function ParagraphRef({ value, paragraphs }) {
-  if (value === null) return null
-  const outside = paragraphs !== null && value > paragraphs
-  return (
-    <span className="beat-ref">
-      ¶ {value}
-      {outside && <span className="file-error"> (file has {plural(paragraphs, 'paragraph')})</span>}
-    </span>
-  )
-}
-
-function Beat({ beat, paragraphs }) {
-  return (
-    <li className={`beat beat-${beat.status.replace(/\s+/g, '-')}`}>
-      <span className="beat-marker" aria-hidden="true" />
-      <div>
-        <div className="beat-meta">
-          <span className="beat-kind">{beat.kind}</span>
-          <span className="beat-status">{beat.status}</span>
-          <ParagraphRef value={beat.paragraphRef} paragraphs={paragraphs} />
-        </div>
-        <p className="beat-content">{beat.content}</p>
-      </div>
-    </li>
-  )
-}
-
-export default function SceneDetail({ sceneId, onOpenProse }) {
-  const result = useQuery(() => window.ficBible.sceneDetail(sceneId), sceneId)
+// refreshKey re-reads the scene without blanking it; onChanged() is called
+// after any edit so App can bump it (and refresh the sidebar).
+export default function SceneDetail({ sceneId, onOpenProse, refreshKey, onChanged }) {
+  const result = useQuery(() => window.ficBible.sceneDetail(sceneId), sceneId, refreshKey)
+  const { kinds } = useSuggestions(refreshKey)
 
   if (result.loading) return <p className="muted">Loading…</p>
   if (result.ok === false) return <QueryError what="this scene" error={result.error} />
@@ -114,13 +92,7 @@ export default function SceneDetail({ sceneId, onOpenProse }) {
       <section aria-label="Beats">
         <h2>Beats</h2>
         <BeatSummary beats={scene.beats} />
-        {scene.beats.length > 0 && (
-          <ol className="beats">
-            {scene.beats.map((beat) => (
-              <Beat key={beat.id} beat={beat} paragraphs={scene.paragraphs} />
-            ))}
-          </ol>
-        )}
+        <BeatList scene={scene} kinds={kinds} onChanged={onChanged} />
       </section>
     </article>
   )

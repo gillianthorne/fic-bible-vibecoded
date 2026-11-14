@@ -17,8 +17,10 @@ import ImportReport from './ImportReport.jsx'
 export default function App() {
   const [selection, setSelection] = useState(null)
   const [expanded, setExpanded] = useState({})
-  // Bumped after each import so the sidebar reads the library again.
+  // Bumped after each import or edit so the sidebar and the open screen
+  // read the library again.
   const [libraryVersion, setLibraryVersion] = useState(0)
+  const changed = () => setLibraryVersion((v) => v + 1)
 
   // An import can clear works, so whatever was open may be gone: show the
   // report instead.
@@ -47,6 +49,8 @@ export default function App() {
         {selection?.kind === 'scene' && selection.view !== 'prose' && (
           <SceneDetail
             sceneId={selection.id}
+            refreshKey={libraryVersion}
+            onChanged={changed}
             onOpenProse={() => setSelection({ kind: 'scene', id: selection.id, view: 'prose' })}
           />
         )}

@@ -658,3 +658,152 @@ p.beat-summary {
   border-bottom: 1px solid #ccc;
   font-weight: 600;
 }
+
+/* Editing: forms, buttons, beat tools */
+
+.main-pane button {
+  font: inherit;
+}
+
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.edit-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.edit-field-wide {
+  width: 100%;
+}
+
+.edit-field label {
+  font-size: 12px;
+  color: #666;
+}
+
+.edit-form input,
+.edit-form select,
+.edit-form textarea {
+  padding: 4px 6px;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  font: inherit;
+  background: #fff;
+}
+
+.edit-form textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.edit-form .edit-number {
+  width: 6em;
+}
+
+.edit-actions,
+.beat-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.edit-actions button,
+.beat-confirm button,
+.beat-tools button,
+.add-beat,
+.edit-button {
+  padding: 3px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  color: #222;
+  cursor: pointer;
+}
+
+.edit-actions button:hover:not(:disabled),
+.beat-confirm button:hover:not(:disabled),
+.beat-tools button:hover:not(:disabled),
+.add-beat:hover,
+.edit-button:hover {
+  background: #f0f0ec;
+}
+
+.main-pane button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.edit-actions .button-primary {
+  border-color: #2a5db0;
+  background: #2a5db0;
+  color: #fff;
+}
+
+.edit-actions .button-primary:hover:not(:disabled) {
+  background: #234f97;
+}
+
+.beat-confirm .button-danger {
+  border-color: #b03a2e;
+  background: #b03a2e;
+  color: #fff;
+}
+
+.save-error {
+  margin: 0;
+  color: #7a1f1f;
+}
+
+.beat-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.beat-tools {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-start;
+  gap: 4px;
+  opacity: 0.35;
+}
+
+.beat:hover .beat-tools,
+.beat-tools:focus-within {
+  opacity: 1;
+}
+
+.beat-tools button {
+  padding: 1px 7px;
+  font-size: 12px;
+}
+
+.beat-confirm {
+  margin-top: 6px;
+}
+
+.beat-editing {
+  border-left-color: #2a5db0;
+  background: #f5f8fd;
+}
+
+.add-beat {
+  margin-top: 10px;
+}
+
+.edit-button {
+  padding: 1px 8px;
+  font-size: 12px;
+}
