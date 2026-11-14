@@ -456,3 +456,115 @@ p.beat-summary {
   margin: 4px 0 0;
   white-space: pre-wrap;
 }
+
+/* Buttons that read as links (Back to scene, View prose) */
+
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: #2a5db0;
+  cursor: pointer;
+}
+
+.link-button:hover {
+  text-decoration: underline;
+}
+
+/* Scene prose viewer */
+
+.prose-viewer {
+  max-width: 760px;
+}
+
+.prose-viewer header p {
+  margin: 0;
+}
+
+.prose-viewer header .link-button {
+  margin-bottom: 8px;
+}
+
+.prose-viewer h1 {
+  margin: 2px 0 4px;
+  font-size: 20px;
+}
+
+.prose {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.prose-paragraph {
+  display: grid;
+  grid-template-columns: 3.5em 1fr;
+  gap: 0 12px;
+  padding: 6px 0;
+  border-top: 1px solid #eee;
+}
+
+.prose-number {
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 2.2;
+  text-align: right;
+  color: #888;
+  user-select: all;
+}
+
+.prose-text > :first-child {
+  margin-top: 0;
+}
+
+.prose-text > :last-child {
+  margin-bottom: 0;
+}
+
+.prose-text p,
+.prose-text blockquote,
+.prose-list {
+  margin: 0 0 4px;
+}
+
+.prose-heading {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+
+.prose-text blockquote {
+  padding-left: 10px;
+  border-left: 3px solid #ddd;
+  color: #555;
+}
+
+.prose-list {
+  list-style: none;
+  padding: 0;
+}
+
+.prose-list-marker {
+  color: #888;
+}
+
+.prose-text code {
+  font-size: 13px;
+  background: #f2f2ef;
+  padding: 0 3px;
+  border-radius: 3px;
+}
+
+.prose-break {
+  margin: 0.75em 25%;
+  border: 0;
+  border-top: 1px solid #ccc;
+}
+
+.scene-detail .view-prose {
+  margin-top: 10px;
+}

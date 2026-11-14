@@ -67,7 +67,7 @@ function Beat({ beat, paragraphs }) {
   )
 }
 
-export default function SceneDetail({ sceneId }) {
+export default function SceneDetail({ sceneId, onOpenProse }) {
   const result = useQuery(() => window.ficBible.sceneDetail(sceneId), sceneId)
 
   if (result.loading) return <p className="muted">Loading…</p>
@@ -106,6 +106,9 @@ export default function SceneDetail({ sceneId }) {
             </dd>
           </div>
         </dl>
+        <button type="button" className="link-button view-prose" onClick={onOpenProse}>
+          View prose →
+        </button>
       </header>
 
       <section aria-label="Beats">

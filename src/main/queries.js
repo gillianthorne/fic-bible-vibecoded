@@ -1,5 +1,5 @@
 import fs from 'node:fs'
-import { countProse } from './prose.js'
+import { countProse, splitParagraphs } from './prose.js'
 import { scenePath } from './paths.js'
 
 // Read-only data access for the four v1 screens. No Electron imports, so
@@ -146,6 +146,44 @@ export function sceneDetail(db, libraryRoot, sceneId) {
     paragraphs: file.paragraphs,
     fileError: file.fileError,
     beats
+  }
+}
+
+// Prose viewer: the scene's file split into paragraphs, in order. The
+// split is splitParagraphs, the same function countProse counts with, so
+// paragraph N here is what a beat's paragraph_ref N points at. Read-only:
+// the file is only ever read. Returns null for an unknown scene; a file
+// that can't be read gives paragraphs: null plus fileError.
+export function sceneProse(db, libraryRoot, sceneId) {
+  const scene = db
+    .prepare(
+      `SELECT s.id, s.title, s.filename,
+              c.id AS chapterId, c.number AS chapterNumber, c.title AS chapterTitle, c.folder AS chapterFolder,
+              w.id AS workId, w.title AS workTitle, w.folder AS workFolder
+       FROM scenes s
+       JOIN chapters c ON c.id = s.chapter_id
+       JOIN works w ON w.id = c.work_id
+       WHERE s.id = ?`
+    )
+    .get(sceneId)
+  if (!scene) return null
+
+  const file = scenePath(libraryRoot, scene.workFolder, scene.chapterFolder, scene.filename)
+  let paragraphs = null
+  let fileError = null
+  try {
+    paragraphs = splitParagraphs(fs.readFileSync(file, 'utf8'))
+  } catch (e) {
+    fileError = e.code ?? e.message
+  }
+  return {
+    id: scene.id,
+    title: scene.title,
+    chapter: { id: scene.chapterId, number: scene.chapterNumber, title: scene.chapterTitle },
+    work: { id: scene.workId, title: scene.workTitle },
+    path: file,
+    paragraphs,
+    fileError
   }
 }
 
