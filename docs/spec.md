@@ -27,17 +27,19 @@ A desktop **Electron** application, running on both Linux and Windows from the s
 | Prose | Markdown files on the local filesystem |
 | Network | None — the app never makes a network request |
 
+**Links.** Work links, chapter links, and URLs inside notes open in the user's default browser, handed over through the operating system. The app itself fetches nothing. Only `http` and `https` links are opened.
+
 **The data is per-machine.** Each laptop has its own library folder and its own database. The app does not sync, and nothing is shared between the two machines. The requirement is that the app *runs* on both, not that it shows the same fic on both.
 
 The app must be packaged and installable on both platforms — running it from a dev server does not count as working.
 
 ## Screens
 
-Four views in v1. A persistent sidebar on the left, one main pane on the right.
+Five views in v1. A persistent sidebar on the left, one main pane on the right.
 
 ### 1. Navigation tree (sidebar, always visible)
 
-Works, expanding to chapters, expanding to scenes. Click a scene to open it in the main pane; click a chapter to open the chapter overview. Shows scene status at a glance. New works, chapters and scenes are created here.
+Works, expanding to chapters, expanding to scenes. Click a work to open the work overview; click a scene to open it in the main pane; click a chapter to open the chapter overview. Shows scene status at a glance. New works, chapters and scenes are created here.
 
 ### 2. Scene detail (main pane)
 
@@ -45,13 +47,21 @@ The primary working view. Shows the scene's own fields — title, POV, status, p
 
 Beats are editable in place: add, edit, reorder, change kind or status, set or clear the paragraph reference. `kind` and `pov` inputs offer previously-used values as you type. The beat list makes planned-versus-landed visible, so the view answers "what is this scene still missing?"
 
+The scene's notes are shown and editable here.
+
 ### 3. Chapter overview (main pane)
 
 Every scene in the chapter as a table: position, title, POV, status, wordcount, and a count of its beats by status. Chapter wordcount as a total. This is the view that replaces reading across spreadsheet rows — the shape of the chapter should be readable without clicking into anything.
 
+The chapter's notes are shown and editable here.
+
 ### 4. Scene prose viewer (main pane)
 
 Read-only display of the scene's markdown file **with paragraph numbers shown**. This exists specifically so a paragraph reference can be located, and so a beat can be pointed at a real passage. No editing, no formatting toolbar.
+
+### 5. Work overview (main pane)
+
+The work's home page. At the top: the title, a link to the work page if one is set, and the work's total wordcount. Below that, the work's notes. Then every chapter as a simple table: number, title, wordcount, status, and the chapter link if one is set. Clicking a chapter opens its chapter overview.
 
 ### What the app does not have in v1
 
@@ -87,6 +97,8 @@ Four tables in a straight chain: a work has chapters, a chapter has scenes, a sc
 | --- | --- | --- |
 | works | title | |
 | works | folder | Relative to the library root in config |
+| works | url | Link to the work page (e.g. AO3), null until set |
+| works | notes | Free text: inspiration, anything general |
 | chapters | work_id | FK to works |
 | chapters | number | Chapter number |
 | chapters | title | |
@@ -94,18 +106,24 @@ Four tables in a straight chain: a work has chapters, a chapter has scenes, a sc
 | chapters | status | Drafting / ready to post / posted |
 | chapters | posted_date | Null until posted |
 | chapters | posted_url | AO3 link, null until posted |
+| chapters | notes | Free text |
 | scenes | chapter_id | FK to chapters |
 | scenes | position | Ordered within the chapter, not globally |
 | scenes | title | |
 | scenes | filename | Filename only, no path segments |
 | scenes | pov | Free text, suggestion-sourced |
 | scenes | status | Fixed vocabulary — see below |
+| scenes | notes | Free text: e.g. where a scene's workskin CSS, HTML or images live |
 | beats | scene_id | FK to scenes |
 | beats | position | Ordered within the scene |
 | beats | kind | Free text, suggestion-sourced |
 | beats | content | The beat itself — free text |
 | beats | status | Fixed vocabulary — see below |
 | beats | paragraph_ref | Nullable paragraph number within the scene file |
+
+### Notes are about the prose, not prose
+
+`notes` on works, chapters and scenes are plain multi-line text, written in the app: inspiration, where supporting files live, anything worth remembering. They describe the prose and never hold it, so the rule that no field lives in both stores still holds. Any `http` or `https` URL in a note is shown as a link.
 
 ### Beats are deliberately heterogeneous
 

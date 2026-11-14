@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import { countProse, countWords, splitParagraphs } from './prose.js'
 import { scenePath } from './paths.js'
 
-// Read-only data access for the four v1 screens. No Electron imports, so
+// Read-only data access for the five v1 screens. No Electron imports, so
 // these run in tests and scripts too.
 //
 // Wordcounts are never in the database (spec: Derived values). A scene's
@@ -74,7 +74,7 @@ export function chapterOverview(db, libraryRoot, chapterId) {
   const chapter = db
     .prepare(
       `SELECT c.id, c.number, c.title, c.status, c.folder, c.posted_date AS postedDate,
-              c.posted_url AS postedUrl, w.id AS workId, w.title AS workTitle, w.folder AS workFolder
+              c.posted_url AS postedUrl, c.notes, w.id AS workId, w.title AS workTitle, w.folder AS workFolder
        FROM chapters c JOIN works w ON w.id = c.work_id
        WHERE c.id = ?`
     )
@@ -116,7 +116,7 @@ export function chapterOverview(db, libraryRoot, chapterId) {
 export function sceneDetail(db, libraryRoot, sceneId) {
   const scene = db
     .prepare(
-      `SELECT s.id, s.position, s.title, s.pov, s.status, s.filename,
+      `SELECT s.id, s.position, s.title, s.pov, s.status, s.filename, s.notes,
               (SELECT count(*) FROM scenes sib WHERE sib.chapter_id = s.chapter_id) AS chapterSceneCount,
               c.id AS chapterId, c.number AS chapterNumber, c.title AS chapterTitle, c.folder AS chapterFolder,
               w.id AS workId, w.title AS workTitle, w.folder AS workFolder
@@ -217,6 +217,29 @@ export function workWordcount(db, libraryRoot, workId) {
     uncounted: chapters.reduce((sum, ch) => sum + ch.uncounted, 0),
     chapters
   }
+}
+
+// Work overview: the work's own fields, its file-derived total, and every
+// chapter with its number, title, status, link and wordcount. Returns null
+// for an unknown work.
+export function workOverview(db, libraryRoot, workId) {
+  const work = db.prepare('SELECT id, title, url, notes FROM works WHERE id = ?').get(workId)
+  if (!work) return null
+
+  const counts = new Map(workWordcount(db, libraryRoot, workId).chapters.map((ch) => [ch.id, ch]))
+  const chapters = db
+    .prepare(
+      `SELECT id, number, title, status, posted_url AS postedUrl
+       FROM chapters WHERE work_id = ? ORDER BY number`
+    )
+    .all(workId)
+    .map((ch) => {
+      const { wordcount, uncounted } = counts.get(ch.id)
+      return { ...ch, wordcount, uncounted }
+    })
+
+  const sum = (key) => chapters.reduce((acc, ch) => acc + ch[key], 0)
+  return { work, chapters, wordcount: sum('wordcount'), uncounted: sum('uncounted') }
 }
 
 // Previously used beat kinds and POVs, most used first, ties alphabetical.

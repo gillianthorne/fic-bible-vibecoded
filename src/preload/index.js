@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('ficBible', {
   chooseLibrary: () => ipcRenderer.invoke('library:choose'),
   importLibrary: () => ipcRenderer.invoke('library:import'),
   navigationTree: () => ipcRenderer.invoke('nav:tree'),
+  workOverview: (workId) => ipcRenderer.invoke('work:overview', workId),
   chapterOverview: (chapterId) => ipcRenderer.invoke('chapter:overview', chapterId),
   sceneDetail: (sceneId) => ipcRenderer.invoke('scene:detail', sceneId),
   sceneProse: (sceneId) => ipcRenderer.invoke('scene:prose', sceneId),
@@ -18,5 +19,6 @@ contextBridge.exposeInMainWorld('ficBible', {
   updateScene: (sceneId, patch) => ipcRenderer.invoke('scene:update', sceneId, patch),
   updateChapter: (chapterId, patch) => ipcRenderer.invoke('chapter:update', chapterId, patch),
   updateWork: (workId, patch) => ipcRenderer.invoke('work:update', workId, patch),
-  suggestions: () => ipcRenderer.invoke('suggestions')
+  suggestions: () => ipcRenderer.invoke('suggestions'),
+  openLink: (url) => ipcRenderer.invoke('link:open', url)
 })

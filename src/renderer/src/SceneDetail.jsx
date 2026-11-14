@@ -3,6 +3,7 @@ import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
 import { Status, Wordcount } from './labels.jsx'
 import BeatList from './Beats.jsx'
+import Notes from './Notes.jsx'
 import {
   EditButton,
   Field,
@@ -162,6 +163,14 @@ export default function SceneDetail({ sceneId, onOpenProse, refreshKey, onChange
           View prose →
         </button>
       </header>
+
+      <Notes
+        key={`notes-${scene.id}`}
+        notes={scene.notes}
+        what="scene"
+        saveNotes={(notes) => window.ficBible.updateScene(scene.id, { notes })}
+        onChanged={onChanged}
+      />
 
       <section aria-label="Beats">
         <h2>Beats</h2>

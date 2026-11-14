@@ -111,5 +111,22 @@ test('only the spec-nullable columns accept NULL', () => {
     )
     .pluck()
     .all()
-  assert.deepEqual(nullable, ['beats.paragraph_ref', 'chapters.posted_date', 'chapters.posted_url'])
+  assert.deepEqual(nullable, [
+    'beats.paragraph_ref',
+    'chapters.notes',
+    'chapters.posted_date',
+    'chapters.posted_url',
+    'scenes.notes',
+    'works.notes',
+    'works.url'
+  ])
+})
+
+test('notes and the work link start out null', () => {
+  const db = freshDb()
+  seed(db)
+  assert.equal(db.prepare('SELECT url FROM works').pluck().get(), null)
+  for (const t of ['works', 'chapters', 'scenes']) {
+    assert.equal(db.prepare(`SELECT notes FROM ${t}`).pluck().get(), null, t)
+  }
 })

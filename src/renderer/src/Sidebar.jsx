@@ -3,8 +3,8 @@ import { QueryError } from './QueryError.jsx'
 import LibraryBar from './LibraryBar.jsx'
 
 // The navigation tree: works, expanding to chapters, expanding to scenes.
-// Clicking a chapter opens its overview and clicking a scene opens its
-// detail. Works have no screen of their own, so clicking one only folds it.
+// Clicking a work opens its overview, a chapter its overview, and a scene
+// its detail.
 //
 // Built as nested lists with disclosure buttons (aria-expanded), not an
 // ARIA tree: role="tree" promises arrow-key navigation, which v1 doesn't
@@ -105,19 +105,29 @@ function Chapter({ chapter, selection, onSelect, isExpanded, onToggle }) {
   )
 }
 
+// Clicking a work opens its overview and unfolds it. Clicking it again
+// while its overview is open folds or unfolds it.
 function Work({ work, selection, onSelect, isExpanded, onToggle }) {
   const key = `work:${work.id}`
   const open = isExpanded(key)
+  const selected = isSelected(selection, 'work', work.id)
   const hidesSelection = !open && work.chapters.some((ch) => chapterHolds(ch, selection))
+  function click() {
+    if (selected || !open) onToggle(key)
+    if (!selected) onSelect({ kind: 'work', id: work.id })
+  }
   return (
     <li className="tree-work">
       <h2>
         <button
           type="button"
-          className={['tree-work-title', hidesSelection && 'hides-selection'].filter(Boolean).join(' ')}
+          className={['tree-work-title', selected && 'selected', hidesSelection && 'hides-selection']
+            .filter(Boolean)
+            .join(' ')}
           aria-expanded={open}
+          aria-current={selected ? 'page' : undefined}
           title={work.title}
-          onClick={() => onToggle(key)}
+          onClick={click}
         >
           <span className="tree-toggle-mark" aria-hidden="true">
             {open ? '▾' : '▸'}
