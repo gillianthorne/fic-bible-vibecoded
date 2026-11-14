@@ -157,9 +157,12 @@ body {
   border-radius: 6px;
   border: 1px solid var(--gold-deep);
   background: var(--paper);
+  /* A soft drop shadow, plus a faint warm glow so the sheet lifts off the
+     dark desk instead of the shadow vanishing into it. */
   box-shadow:
-    0 1px 2px rgb(0 0 0 / 0.25),
-    0 10px 30px rgb(0 0 0 / 0.25);
+    0 2px 4px rgb(0 0 0 / 0.4),
+    0 14px 32px rgb(0 0 0 / 0.5),
+    0 0 36px rgb(240 205 150 / 0.12);
 }
 
 .sheet-empty {
@@ -186,6 +189,11 @@ h2 {
   font-weight: 600;
   letter-spacing: 0.05em;
   color: var(--ink);
+}
+
+/* Big titles on the sheets need less spacing than small headings. */
+.sheet h1 {
+  letter-spacing: 0.02em;
 }
 
 /* A gold rule under each screen's heading block. */
@@ -281,7 +289,13 @@ h2 {
 .tree-work h2 {
   margin: 0 0 2px;
   font-size: 14px;
+  letter-spacing: 0.08em;
   color: var(--desk-text);
+}
+
+/* Buttons don't inherit letter spacing by default. */
+.tree-work h2 button {
+  letter-spacing: inherit;
 }
 
 /* Rows are one line: number, dot and arrow keep their size, only the
