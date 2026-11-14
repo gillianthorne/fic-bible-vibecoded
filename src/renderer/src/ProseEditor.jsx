@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
-import { SaveError } from './editing.jsx'
+import { SaveError, useSave, useSuggestions } from './editing.jsx'
 import { number } from './labels.jsx'
-import { commands, createProseEditor, goToParagraph } from './proseEditor.js'
+import { commands, createProseEditor, goToParagraph, setNoteCounts } from './proseEditor.js'
 import { countProse } from '../../main/prose.js'
-import { NoteParagraph, NoteStatus, openCount } from './EditNotes.jsx'
+import { EditNoteForm, NoteParagraph, NoteStatus, openCount } from './EditNotes.jsx'
 
 // Moves the cursor to a note's paragraph, then makes sure that line isn't
 // hidden under what's pinned at the top of the pane: the toolbar, and the
@@ -30,13 +30,11 @@ function jumpToNote(view, paragraph, panel) {
 // The scene's edit notes beside the editor (spec: Scene prose editor).
 // Clicking a note moves the cursor to its paragraph, counted in the text
 // as it is now; setting a status saves that row straight away. Neither
-// touches the prose, so neither is an unsaved change.
-function NotesPanel({ sceneId, viewRef, paragraphs }) {
-  const [version, setVersion] = useState(0)
-  const result = useQuery(() => window.ficBible.editNotes(sceneId), sceneId, version)
+// touches the prose, so neither is an unsaved change. It always starts
+// collapsed: the editor is remounted for each scene, so this does too.
+function NotesPanel({ result, onChanged, viewRef, paragraphs }) {
   const [showAll, setShowAll] = useState(false)
-  const [collapsed, setCollapsed] = useState(false)
-  const refresh = () => setVersion((v) => v + 1)
+  const [collapsed, setCollapsed] = useState(true)
 
   let body
   if (result.loading) body = <p className="muted">Loading…</p>
@@ -67,7 +65,7 @@ function NotesPanel({ sceneId, viewRef, paragraphs }) {
                 </span>
                 <span className="edit-note-text">{note.note}</span>
               </button>
-              <NoteStatus note={note} onChanged={refresh} label={`Status of the note at paragraph ${note.paragraph}`} />
+              <NoteStatus note={note} onChanged={onChanged} label={`Status of the note at paragraph ${note.paragraph}`} />
             </li>
           ))}
         </ul>
@@ -97,6 +95,98 @@ function NotesPanel({ sceneId, viewRef, paragraphs }) {
       </h2>
       {!collapsed && body}
     </aside>
+  )
+}
+
+// One note in the popup: read, change its status, or edit it in full.
+function PopupNote({ note, editKinds, paragraphs, onChanged }) {
+  const [editing, setEditing] = useState(false)
+  const { busy, error, save, clearError } = useSave()
+
+  if (editing) {
+    return (
+      <li className="editor-note editor-note-editing">
+        <EditNoteForm
+          initial={note}
+          editKinds={editKinds}
+          paragraphs={paragraphs}
+          busy={busy}
+          error={error}
+          onSubmit={(fields) =>
+            save(
+              () => window.ficBible.updateEditNote(note.id, fields),
+              () => {
+                setEditing(false)
+                onChanged()
+              }
+            )
+          }
+          onCancel={() => {
+            clearError()
+            setEditing(false)
+          }}
+        />
+      </li>
+    )
+  }
+  return (
+    <li className={`editor-note edit-note-${note.status}`}>
+      {note.kind && <span className="editor-note-meta edit-note-kind">{note.kind}</span>}
+      <span className="edit-note-text">{note.note}</span>
+      <span className="editor-popup-tools">
+        <NoteStatus note={note} onChanged={onChanged} label={`Status of the note: ${note.note}`} />
+        <button type="button" className="link-button" onClick={() => setEditing(true)}>
+          Edit
+        </button>
+      </span>
+    </li>
+  )
+}
+
+// The notes for one paragraph, opened from its count in the margin and
+// placed beside it. Escape or a click elsewhere closes it. Shows every
+// note on the paragraph, dealt-with ones too, so a status just changed
+// can be changed back.
+function NotePopup({ popup, notes, editKinds, paragraphs, onChanged, onClose }) {
+  const box = useRef(null)
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && onClose()
+    const onDown = (e) => {
+      if (box.current?.contains(e.target) || e.target.closest?.('.cm-note-count')) return
+      onClose()
+    }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('mousedown', onDown)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('mousedown', onDown)
+    }
+  }, [onClose])
+
+  return (
+    <div
+      ref={box}
+      className="editor-popup"
+      role="dialog"
+      aria-label={`Edit notes at paragraph ${popup.paragraph}`}
+      style={{ top: popup.top, left: popup.left }}
+    >
+      <div className="editor-popup-head">
+        <strong>¶ {popup.paragraph}</strong>
+        <button type="button" className="link-button" aria-label="Close" onClick={onClose}>
+          ✕
+        </button>
+      </div>
+      {notes.length === 0 ? (
+        <p className="muted">No edit notes here.</p>
+      ) : (
+        <ul className="editor-notes-list">
+          {notes.map((note) => (
+            <PopupNote key={note.id} note={note} editKinds={editKinds} paragraphs={paragraphs} onChanged={onChanged} />
+          ))}
+        </ul>
+      )}
+    </div>
   )
 }
 
@@ -195,12 +285,45 @@ function Editor({ scene, onBack, onDirtyChange, onSaved }) {
   const saveRef = useRef(save)
   saveRef.current = save
 
+  // Edit notes: read here, shared by the panel, the counts in the margin
+  // and the popup a count opens. A change to any of them reads them again.
+  const [notesVersion, setNotesVersion] = useState(0)
+  const notes = useQuery(() => window.ficBible.editNotes(scene.id), scene.id, notesVersion)
+  const notesChanged = () => setNotesVersion((v) => v + 1)
+  const { editKinds } = useSuggestions(notesVersion)
+  const [popup, setPopup] = useState(null) // { paragraph, top, left } | null
+  const layout = useRef(null)
+  const closePopup = useCallback(() => setPopup(null), [])
+
+  // A count in the margin opens its paragraph's notes beside it, or
+  // closes them if they're already open.
+  const openPopup = (paragraph, count) => {
+    const frame = layout.current.getBoundingClientRect()
+    const at = count.getBoundingClientRect()
+    setPopup((open) =>
+      open?.paragraph === paragraph ? null : { paragraph, top: at.top - frame.top - 8, left: at.right - frame.left + 10 }
+    )
+  }
+  const openPopupRef = useRef(openPopup)
+  openPopupRef.current = openPopup
+
+  useEffect(() => {
+    const view = viewRef.current
+    if (!view || !notes.ok) return
+    const counts = new Map()
+    for (const note of notes.data) {
+      if (note.status === 'open') counts.set(note.paragraph, (counts.get(note.paragraph) ?? 0) + 1)
+    }
+    view.dispatch({ effects: setNoteCounts.of(counts) })
+  }, [notes])
+
   useEffect(() => {
     const view = createProseEditor({
       parent: host.current,
       text: scene.text,
       onChange: setText,
-      onSave: () => saveRef.current()
+      onSave: () => saveRef.current(),
+      onNoteCount: (paragraph, count) => openPopupRef.current(paragraph, count)
     })
     viewRef.current = view
     view.focus()
@@ -272,9 +395,19 @@ function Editor({ scene, onBack, onDirtyChange, onSaved }) {
       </div>
       <SaveError error={status.error} />
 
-      <div className="editor-layout">
+      <div className="editor-layout" ref={layout}>
         <div className="editor-host" ref={host} title={scene.path} />
-        <NotesPanel sceneId={scene.id} viewRef={viewRef} paragraphs={counts.paragraphs} />
+        <NotesPanel result={notes} onChanged={notesChanged} viewRef={viewRef} paragraphs={counts.paragraphs} />
+        {popup && (
+          <NotePopup
+            popup={popup}
+            notes={notes.ok ? notes.data.filter((n) => n.paragraph === popup.paragraph) : []}
+            editKinds={editKinds}
+            paragraphs={counts.paragraphs}
+            onChanged={notesChanged}
+            onClose={closePopup}
+          />
+        )}
       </div>
     </article>
   )

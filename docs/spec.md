@@ -77,7 +77,7 @@ The editor shows the markdown source, with its markers (`**`, `*`, `#`, `>`) lef
 
 A toolbar formats the selection: bold, italic, strikethrough, heading, blockquote, bulleted and numbered list, and a scene break. Bold and italic also have Ctrl-B and Ctrl-I (Cmd on a Mac). Each toggles: applied to text that already has it, it takes it off. Typing the markdown by hand works the same as using the buttons. No images.
 
-Beside the editor, a panel lists the scene's edit notes in paragraph order. Clicking one moves the cursor to its paragraph. Each note's status can be set from the panel (open, fixed, ignored, cut), and the change is saved straight away, separately from the prose: it is a database row, not part of the file, so it neither needs Save nor counts as an unsaved change.
+Paragraphs with open edit notes show how many in the margin, beside their number, as in the viewer. Clicking that count opens the paragraph's notes beside it, where each can have its status set or be edited in full. Beside the editor, a panel lists the scene's edit notes in paragraph order; it always starts collapsed, for every scene. Clicking one moves the cursor to its paragraph. Each note's status can be set from the panel (open, fixed, ignored, cut), and the change is saved straight away, separately from the prose: it is a database row, not part of the file, so it neither needs Save nor counts as an unsaved change.
 
 Saving is explicit, with a Save button or Ctrl-S. There is no autosave. Leaving the editor, or closing the app, with unsaved changes asks first. The chapter read view stays read-only.
 

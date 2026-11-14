@@ -1,4 +1,4 @@
-import { EditorSelection, EditorState, RangeSet, StateField } from '@codemirror/state'
+import { EditorSelection, EditorState, RangeSet, StateEffect, StateField } from '@codemirror/state'
 import { EditorView, GutterMarker, gutter, keymap, drawSelection, highlightActiveLine } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
@@ -52,30 +52,62 @@ export const commands = {
 
 // ---- Paragraph numbers -------------------------------------------------
 
+// A paragraph number, with a count of the paragraph's open edit notes
+// before it (spec: Scene prose editor). The count is a button: clicking
+// it is handled by the gutter's click handler below.
 class ParagraphNumber extends GutterMarker {
-  constructor(n) {
+  constructor(n, open) {
     super()
     this.n = n
+    this.open = open
   }
   eq(other) {
-    return other.n === this.n
+    return other.n === this.n && other.open === this.open
   }
   toDOM() {
-    return document.createTextNode(String(this.n))
+    const wrap = document.createElement('span')
+    if (this.open > 0) {
+      const count = document.createElement('button')
+      count.type = 'button'
+      count.className = 'cm-note-count'
+      count.dataset.paragraph = String(this.n)
+      count.textContent = String(this.open)
+      count.title = `${this.open} open edit note${this.open === 1 ? '' : 's'}: click to view`
+      count.setAttribute('aria-label', `Paragraph ${this.n}: ${count.title}`)
+      wrap.append(count)
+    }
+    wrap.append(String(this.n))
+    return wrap
   }
 }
+
+// Open edit-note counts by paragraph number, set from outside the editor
+// with setNoteCounts whenever the notes are read.
+export const setNoteCounts = StateEffect.define()
+
+const noteCountsField = StateField.define({
+  create: () => new Map(),
+  update: (counts, tr) => tr.effects.reduce((acc, e) => (e.is(setNoteCounts) ? e.value : acc), counts)
+})
 
 // The paragraph numbers as gutter markers, recomputed on each change.
 // A scene is short enough that counting from the top each time is cheap.
-function paragraphMarkers(doc) {
+// Counts go by paragraph number as it is now, while typing, the same way
+// a note's paragraph points at the file.
+function paragraphMarkers(state) {
+  const doc = state.doc
+  const counts = state.field(noteCountsField)
   const lines = []
   for (let i = 1; i <= doc.lines; i++) lines.push(doc.line(i).text)
-  return RangeSet.of(paragraphStartLines(lines).map((line, i) => new ParagraphNumber(i + 1).range(doc.line(line).from)))
+  return RangeSet.of(
+    paragraphStartLines(lines).map((line, i) => new ParagraphNumber(i + 1, counts.get(i + 1) ?? 0).range(doc.line(line).from))
+  )
 }
 
 const paragraphField = StateField.define({
-  create: (state) => paragraphMarkers(state.doc),
-  update: (markers, tr) => (tr.docChanged ? paragraphMarkers(tr.state.doc) : markers)
+  create: (state) => paragraphMarkers(state),
+  update: (markers, tr) =>
+    tr.docChanged || tr.effects.some((e) => e.is(setNoteCounts)) ? paragraphMarkers(tr.state) : markers
 })
 
 // Moves the cursor to the start of paragraph n (1-based), scrolled into
@@ -96,11 +128,22 @@ export function goToParagraph(view, n) {
   return true
 }
 
-const paragraphGutter = [
+// onNoteCount(paragraph, element) is called when a count is clicked.
+const paragraphGutter = (onNoteCount) => [
+  noteCountsField,
   paragraphField,
   gutter({
     class: 'cm-paragraph-numbers',
-    markers: (view) => view.state.field(paragraphField)
+    markers: (view) => view.state.field(paragraphField),
+    domEventHandlers: {
+      mousedown: (_view, _line, event) => Boolean(event.target.closest?.('.cm-note-count')),
+      click: (_view, _line, event) => {
+        const count = event.target.closest?.('.cm-note-count')
+        if (!count) return false
+        onNoteCount(Number(count.dataset.paragraph), count)
+        return true
+      }
+    }
   })
 ]
 
@@ -123,9 +166,10 @@ const proseHighlight = HighlightStyle.define([
 // ---- The editor --------------------------------------------------------
 
 // Creates the editor in `parent` with `text`. onChange(text) is called
-// after each edit, onSave() on Ctrl-S. Returns the EditorView; call
-// destroy() on it when done.
-export function createProseEditor({ parent, text, onChange, onSave }) {
+// after each edit, onSave() on Ctrl-S, onNoteCount(paragraph, element)
+// when an edit-note count in the margin is clicked. Returns the
+// EditorView; call destroy() on it when done.
+export function createProseEditor({ parent, text, onChange, onSave, onNoteCount }) {
   const ownKeys = keymap.of([
     // Before the default keymap, which uses Mod-i to select the
     // surrounding syntax.
@@ -147,7 +191,7 @@ export function createProseEditor({ parent, text, onChange, onSave }) {
         keymap.of([...defaultKeymap, ...historyKeymap]),
         markdown({ base: markdownLanguage }),
         syntaxHighlighting(proseHighlight),
-        paragraphGutter,
+        paragraphGutter(onNoteCount),
         EditorView.contentAttributes.of({ spellcheck: 'true', autocorrect: 'on', 'aria-label': 'Scene prose' }),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) onChange(update.state.doc.toString())
