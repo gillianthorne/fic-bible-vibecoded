@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import { countProse, countWords, splitParagraphs } from './prose.js'
 import { scenePath } from './paths.js'
 
-// Read-only data access for the five v1 screens. No Electron imports, so
+// Read-only data access for the v1 screens. No Electron imports, so
 // these run in tests and scripts too.
 //
 // Wordcounts are never in the database (spec: Derived values). A scene's
