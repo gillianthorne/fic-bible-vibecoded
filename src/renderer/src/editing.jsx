@@ -109,6 +109,26 @@ export function FormActions({ busy, onCancel, saveLabel = 'Save' }) {
   )
 }
 
+// A small pencil after a title that opens its edit form. Faint until the
+// title row is hovered or the button has focus. label names what it edits
+// ("Edit chapter"); it's the button's accessible name and its tooltip.
+export function EditButton({ label, onClick }) {
+  return (
+    <button type="button" className="edit-button" aria-label={label} title={label} onClick={onClick}>
+      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+        <path
+          d="M11.3 2.3a1.5 1.5 0 0 1 2.1 0l.3.3a1.5 1.5 0 0 1 0 2.1L5.5 12.9 2.5 13.5l.6-3 8.2-8.2Z"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinejoin="round"
+        />
+        <path d="M10 3.6 12.4 6" stroke="currentColor" strokeWidth="1.4" />
+      </svg>
+    </button>
+  )
+}
+
 export function SaveError({ error }) {
   if (!error) return null
   return (
