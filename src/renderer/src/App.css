@@ -803,7 +803,39 @@ p.beat-summary {
   margin-top: 10px;
 }
 
-.edit-button {
+.main-pane .edit-button {
   padding: 1px 8px;
   font-size: 12px;
+}
+
+.title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.edit-note {
+  margin: 0;
+  font-size: 12px;
+}
+
+.scene-form,
+.chapter-form {
+  max-width: 560px;
+  margin: 6px 0 10px;
+}
+
+.scene-form input[type='text'],
+.chapter-form input[type='text'],
+.chapter-form input[type='url'] {
+  width: 100%;
+}
+
+.work-title-row p {
+  margin: 0;
+}
+
+.posted-url {
+  overflow-wrap: anywhere;
 }
