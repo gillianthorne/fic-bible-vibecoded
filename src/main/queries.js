@@ -101,13 +101,35 @@ export function chapterOverview(db, libraryRoot, chapterId) {
     return {
       ...scene,
       wordcount: file.wordcount,
+      paragraphs: file.paragraphs,
       fileError: file.fileError,
       beats: { total: beatTotal, planned, inDraft, cut }
     }
   })
 
   const { workId, workTitle, workFolder, ...rest } = chapter
-  return { chapter: { ...rest, work: { id: workId, title: workTitle, folder: workFolder } }, scenes, ...total(scenes) }
+  return {
+    chapter: { ...rest, work: { id: workId, title: workTitle, folder: workFolder } },
+    scenes,
+    ...total(scenes),
+    editNotes: chapterEditNotes(db, chapterId)
+  }
+}
+
+// Every edit note in a chapter, for its overview: by kind (ignoring case,
+// so "Typo" and "typo" fall together, and notes with no kind last), then
+// by scene, then by paragraph, then in the order added. Each carries its
+// scene's id, position and title. Reads no files.
+export function chapterEditNotes(db, chapterId) {
+  return db
+    .prepare(
+      `SELECT n.id, n.paragraph, n.kind, n.note, n.status,
+              s.id AS sceneId, s.position AS scenePosition, s.title AS sceneTitle
+       FROM edit_notes n JOIN scenes s ON s.id = n.scene_id
+       WHERE s.chapter_id = ?
+       ORDER BY n.kind = '', n.kind COLLATE NOCASE, s.position, n.paragraph, n.id`
+    )
+    .all(chapterId)
 }
 
 // Scene detail: the scene's fields, its file-derived counts, and its beats

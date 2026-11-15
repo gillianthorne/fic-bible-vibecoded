@@ -6,7 +6,7 @@ import { openSqlite } from '../src/main/sqlite.js'
 import { migrate } from '../src/main/migrate.js'
 import { createHandlers } from '../src/main/handlers.js'
 import { createEditNote, deleteEditNote, updateEditNote } from '../src/main/edit.js'
-import { editNotes, suggestions } from '../src/main/queries.js'
+import { chapterEditNotes, editNotes, suggestions } from '../src/main/queries.js'
 
 const MIGRATIONS = fileURLToPath(new URL('../migrations', import.meta.url))
 
@@ -95,4 +95,24 @@ test('edit note handlers return { ok } results', () => {
   assert.equal(h['editNote:list']('1').ok, false)
   assert.deepEqual(h['editNote:delete'](created.data), { ok: true, data: null })
   assert.deepEqual(h['editNote:list'](1).data, [])
+})
+
+test('chapterEditNotes sorts by kind (ignoring case, none last), then scene, then paragraph', () => {
+  const db = setup()
+  db.exec(`
+    INSERT INTO chapters (id, work_id, number, title, folder) VALUES (2, 1, 2, 'C2', '02-C2');
+    INSERT INTO scenes (id, chapter_id, position, title, filename, pov) VALUES (3, 2, 1, 'Other', '01-o.md', '');
+  `)
+  createEditNote(db, 2, { paragraph: 1, kind: 'typo', note: 'S2 typo' })
+  createEditNote(db, 1, { paragraph: 5, kind: 'Pacing', note: 'S1 pacing 5' })
+  createEditNote(db, 1, { paragraph: 2, kind: 'pacing', note: 'S1 pacing 2' })
+  createEditNote(db, 1, { paragraph: 1, note: 'S1 no kind' })
+  createEditNote(db, 1, { paragraph: 9, kind: 'typo', note: 'S1 typo', status: 'fixed' })
+  createEditNote(db, 3, { paragraph: 1, kind: 'typo', note: 'other chapter' })
+  const notes = chapterEditNotes(db, 1)
+  assert.deepEqual(notes.map((n) => n.note), ['S1 pacing 2', 'S1 pacing 5', 'S1 typo', 'S2 typo', 'S1 no kind'])
+  assert.deepEqual(
+    { ...notes[3], id: 0 },
+    { id: 0, paragraph: 1, kind: 'typo', note: 'S2 typo', status: 'open', sceneId: 2, scenePosition: 2, sceneTitle: 'S2' }
+  )
 })

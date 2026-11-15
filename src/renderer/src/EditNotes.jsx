@@ -135,7 +135,11 @@ export function EditNoteForm({ initial, editKinds, paragraphs, fixedParagraph, i
   )
 }
 
-function NoteRow({ note, paragraphs, editKinds, onChanged }) {
+// One note as a table row: paragraph, kind, note, status, pencil and
+// trash can. With sceneCell (the chapter overview, where the kind is the
+// group's heading), that comes first and replaces the kind column; the
+// note is still the third column either way.
+export function NoteRow({ note, paragraphs, editKinds, onChanged, sceneCell }) {
   const [mode, setMode] = useState('view') // 'view' | 'edit' | 'confirm-delete'
   const { busy, error, save, clearError } = useSave()
   const done = () => {
@@ -167,10 +171,11 @@ function NoteRow({ note, paragraphs, editKinds, onChanged }) {
 
   return (
     <tr className={`edit-note edit-note-${note.status}`}>
+      {sceneCell && <td>{sceneCell}</td>}
       <td className="num">
         <NoteParagraph value={note.paragraph} paragraphs={paragraphs} />
       </td>
-      <td className="edit-note-kind">{note.kind}</td>
+      {!sceneCell && <td className="edit-note-kind">{note.kind}</td>}
       <td className="edit-note-cell">
         {/* Its own element, so a dealt-with note's fading and a cut note's
             strike-through stop at the text, not the delete prompt. */}

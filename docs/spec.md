@@ -59,6 +59,8 @@ Every scene in the chapter as a table: position, title, POV, status, wordcount, 
 
 The chapter's notes are shown and editable here.
 
+Below the scenes, every edit note in the chapter (v2), grouped by kind — ignoring case, with notes that have no kind last — and within each kind by scene, then paragraph. Only open notes show, with a count of the rest and a toggle to show them too. Each note's status, paragraph, kind and text are editable in place, and it can be deleted, as on the scene detail; its scene's name opens that scene.
+
 A Read chapter link opens the whole chapter's prose: every scene in order on one page, each numbered by paragraph from 1, with a jump list to each scene and links to the previous and next chapter.
 
 ### 4. Scene prose viewer (main pane)

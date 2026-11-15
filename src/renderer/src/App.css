@@ -2101,3 +2101,59 @@ select.edit-note-status-fixed {
   padding-top: 0;
   border-top: 0;
 }
+
+/* Chapter overview: the chapter's edit notes, a small table per kind.
+   The overview's scene-table rules (rows that open a scene, cells that
+   don't wrap) are undone here: these rows edit in place, and only the
+   scene name opens the scene. */
+
+.chapter-edit-notes {
+  margin-top: 32px;
+}
+
+.chapter-edit-notes .beat-summary .link-button {
+  font-size: inherit;
+}
+
+.chapter-edit-group h3 {
+  margin: 20px 0 0;
+  font-size: 16px;
+}
+
+.chapter-edit-count {
+  font-size: 13px;
+  font-weight: normal;
+}
+
+.chapter-overview table.edit-notes {
+  margin-top: 6px;
+}
+
+.chapter-overview table.edit-notes tbody tr {
+  cursor: default;
+}
+
+.chapter-overview table.edit-notes tbody tr:hover {
+  background: none;
+  box-shadow: none;
+}
+
+.chapter-overview table.edit-notes td:nth-child(3) {
+  white-space: normal;
+}
+
+.chapter-overview table.edit-notes td:first-child .link-button {
+  text-align: left;
+}
+
+/* Columns: everything shrinks to fit except the note, which takes the
+   rest. Specific enough to beat the overview's own column rules. */
+.chapter-overview .chapter-edit-group table.edit-notes tr > :is(th, td) {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.chapter-overview .chapter-edit-group table.edit-notes tr > :is(th, td):nth-child(3) {
+  width: auto;
+  white-space: normal;
+}

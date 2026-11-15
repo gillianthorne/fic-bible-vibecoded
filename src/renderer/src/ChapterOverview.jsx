@@ -2,8 +2,20 @@ import { useState } from 'react'
 import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
 import { number, Status, Wordcount } from './labels.jsx'
-import { CHAPTER_STATUSES, EditButton, Field, FormActions, NumberInput, SaveError, Select, toNumber, useSave } from './editing.jsx'
+import {
+  CHAPTER_STATUSES,
+  EditButton,
+  Field,
+  FormActions,
+  NumberInput,
+  SaveError,
+  Select,
+  toNumber,
+  useSave,
+  useSuggestions
+} from './editing.jsx'
 import Notes, { ExternalLink } from './Notes.jsx'
+import ChapterEditNotes from './ChapterEditNotes.jsx'
 
 // Every scene in the chapter, so its shape is readable without clicking
 // into anything. Wordcounts come from the scene files, read by the main
@@ -142,6 +154,7 @@ function ChapterHeader({ chapter, onChanged }) {
 // onOpenProse() opens the whole chapter's prose.
 export default function ChapterOverview({ chapterId, refreshKey, onChanged, onOpenScene, onOpenProse }) {
   const result = useQuery(() => window.ficBible.chapterOverview(chapterId), chapterId, refreshKey)
+  const { editKinds } = useSuggestions(refreshKey)
 
   if (result.loading) return <p className="muted">Loading…</p>
   if (result.ok === false) return <QueryError what="this chapter" error={result.error} />
@@ -227,6 +240,16 @@ export default function ChapterOverview({ chapterId, refreshKey, onChanged, onOp
             </tr>
           </tfoot>
         </table>
+      )}
+
+      {scenes.length > 0 && (
+        <ChapterEditNotes
+          notes={result.data.editNotes}
+          scenes={scenes}
+          editKinds={editKinds}
+          onChanged={onChanged}
+          onOpenScene={(sceneId) => onOpenScene(sceneId, chapter.id, chapter.work.id)}
+        />
       )}
     </article>
   )
