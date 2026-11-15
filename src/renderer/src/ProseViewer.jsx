@@ -4,7 +4,7 @@ import { QueryError } from './QueryError.jsx'
 import Markdown from './Markdown.jsx'
 import { number } from './labels.jsx'
 import { useSave, useSuggestions } from './editing.jsx'
-import { EditNoteForm, NotePopup, openCount } from './EditNotes.jsx'
+import { EditNoteForm, NoteCounts, NotePopup, openCount } from './EditNotes.jsx'
 
 const count = (n, noun) => `${number(n)} ${noun}${n === 1 ? '' : 's'}`
 
@@ -14,26 +14,14 @@ const count = (n, noun) => `${number(n)} ${noun}${n === 1 ? '' : 's'}`
 // already split by splitParagraphs, the same split the paragraph count
 // uses; the number shown is the paragraph's place in that list, 1-based.
 
-// A paragraph number that opens the add-note form, with the count of the
-// paragraph's open edit notes before it, as in the editor's margin. The
-// count opens those notes to read or edit (onOpenNotes gets the count's
+// A paragraph number that opens the add-note form, with the paragraph's
+// edit-note counts by status before it, as in the editor's margin. The
+// counts open those notes to read or edit (onOpenNotes gets their
 // element, to place them beside it).
 function NoteNumber({ n, notes, adding, onAdd, onOpenNotes }) {
-  const open = notes.filter((note) => note.status === 'open').length
   return (
     <span className="prose-number">
-      {open > 0 && (
-        <button
-          type="button"
-          className="prose-note-count"
-          data-note-anchor=""
-          title={`${open} open edit note${open === 1 ? '' : 's'}: click to view`}
-          aria-label={`Paragraph ${n}: ${open} open edit note${open === 1 ? '' : 's'}, view`}
-          onClick={(e) => onOpenNotes(e.currentTarget)}
-        >
-          {open}
-        </button>
-      )}
+      <NoteCounts paragraph={n} notes={notes} onOpen={onOpenNotes} />
       <button
         type="button"
         className={`prose-number-button${adding ? ' prose-number-active' : ''}`}
@@ -218,7 +206,7 @@ export default function ProseViewer({ sceneId, onBack, onOpenScene, onEditProse 
           </p>
         )}
         {scene.paragraphs?.length > 0 && (
-          <p className="muted prose-note-hint">Click a paragraph number to add an edit note, or a yellow count to see that paragraph’s notes.</p>
+          <p className="muted prose-note-hint">Click a paragraph number to add an edit note, or the coloured counts beside it to see that paragraph’s notes.</p>
         )}
         <Flip previous={scene.previous} next={scene.next} label={sceneLabel} onOpen={onOpenScene} what="scene" />
       </header>

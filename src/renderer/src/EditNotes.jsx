@@ -21,6 +21,41 @@ const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`
 
 export const openCount = (notes) => notes.filter((n) => n.status === 'open').length
 
+// How many of these notes have each status, as [status, count] pairs in
+// the order open, fixed, ignored, cut, leaving out statuses with none.
+export function statusCounts(notes) {
+  return EDIT_NOTE_STATUSES.map((s) => [s, notes.filter((n) => n.status === s).length]).filter(([, n]) => n > 0)
+}
+
+// Describes the counts in words, for a tooltip or accessible name:
+// "2 open, 1 fixed".
+export const describeCounts = (counts) => counts.map(([s, n]) => `${n} ${s}`).join(', ')
+
+// The counts before a paragraph number in the prose viewer: a small
+// numbered badge per status, as one button that opens the paragraph's
+// notes. (The editor's margin builds the same thing in proseEditor.js.)
+export function NoteCounts({ paragraph, notes, onOpen }) {
+  const counts = statusCounts(notes)
+  if (counts.length === 0) return null
+  const words = `${describeCounts(counts)} edit note${notes.length === 1 ? '' : 's'}`
+  return (
+    <button
+      type="button"
+      className="note-counts"
+      data-note-anchor=""
+      title={`${words}: click to view`}
+      aria-label={`Paragraph ${paragraph}: ${words}, view`}
+      onClick={(e) => onOpen(e.currentTarget)}
+    >
+      {counts.map(([status, n]) => (
+        <span key={status} className={`note-count note-count-${status}`}>
+          {n}
+        </span>
+      ))}
+    </button>
+  )
+}
+
 // A note's paragraph, with a warning when the file has fewer paragraphs
 // (paragraphs added or removed above it since the note was written).
 export function NoteParagraph({ value, paragraphs }) {

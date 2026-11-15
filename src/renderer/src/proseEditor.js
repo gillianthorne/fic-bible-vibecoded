@@ -52,31 +52,42 @@ export const commands = {
 
 // ---- Paragraph numbers -------------------------------------------------
 
-// A paragraph number, with a count of the paragraph's open edit notes
-// before it (spec: Scene prose editor). Both are buttons: the count opens
-// the paragraph's notes, the number opens them ready to add one. Clicks
-// are handled by the gutter's click handler below.
+// A paragraph number, with the paragraph's edit-note counts before it
+// (spec: Scene prose editor): a small numbered badge per status, in the
+// order open, fixed, ignored, cut, matching the viewer's NoteCounts.
+// counts is those [status, count] pairs. The counts and the number are
+// buttons: the counts open the paragraph's notes, the number opens them
+// ready to add one. Clicks are handled by the gutter's click handler
+// below.
 class ParagraphNumber extends GutterMarker {
-  constructor(n, open) {
+  constructor(n, counts) {
     super()
     this.n = n
-    this.open = open
+    this.counts = counts
+    this.key = counts.map(([s, c]) => `${s}${c}`).join()
   }
   eq(other) {
-    return other.n === this.n && other.open === this.open
+    return other.n === this.n && other.key === this.key
   }
   toDOM() {
     const wrap = document.createElement('span')
-    if (this.open > 0) {
-      const count = document.createElement('button')
-      count.type = 'button'
-      count.className = 'cm-note-count'
-      count.dataset.paragraph = String(this.n)
-      count.dataset.noteAnchor = ''
-      count.textContent = String(this.open)
-      count.title = `${this.open} open edit note${this.open === 1 ? '' : 's'}: click to view`
-      count.setAttribute('aria-label', `Paragraph ${this.n}: ${count.title}`)
-      wrap.append(count)
+    if (this.counts.length > 0) {
+      const total = this.counts.reduce((sum, [, c]) => sum + c, 0)
+      const words = `${this.counts.map(([s, c]) => `${c} ${s}`).join(', ')} edit note${total === 1 ? '' : 's'}`
+      const group = document.createElement('button')
+      group.type = 'button'
+      group.className = 'note-counts'
+      group.dataset.paragraph = String(this.n)
+      group.dataset.noteAnchor = ''
+      group.title = `${words}: click to view`
+      group.setAttribute('aria-label', `Paragraph ${this.n}: ${words}, view`)
+      for (const [status, c] of this.counts) {
+        const badge = document.createElement('span')
+        badge.className = `note-count note-count-${status}`
+        badge.textContent = String(c)
+        group.append(badge)
+      }
+      wrap.append(group)
     }
     const number = document.createElement('button')
     number.type = 'button'
@@ -91,8 +102,9 @@ class ParagraphNumber extends GutterMarker {
   }
 }
 
-// Open edit-note counts by paragraph number, set from outside the editor
-// with setNoteCounts whenever the notes are read.
+// Edit-note counts by paragraph number, each a list of [status, count]
+// pairs, set from outside the editor with setNoteCounts whenever the
+// notes are read.
 export const setNoteCounts = StateEffect.define()
 
 const noteCountsField = StateField.define({
@@ -110,7 +122,7 @@ function paragraphMarkers(state) {
   const lines = []
   for (let i = 1; i <= doc.lines; i++) lines.push(doc.line(i).text)
   return RangeSet.of(
-    paragraphStartLines(lines).map((line, i) => new ParagraphNumber(i + 1, counts.get(i + 1) ?? 0).range(doc.line(line).from))
+    paragraphStartLines(lines).map((line, i) => new ParagraphNumber(i + 1, counts.get(i + 1) ?? []).range(doc.line(line).from))
   )
 }
 

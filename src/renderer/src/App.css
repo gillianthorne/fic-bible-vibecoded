@@ -923,7 +923,7 @@ p.beat-summary {
 
 .sheet-prose {
   max-width: 860px;
-  padding: 36px 72px 72px 44px;
+  padding: 36px 72px 72px 24px;
   background: var(--page);
   color: var(--page-ink);
 }
@@ -931,7 +931,8 @@ p.beat-summary {
 .prose-viewer {
   --prose-size: 18px;
   --prose-leading: 1.7;
-  --prose-gutter: 3.2rem;
+  /* Wide enough for a paragraph number and up to four edit-note counts. */
+  --prose-gutter: 5.2rem;
 }
 
 .prose-viewer header {
@@ -1751,13 +1752,7 @@ select.edit-note-status-fixed {
   text-decoration: underline;
 }
 
-button.prose-note-count:hover,
-button.prose-note-count:focus-visible {
-  background: var(--amber);
-  color: #fff;
-}
-
-.prose-number:has(.prose-note-count) {
+.prose-number:has(.note-counts) {
   opacity: 1;
 }
 
@@ -1765,15 +1760,13 @@ button.prose-note-count:focus-visible {
   position: relative;
 }
 
+/* The open count in the editor's notes panel heading. */
 .prose-note-count {
   display: inline-block;
   min-width: 15px;
-  margin-right: 4px;
   padding: 0 3px;
-  border: 0;
   border-radius: 8px;
   font-family: var(--sans);
-  cursor: pointer;
   background: var(--chip-drafting);
   color: var(--chip-drafting-ink);
   font-size: 10px;
@@ -1942,32 +1935,62 @@ button.prose-note-count:focus-visible {
   text-decoration: line-through;
 }
 
-/* Prose editor margin: a paragraph's open edit notes as a yellow count
-   before its number, matching the viewer's. Clicking it opens a popup
-   beside the paragraph to read, re-status or edit them. */
+/* Edit-note counts before a paragraph number, in the viewer and the
+   editor's margin: one small numbered badge per status the paragraph's
+   notes have, always in the order open, fixed, ignored, cut. The group
+   is one button that opens the paragraph's notes. */
 
-.editor-host .cm-paragraph-numbers .cm-gutterElement:has(.cm-note-count) {
+.editor-host .cm-paragraph-numbers .cm-gutterElement:has(.note-counts) {
   opacity: 1;
 }
 
-.editor-host .cm-note-count {
-  min-width: 15px;
-  margin-right: 4px;
-  padding: 0 3px;
+.note-counts {
+  display: inline-flex;
+  gap: 1px;
+  margin-right: 3px;
+  padding: 0;
   border: 0;
-  border-radius: 8px;
-  background: var(--chip-drafting);
-  color: var(--chip-drafting-ink);
-  font: 600 10px/15px var(--sans);
-  text-align: center;
+  border-radius: 7px;
+  background: none;
+  font-family: var(--sans);
   vertical-align: 1px;
   cursor: pointer;
 }
 
-.editor-host .cm-note-count:hover,
-.editor-host .cm-note-count:focus-visible {
-  background: var(--amber);
-  color: #fff;
+.note-counts:hover,
+.note-counts:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+
+.note-count {
+  min-width: 12px;
+  padding: 0 2px;
+  border-radius: 7px;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 13px;
+  text-align: center;
+}
+
+.note-count-open {
+  background: var(--chip-drafting);
+  color: var(--chip-drafting-ink);
+}
+
+.note-count-fixed {
+  background: var(--chip-posted);
+  color: var(--chip-posted-ink);
+}
+
+.note-count-ignored {
+  background: var(--chip-drafted);
+  color: var(--chip-drafted-ink);
+}
+
+.note-count-cut {
+  background: var(--red-line);
+  color: var(--red-ink);
 }
 
 .editor-layout {
@@ -2020,11 +2043,11 @@ button.prose-note-count:focus-visible {
   text-decoration: line-through;
 }
 
-/* The viewer's count sits in the paragraph-number column, whose line
-   height is the prose's; keep the badge its own small size. */
-.prose-number .prose-note-count {
-  font-size: 10px;
-  line-height: 15px;
+/* The viewer's counts sit in the paragraph-number column, whose line
+   height is the prose's; keep the badges their own small size. */
+.prose-number .note-count {
+  font-size: 9px;
+  line-height: 13px;
 }
 
 /* Editor margin: each paragraph number is a button that opens the notes

@@ -5,7 +5,7 @@ import { SaveError, useSuggestions } from './editing.jsx'
 import { number } from './labels.jsx'
 import { commands, createProseEditor, goToParagraph, setNoteCounts } from './proseEditor.js'
 import { countProse } from '../../main/prose.js'
-import { NoteParagraph, NotePopup, NoteStatus, openCount } from './EditNotes.jsx'
+import { NoteParagraph, NotePopup, NoteStatus, openCount, statusCounts } from './EditNotes.jsx'
 
 // Moves the cursor to a note's paragraph, then makes sure that line isn't
 // hidden under what's pinned at the top of the pane: the toolbar, and the
@@ -221,10 +221,8 @@ function Editor({ scene, onBack, onDirtyChange, onSaved }) {
   useEffect(() => {
     const view = viewRef.current
     if (!view || !notes.ok) return
-    const counts = new Map()
-    for (const note of notes.data) {
-      if (note.status === 'open') counts.set(note.paragraph, (counts.get(note.paragraph) ?? 0) + 1)
-    }
+    const byParagraph = Map.groupBy(notes.data, (note) => note.paragraph)
+    const counts = new Map([...byParagraph].map(([paragraph, list]) => [paragraph, statusCounts(list)]))
     view.dispatch({ effects: setNoteCounts.of(counts) })
   }, [notes])
 
