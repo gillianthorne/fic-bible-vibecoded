@@ -203,13 +203,16 @@ function Editor({ scene, onBack, onDirtyChange, onSaved }) {
   const layout = useRef(null)
   const closePopup = useCallback(() => setPopup(null), [])
 
-  // A count in the margin opens its paragraph's notes beside it, or
-  // closes them if they're already open.
-  const openPopup = (paragraph, count) => {
+  // A count in the margin opens its paragraph's notes beside it; a
+  // paragraph number opens them ready to add one. Clicking the same thing
+  // again closes them. Placed just right of the margin, clear of both.
+  const openPopup = (paragraph, anchor, adding) => {
     const frame = layout.current.getBoundingClientRect()
-    const at = count.getBoundingClientRect()
+    const at = (anchor.closest('.cm-gutterElement') ?? anchor).getBoundingClientRect()
     setPopup((open) =>
-      open?.paragraph === paragraph ? null : { paragraph, top: at.top - frame.top - 8, left: at.right - frame.left + 10 }
+      open?.paragraph === paragraph && open.adding === adding
+        ? null
+        : { paragraph, adding, top: at.top - frame.top - 8, left: at.right - frame.left + 6 }
     )
   }
   const openPopupRef = useRef(openPopup)
@@ -231,7 +234,7 @@ function Editor({ scene, onBack, onDirtyChange, onSaved }) {
       text: scene.text,
       onChange: setText,
       onSave: () => saveRef.current(),
-      onNoteCount: (paragraph, count) => openPopupRef.current(paragraph, count)
+      onNotes: (paragraph, anchor, adding) => openPopupRef.current(paragraph, anchor, adding)
     })
     viewRef.current = view
     view.focus()
@@ -308,6 +311,8 @@ function Editor({ scene, onBack, onDirtyChange, onSaved }) {
         <NotesPanel result={notes} onChanged={notesChanged} viewRef={viewRef} paragraphs={counts.paragraphs} />
         {popup && (
           <NotePopup
+            key={`${popup.paragraph}-${popup.adding}`}
+            sceneId={scene.id}
             popup={popup}
             notes={notes.ok ? notes.data.filter((n) => n.paragraph === popup.paragraph) : []}
             editKinds={editKinds}

@@ -2026,3 +2026,41 @@ button.prose-note-count:focus-visible {
   font-size: 10px;
   line-height: 15px;
 }
+
+/* Editor margin: each paragraph number is a button that opens the notes
+   popup ready to add a note. Quiet until hovered, like the viewer's. */
+.editor-host .cm-paragraph-number {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.editor-host .cm-paragraph-number:hover,
+.editor-host .cm-paragraph-number:focus-visible {
+  color: var(--link);
+  text-decoration: underline;
+}
+
+.editor-host .cm-paragraph-numbers .cm-gutterElement:hover {
+  opacity: 1;
+}
+
+.editor-popup-new {
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.editor-popup-add {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--rule);
+}
+
+.editor-popup-head + .editor-popup-add {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}

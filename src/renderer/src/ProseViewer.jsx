@@ -26,7 +26,7 @@ function NoteNumber({ n, notes, adding, onAdd, onOpenNotes }) {
         <button
           type="button"
           className="prose-note-count"
-          data-note-count=""
+          data-note-anchor=""
           title={`${open} open edit note${open === 1 ? '' : 's'}: click to view`}
           aria-label={`Paragraph ${n}: ${open} open edit note${open === 1 ? '' : 's'}, view`}
           onClick={(e) => onOpenNotes(e.currentTarget)}
@@ -134,6 +134,8 @@ export function Body({ scene, editKinds = [], onNotesChanged }) {
       </ol>
       {popup && (
         <NotePopup
+          key={popup.paragraph}
+          sceneId={scene.id}
           popup={popup}
           notes={scene.editNotes.filter((note) => note.paragraph === popup.paragraph)}
           editKinds={editKinds}

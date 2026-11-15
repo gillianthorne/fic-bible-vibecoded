@@ -218,16 +218,39 @@ function PopupNote({ note, editKinds, paragraphs, onChanged }) {
   )
 }
 
-// The notes for one paragraph, opened from its yellow count (in the prose
-// viewer, or the prose editor's margin) and placed beside it. Escape or a click elsewhere closes it. Shows every
+// The add form inside the popup. The paragraph is the one the popup is
+// for, so it isn't asked for; a new note starts open.
+function PopupAdd({ sceneId, paragraph, editKinds, onDone, onCancel }) {
+  const { busy, error, save } = useSave()
+  return (
+    <EditNoteForm
+      initial={{ paragraph, kind: '', status: 'open', note: '' }}
+      editKinds={editKinds}
+      fixedParagraph
+      isNew
+      busy={busy}
+      error={error}
+      saveLabel="Add note"
+      onSubmit={(fields) => save(() => window.ficBible.createEditNote(sceneId, fields), onDone)}
+      onCancel={onCancel}
+    />
+  )
+}
+
+// The notes for one paragraph, placed beside what opened it: a yellow
+// count (in the prose viewer, or the prose editor's margin), or a
+// paragraph number in the editor's margin, which opens it ready to add a
+// note (popup.adding). Escape or a click elsewhere closes it. Shows every
 // note on the paragraph, dealt-with ones too, so a status just changed
-// can be changed back.
-export function NotePopup({ popup, notes, editKinds, paragraphs, onChanged, onClose }) {
+// can be changed back. What opens it is marked data-note-anchor, so
+// clicking it again toggles rather than closing and reopening.
+export function NotePopup({ sceneId, popup, notes, editKinds, paragraphs, onChanged, onClose }) {
   const box = useRef(null)
+  const [adding, setAdding] = useState(Boolean(popup.adding))
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
     const onDown = (e) => {
-      if (box.current?.contains(e.target) || e.target.closest?.('[data-note-count]')) return
+      if (box.current?.contains(e.target) || e.target.closest?.('[data-note-anchor]')) return
       onClose()
     }
     document.addEventListener('keydown', onKey)
@@ -252,14 +275,31 @@ export function NotePopup({ popup, notes, editKinds, paragraphs, onChanged, onCl
           ✕
         </button>
       </div>
-      {notes.length === 0 ? (
-        <p className="muted">No edit notes here.</p>
-      ) : (
+      {notes.length === 0 && !adding && <p className="muted">No edit notes here.</p>}
+      {notes.length > 0 && (
         <ul className="editor-notes-list">
           {notes.map((note) => (
             <PopupNote key={note.id} note={note} editKinds={editKinds} paragraphs={paragraphs} onChanged={onChanged} />
           ))}
         </ul>
+      )}
+      {adding ? (
+        <div className="editor-popup-add">
+          <PopupAdd
+            sceneId={sceneId}
+            paragraph={popup.paragraph}
+            editKinds={editKinds}
+            onDone={() => {
+              setAdding(false)
+              onChanged()
+            }}
+            onCancel={() => (notes.length === 0 ? onClose() : setAdding(false))}
+          />
+        </div>
+      ) : (
+        <button type="button" className="link-button editor-popup-new" onClick={() => setAdding(true)}>
+          + Add note
+        </button>
       )}
     </div>
   )

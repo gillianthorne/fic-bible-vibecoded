@@ -53,8 +53,9 @@ export const commands = {
 // ---- Paragraph numbers -------------------------------------------------
 
 // A paragraph number, with a count of the paragraph's open edit notes
-// before it (spec: Scene prose editor). The count is a button: clicking
-// it is handled by the gutter's click handler below.
+// before it (spec: Scene prose editor). Both are buttons: the count opens
+// the paragraph's notes, the number opens them ready to add one. Clicks
+// are handled by the gutter's click handler below.
 class ParagraphNumber extends GutterMarker {
   constructor(n, open) {
     super()
@@ -71,13 +72,21 @@ class ParagraphNumber extends GutterMarker {
       count.type = 'button'
       count.className = 'cm-note-count'
       count.dataset.paragraph = String(this.n)
-      count.dataset.noteCount = ''
+      count.dataset.noteAnchor = ''
       count.textContent = String(this.open)
       count.title = `${this.open} open edit note${this.open === 1 ? '' : 's'}: click to view`
       count.setAttribute('aria-label', `Paragraph ${this.n}: ${count.title}`)
       wrap.append(count)
     }
-    wrap.append(String(this.n))
+    const number = document.createElement('button')
+    number.type = 'button'
+    number.className = 'cm-paragraph-number'
+    number.dataset.paragraph = String(this.n)
+    number.dataset.noteAnchor = ''
+    number.textContent = String(this.n)
+    number.title = `Add an edit note at paragraph ${this.n}`
+    number.setAttribute('aria-label', `Paragraph ${this.n}: add an edit note`)
+    wrap.append(number)
     return wrap
   }
 }
@@ -129,19 +138,20 @@ export function goToParagraph(view, n) {
   return true
 }
 
-// onNoteCount(paragraph, element) is called when a count is clicked.
-const paragraphGutter = (onNoteCount) => [
+// onNotes(paragraph, element, adding) is called when a count (adding
+// false) or a paragraph number (adding true) is clicked.
+const paragraphGutter = (onNotes) => [
   noteCountsField,
   paragraphField,
   gutter({
     class: 'cm-paragraph-numbers',
     markers: (view) => view.state.field(paragraphField),
     domEventHandlers: {
-      mousedown: (_view, _line, event) => Boolean(event.target.closest?.('.cm-note-count')),
+      mousedown: (_view, _line, event) => Boolean(event.target.closest?.('[data-note-anchor]')),
       click: (_view, _line, event) => {
-        const count = event.target.closest?.('.cm-note-count')
-        if (!count) return false
-        onNoteCount(Number(count.dataset.paragraph), count)
+        const anchor = event.target.closest?.('[data-note-anchor]')
+        if (!anchor) return false
+        onNotes(Number(anchor.dataset.paragraph), anchor, anchor.classList.contains('cm-paragraph-number'))
         return true
       }
     }
@@ -167,10 +177,11 @@ const proseHighlight = HighlightStyle.define([
 // ---- The editor --------------------------------------------------------
 
 // Creates the editor in `parent` with `text`. onChange(text) is called
-// after each edit, onSave() on Ctrl-S, onNoteCount(paragraph, element)
-// when an edit-note count in the margin is clicked. Returns the
+// after each edit, onSave() on Ctrl-S, onNotes(paragraph, element,
+// adding) when an edit-note count or a paragraph number in the margin is
+// clicked. Returns the
 // EditorView; call destroy() on it when done.
-export function createProseEditor({ parent, text, onChange, onSave, onNoteCount }) {
+export function createProseEditor({ parent, text, onChange, onSave, onNotes }) {
   const ownKeys = keymap.of([
     // Before the default keymap, which uses Mod-i to select the
     // surrounding syntax.
@@ -192,7 +203,7 @@ export function createProseEditor({ parent, text, onChange, onSave, onNoteCount 
         keymap.of([...defaultKeymap, ...historyKeymap]),
         markdown({ base: markdownLanguage }),
         syntaxHighlighting(proseHighlight),
-        paragraphGutter(onNoteCount),
+        paragraphGutter(onNotes),
         EditorView.contentAttributes.of({ spellcheck: 'true', autocorrect: 'on', 'aria-label': 'Scene prose' }),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) onChange(update.state.doc.toString())
