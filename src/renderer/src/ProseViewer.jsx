@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
 import Markdown from './Markdown.jsx'
 import { number } from './labels.jsx'
 import { useSave, useSuggestions } from './editing.jsx'
-import { EditNoteForm, openCount } from './EditNotes.jsx'
+import { EditNoteForm, NotePopup, openCount } from './EditNotes.jsx'
 
 const count = (n, noun) => `${number(n)} ${noun}${n === 1 ? '' : 's'}`
 
@@ -15,30 +15,35 @@ const count = (n, noun) => `${number(n)} ${noun}${n === 1 ? '' : 's'}`
 // uses; the number shown is the paragraph's place in that list, 1-based.
 
 // A paragraph number that opens the add-note form, with the count of the
-// paragraph's open edit notes beside it. Their text is the tooltip.
-function NoteNumber({ n, notes, adding, onClick }) {
-  const open = notes.filter((note) => note.status === 'open')
-  const title = [
-    `Add an edit note at paragraph ${n}`,
-    ...open.map((note) => `• ${note.kind ? `${note.kind}: ` : ''}${note.note}`)
-  ].join('\n')
+// paragraph's open edit notes before it, as in the editor's margin. The
+// count opens those notes to read or edit (onOpenNotes gets the count's
+// element, to place them beside it).
+function NoteNumber({ n, notes, adding, onAdd, onOpenNotes }) {
+  const open = notes.filter((note) => note.status === 'open').length
   return (
     <span className="prose-number">
+      {open > 0 && (
+        <button
+          type="button"
+          className="prose-note-count"
+          data-note-count=""
+          title={`${open} open edit note${open === 1 ? '' : 's'}: click to view`}
+          aria-label={`Paragraph ${n}: ${open} open edit note${open === 1 ? '' : 's'}, view`}
+          onClick={(e) => onOpenNotes(e.currentTarget)}
+        >
+          {open}
+        </button>
+      )}
       <button
         type="button"
         className={`prose-number-button${adding ? ' prose-number-active' : ''}`}
-        title={title}
-        aria-label={`Paragraph ${n}${open.length ? `, ${open.length} open edit notes` : ''}: add an edit note`}
+        title={`Add an edit note at paragraph ${n}`}
+        aria-label={`Paragraph ${n}: add an edit note`}
         aria-expanded={adding}
-        onClick={onClick}
+        onClick={onAdd}
       >
         {n}
       </button>
-      {open.length > 0 && (
-        <span className="prose-note-count" aria-hidden="true">
-          {open.length}
-        </span>
-      )}
     </span>
   )
 }
@@ -62,12 +67,23 @@ function AddNoteHere({ sceneId, paragraph, editKinds, onDone, onCancel }) {
   )
 }
 
-// With onNoteAdded, each paragraph number opens a form to add an edit
-// note there (spec: Scene prose viewer). That writes a database row only;
-// the prose stays read-only. Without it (the chapter read view), the
-// numbers are plain text.
-export function Body({ scene, editKinds = [], onNoteAdded }) {
+// With onNotesChanged, each paragraph number opens a form to add an edit
+// note there, and a paragraph's count of open notes opens them to read or
+// edit (spec: Scene prose viewer). Both write database rows only; the
+// prose stays read-only. Without it (the chapter read view), the numbers
+// are plain text.
+export function Body({ scene, editKinds = [], onNotesChanged }) {
   const [adding, setAdding] = useState(null)
+  const [popup, setPopup] = useState(null) // { paragraph, top, left } | null
+  const list = useRef(null)
+  const closePopup = useCallback(() => setPopup(null), [])
+  const openPopup = (paragraph, count) => {
+    const frame = list.current.getBoundingClientRect()
+    const at = count.getBoundingClientRect()
+    setPopup((open) =>
+      open?.paragraph === paragraph ? null : { paragraph, top: at.top - frame.top - 8, left: at.right - frame.left + 10 }
+    )
+  }
   if (scene.fileError !== null) {
     const what = scene.fileError === 'ENOENT' ? 'The scene file is missing' : "The scene file couldn't be read"
     return (
@@ -79,41 +95,54 @@ export function Body({ scene, editKinds = [], onNoteAdded }) {
   if (scene.paragraphs.length === 0) return <p className="muted">No paragraphs yet: the file is empty.</p>
 
   return (
-    <ol className="prose">
-      {scene.paragraphs.map((paragraph, i) => {
-        const n = i + 1
-        return (
-          <li key={i} className="prose-paragraph">
-            {onNoteAdded ? (
-              <NoteNumber
-                n={n}
-                notes={scene.editNotes.filter((note) => note.paragraph === n)}
-                adding={adding === n}
-                onClick={() => setAdding(adding === n ? null : n)}
-              />
-            ) : (
-              <span className="prose-number">{n}</span>
-            )}
-            <div className="prose-text">
-              <Markdown paragraph={paragraph} />
-            </div>
-            {adding === n && (
-              <AddNoteHere
-                key={n}
-                sceneId={scene.id}
-                paragraph={n}
-                editKinds={editKinds}
-                onCancel={() => setAdding(null)}
-                onDone={() => {
-                  setAdding(null)
-                  onNoteAdded()
-                }}
-              />
-            )}
-          </li>
-        )
-      })}
-    </ol>
+    <div className="prose-frame" ref={list}>
+      <ol className="prose">
+        {scene.paragraphs.map((paragraph, i) => {
+          const n = i + 1
+          return (
+            <li key={i} className="prose-paragraph">
+              {onNotesChanged ? (
+                <NoteNumber
+                  n={n}
+                  notes={scene.editNotes.filter((note) => note.paragraph === n)}
+                  adding={adding === n}
+                  onAdd={() => setAdding(adding === n ? null : n)}
+                  onOpenNotes={(count) => openPopup(n, count)}
+                />
+              ) : (
+                <span className="prose-number">{n}</span>
+              )}
+              <div className="prose-text">
+                <Markdown paragraph={paragraph} />
+              </div>
+              {adding === n && (
+                <AddNoteHere
+                  key={n}
+                  sceneId={scene.id}
+                  paragraph={n}
+                  editKinds={editKinds}
+                  onCancel={() => setAdding(null)}
+                  onDone={() => {
+                    setAdding(null)
+                    onNotesChanged()
+                  }}
+                />
+              )}
+            </li>
+          )
+        })}
+      </ol>
+      {popup && (
+        <NotePopup
+          popup={popup}
+          notes={scene.editNotes.filter((note) => note.paragraph === popup.paragraph)}
+          editKinds={editKinds}
+          paragraphs={scene.paragraphs.length}
+          onChanged={onNotesChanged}
+          onClose={closePopup}
+        />
+      )}
+    </div>
   )
 }
 
@@ -187,7 +216,7 @@ export default function ProseViewer({ sceneId, onBack, onOpenScene, onEditProse 
           </p>
         )}
         {scene.paragraphs?.length > 0 && (
-          <p className="muted prose-note-hint">Click a paragraph number to add an edit note.</p>
+          <p className="muted prose-note-hint">Click a paragraph number to add an edit note, or a yellow count to see that paragraph’s notes.</p>
         )}
         <Flip previous={scene.previous} next={scene.next} label={sceneLabel} onOpen={onOpenScene} what="scene" />
       </header>
@@ -195,7 +224,7 @@ export default function ProseViewer({ sceneId, onBack, onOpenScene, onEditProse 
         key={scene.id}
         scene={scene}
         editKinds={editKinds}
-        onNoteAdded={() => setNotesVersion((v) => v + 1)}
+        onNotesChanged={() => setNotesVersion((v) => v + 1)}
       />
       <footer className="prose-footer">
         <Flip previous={scene.previous} next={scene.next} label={sceneLabel} onOpen={onOpenScene} what="scene" />

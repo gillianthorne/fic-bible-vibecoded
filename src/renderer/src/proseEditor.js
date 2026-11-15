@@ -71,6 +71,7 @@ class ParagraphNumber extends GutterMarker {
       count.type = 'button'
       count.className = 'cm-note-count'
       count.dataset.paragraph = String(this.n)
+      count.dataset.noteCount = ''
       count.textContent = String(this.open)
       count.title = `${this.open} open edit note${this.open === 1 ? '' : 's'}: click to view`
       count.setAttribute('aria-label', `Paragraph ${this.n}: ${count.title}`)

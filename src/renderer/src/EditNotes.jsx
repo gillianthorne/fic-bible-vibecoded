@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   EDIT_NOTE_STATUSES,
   Field,
@@ -170,6 +170,98 @@ function NoteRow({ note, paragraphs, editKinds, onChanged }) {
         )}
       </td>
     </tr>
+  )
+}
+
+// One note in the popup: read, change its status, or edit it in full.
+function PopupNote({ note, editKinds, paragraphs, onChanged }) {
+  const [editing, setEditing] = useState(false)
+  const { busy, error, save, clearError } = useSave()
+
+  if (editing) {
+    return (
+      <li className="editor-note editor-note-editing">
+        <EditNoteForm
+          initial={note}
+          editKinds={editKinds}
+          paragraphs={paragraphs}
+          busy={busy}
+          error={error}
+          onSubmit={(fields) =>
+            save(
+              () => window.ficBible.updateEditNote(note.id, fields),
+              () => {
+                setEditing(false)
+                onChanged()
+              }
+            )
+          }
+          onCancel={() => {
+            clearError()
+            setEditing(false)
+          }}
+        />
+      </li>
+    )
+  }
+  return (
+    <li className={`editor-note edit-note-${note.status}`}>
+      {note.kind && <span className="editor-note-meta edit-note-kind">{note.kind}</span>}
+      <span className="edit-note-text">{note.note}</span>
+      <span className="editor-popup-tools">
+        <NoteStatus note={note} onChanged={onChanged} label={`Status of the note: ${note.note}`} />
+        <button type="button" className="link-button" onClick={() => setEditing(true)}>
+          Edit
+        </button>
+      </span>
+    </li>
+  )
+}
+
+// The notes for one paragraph, opened from its yellow count (in the prose
+// viewer, or the prose editor's margin) and placed beside it. Escape or a click elsewhere closes it. Shows every
+// note on the paragraph, dealt-with ones too, so a status just changed
+// can be changed back.
+export function NotePopup({ popup, notes, editKinds, paragraphs, onChanged, onClose }) {
+  const box = useRef(null)
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && onClose()
+    const onDown = (e) => {
+      if (box.current?.contains(e.target) || e.target.closest?.('[data-note-count]')) return
+      onClose()
+    }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('mousedown', onDown)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('mousedown', onDown)
+    }
+  }, [onClose])
+
+  return (
+    <div
+      ref={box}
+      className="editor-popup"
+      role="dialog"
+      aria-label={`Edit notes at paragraph ${popup.paragraph}`}
+      style={{ top: popup.top, left: popup.left }}
+    >
+      <div className="editor-popup-head">
+        <strong>¶ {popup.paragraph}</strong>
+        <button type="button" className="link-button" aria-label="Close" onClick={onClose}>
+          ✕
+        </button>
+      </div>
+      {notes.length === 0 ? (
+        <p className="muted">No edit notes here.</p>
+      ) : (
+        <ul className="editor-notes-list">
+          {notes.map((note) => (
+            <PopupNote key={note.id} note={note} editKinds={editKinds} paragraphs={paragraphs} onChanged={onChanged} />
+          ))}
+        </ul>
+      )}
+    </div>
   )
 }
 

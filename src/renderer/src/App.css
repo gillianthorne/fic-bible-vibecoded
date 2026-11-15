@@ -1751,16 +1751,29 @@ select.edit-note-status-fixed {
   text-decoration: underline;
 }
 
+button.prose-note-count:hover,
+button.prose-note-count:focus-visible {
+  background: var(--amber);
+  color: #fff;
+}
+
 .prose-number:has(.prose-note-count) {
   opacity: 1;
+}
+
+.prose-frame {
+  position: relative;
 }
 
 .prose-note-count {
   display: inline-block;
   min-width: 15px;
-  margin-left: 3px;
+  margin-right: 4px;
   padding: 0 3px;
+  border: 0;
   border-radius: 8px;
+  font-family: var(--sans);
+  cursor: pointer;
   background: var(--chip-drafting);
   color: var(--chip-drafting-ink);
   font-size: 10px;
@@ -2005,4 +2018,11 @@ select.edit-note-status-fixed {
 
 .editor-popup .editor-note.edit-note-cut .edit-note-text {
   text-decoration: line-through;
+}
+
+/* The viewer's count sits in the paragraph-number column, whose line
+   height is the prose's; keep the badge its own small size. */
+.prose-number .prose-note-count {
+  font-size: 10px;
+  line-height: 15px;
 }

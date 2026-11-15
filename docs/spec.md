@@ -65,7 +65,7 @@ A Read chapter link opens the whole chapter's prose: every scene in order on one
 
 Read-only display of the scene's markdown file **with paragraph numbers shown**. This exists specifically so a paragraph reference can be located, and so a beat can be pointed at a real passage. No editing, no formatting toolbar: editing is a separate screen, opened from an Edit prose button here and on the scene detail.
 
-Clicking a paragraph number opens a small form to add an edit note at that paragraph (v2): a correction or a note to self, for the next revising pass. Paragraphs with open edit notes show how many beside their number. Adding a note changes a database row only; the prose stays read-only.
+Clicking a paragraph number opens a small form to add an edit note at that paragraph (v2): a correction or a note to self, for the next revising pass. Paragraphs with open edit notes show how many just before their number, as the editor does. Clicking that count opens the paragraph's notes beside it, where each can have its status set or be edited in full. Adding or editing a note changes a database row only; the prose stays read-only.
 
 Previous and next links move through the work's scenes in reading order, across chapter ends.
 
@@ -77,7 +77,7 @@ The editor shows the markdown source, with its markers (`**`, `*`, `#`, `>`) lef
 
 A toolbar formats the selection: bold, italic, strikethrough, heading, blockquote, bulleted and numbered list, and a scene break. Bold and italic also have Ctrl-B and Ctrl-I (Cmd on a Mac). Each toggles: applied to text that already has it, it takes it off. Typing the markdown by hand works the same as using the buttons. No images.
 
-Paragraphs with open edit notes show how many in the margin, beside their number, as in the viewer. Clicking that count opens the paragraph's notes beside it, where each can have its status set or be edited in full. Beside the editor, a panel lists the scene's edit notes in paragraph order; it always starts collapsed, for every scene. Clicking one moves the cursor to its paragraph. Each note's status can be set from the panel (open, fixed, ignored, cut), and the change is saved straight away, separately from the prose: it is a database row, not part of the file, so it neither needs Save nor counts as an unsaved change.
+Paragraphs with open edit notes show how many in the margin, just before their number, as in the viewer. Clicking that count opens the paragraph's notes beside it, where each can have its status set or be edited in full. Beside the editor, a panel lists the scene's edit notes in paragraph order; it always starts collapsed, for every scene. Clicking one moves the cursor to its paragraph. Each note's status can be set from the panel (open, fixed, ignored, cut), and the change is saved straight away, separately from the prose: it is a database row, not part of the file, so it neither needs Save nor counts as an unsaved change.
 
 Saving is explicit, with a Save button or Ctrl-S. There is no autosave. Leaving the editor, or closing the app, with unsaved changes asks first. The chapter read view stays read-only.
 
