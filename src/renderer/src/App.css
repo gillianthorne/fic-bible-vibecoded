@@ -1701,9 +1701,23 @@ table.edit-notes td:not(:nth-child(3)) {
   text-decoration: line-through;
 }
 
-.edit-note:hover .beat-tools,
-.edit-note .beat-tools:focus-within {
+/* Pencil and trash can: faint until the note's row (or popup entry) is
+   hovered, like the pencils after titles. The trash can turns red. */
+.edit-note-tools {
+  display: flex;
+  gap: 2px;
+}
+
+:is(.edit-note, .editor-note):hover .edit-button {
   opacity: 1;
+  color: var(--gold-deep);
+}
+
+.main-pane .delete-button:hover,
+.main-pane .delete-button:focus-visible,
+:is(.edit-note, .editor-note):hover .delete-button:hover {
+  color: var(--danger);
+  background: var(--red-soft);
 }
 
 .edit-note-editing td {

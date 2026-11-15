@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import {
+  DeleteButton,
   EDIT_NOTE_STATUSES,
+  EditButton,
   Field,
   FormActions,
   NumberInput,
@@ -169,8 +171,10 @@ function NoteRow({ note, paragraphs, editKinds, onChanged }) {
         <NoteParagraph value={note.paragraph} paragraphs={paragraphs} />
       </td>
       <td className="edit-note-kind">{note.kind}</td>
-      <td className="edit-note-text">
-        {note.note}
+      <td className="edit-note-cell">
+        {/* Its own element, so a dealt-with note's fading and a cut note's
+            strike-through stop at the text, not the delete prompt. */}
+        <span className="edit-note-text">{note.note}</span>
         {mode === 'confirm-delete' && (
           <div className="beat-confirm" role="alert">
             <span>Delete this edit note? This can’t be undone.</span>
@@ -194,13 +198,9 @@ function NoteRow({ note, paragraphs, editKinds, onChanged }) {
       </td>
       <td>
         {mode === 'view' && (
-          <div className="beat-tools edit-note-tools">
-            <button type="button" aria-label={`Edit ${label}`} disabled={busy} onClick={() => setMode('edit')}>
-              Edit
-            </button>
-            <button type="button" aria-label={`Delete ${label}`} disabled={busy} onClick={() => setMode('confirm-delete')}>
-              Delete
-            </button>
+          <div className="edit-note-tools">
+            <EditButton label={`Edit ${label}`} disabled={busy} onClick={() => setMode('edit')} />
+            <DeleteButton label={`Delete ${label}`} disabled={busy} onClick={() => setMode('confirm-delete')} />
           </div>
         )}
       </td>
@@ -245,9 +245,7 @@ function PopupNote({ note, editKinds, paragraphs, onChanged }) {
       <span className="edit-note-text">{note.note}</span>
       <span className="editor-popup-tools">
         <NoteStatus note={note} onChanged={onChanged} label={`Status of the note: ${note.note}`} />
-        <button type="button" className="link-button" onClick={() => setEditing(true)}>
-          Edit
-        </button>
+        <EditButton label="Edit this note" onClick={() => setEditing(true)} />
       </span>
     </li>
   )
