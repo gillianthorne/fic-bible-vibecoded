@@ -1,9 +1,30 @@
-import { chapterOverview, chapterProse, libraryOverview, navigationTree, sceneDetail, sceneProse, suggestions, workOverview } from './queries.js'
+import {
+  chapterOverview,
+  chapterProse,
+  editNotes,
+  libraryOverview,
+  navigationTree,
+  sceneDetail,
+  sceneProse,
+  suggestions,
+  workOverview
+} from './queries.js'
 import { checkLink } from './links.js'
 import { readSceneSource, saveSceneSource } from './save.js'
 import { createChapter, createScene, createWork } from './create.js'
 import { deleteWorks, importLibrary, worksMissingFrom } from './import.js'
-import { createBeat, deleteBeat, moveBeat, updateBeat, updateChapter, updateScene, updateWork } from './edit.js'
+import {
+  createBeat,
+  createEditNote,
+  deleteBeat,
+  deleteEditNote,
+  moveBeat,
+  updateBeat,
+  updateChapter,
+  updateEditNote,
+  updateScene,
+  updateWork
+} from './edit.js'
 
 // What the renderer can ask for, one function per IPC channel. No Electron
 // imports, so these are tested with plain `node --test`.
@@ -139,6 +160,12 @@ export function createHandlers(open, library = null, links = null) {
     'beat:update': (beatId, patch) => respond(() => (updateBeat(open().db, beatId, patch), null)),
     'beat:move': (beatId, direction) => respond(() => (moveBeat(open().db, beatId, direction), null)),
     'beat:delete': (beatId) => respond(() => (deleteBeat(open().db, beatId), null)),
+
+    // Edit notes: rows only, never the scene file. The same shape as beats.
+    'editNote:list': (sceneId) => respond(() => editNotes(open().db, requireId(sceneId, 'sceneId'))),
+    'editNote:create': (sceneId, fields) => respond(() => createEditNote(open().db, sceneId, fields)),
+    'editNote:update': (noteId, patch) => respond(() => (updateEditNote(open().db, noteId, patch), null)),
+    'editNote:delete': (noteId) => respond(() => (deleteEditNote(open().db, noteId), null)),
 
     'scene:update': (sceneId, patch) => respond(() => (updateScene(open().db, sceneId, patch), null)),
     'chapter:update': (chapterId, patch) => respond(() => (updateChapter(open().db, chapterId, patch), null)),

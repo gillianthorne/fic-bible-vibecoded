@@ -1,10 +1,102 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
-import { SaveError } from './editing.jsx'
+import { SaveError, useSuggestions } from './editing.jsx'
 import { number } from './labels.jsx'
-import { commands, createProseEditor } from './proseEditor.js'
+import { commands, createProseEditor, goToParagraph, setNoteCounts } from './proseEditor.js'
 import { countProse } from '../../main/prose.js'
+import { NoteParagraph, NotePopup, NoteStatus, openCount, statusCounts } from './EditNotes.jsx'
+
+// Moves the cursor to a note's paragraph, then makes sure that line isn't
+// hidden under what's pinned at the top of the pane: the toolbar, and the
+// notes panel too when it sits above the text (a narrow editor) rather
+// than beside it. Measured after CodeMirror has scrolled, once the pinned
+// pieces have settled where they stick.
+function jumpToNote(view, paragraph, panel) {
+  if (!goToParagraph(view, paragraph)) return
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      const pane = document.querySelector('.main-pane')
+      const line = view.coordsAtPos(view.state.selection.main.head)
+      const stacked = getComputedStyle(panel).order === '-1'
+      const cover = stacked ? panel : document.querySelector('.editor-bar')
+      if (!pane || !line || !cover) return
+      const hidden = cover.getBoundingClientRect().bottom + 16 - line.top
+      if (hidden > 0) pane.scrollBy(0, -hidden)
+    })
+  )
+}
+
+// The scene's edit notes beside the editor (spec: Scene prose editor).
+// Clicking a note moves the cursor to its paragraph, counted in the text
+// as it is now; setting a status saves that row straight away. Neither
+// touches the prose, so neither is an unsaved change. It always starts
+// collapsed: the editor is remounted for each scene, so this does too.
+function NotesPanel({ result, onChanged, viewRef, paragraphs }) {
+  const [showAll, setShowAll] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
+
+  let body
+  if (result.loading) body = <p className="muted">Loading…</p>
+  else if (result.ok === false) body = <QueryError what="the edit notes" error={result.error} />
+  else if (result.data.length === 0)
+    body = <p className="muted">No edit notes. Add them from View prose, by clicking a paragraph number.</p>
+  else {
+    const notes = showAll ? result.data : result.data.filter((n) => n.status === 'open')
+    const hidden = result.data.length - openCount(result.data)
+    body = (
+      <>
+        {notes.length === 0 && <p className="muted">Every note has been dealt with.</p>}
+        <ul className="editor-notes-list">
+          {notes.map((note) => (
+            <li key={note.id} className={`editor-note edit-note-${note.status}`}>
+              <button
+                type="button"
+                className="editor-note-jump"
+                title={`Go to paragraph ${note.paragraph}`}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={(e) =>
+                  viewRef.current && jumpToNote(viewRef.current, note.paragraph, e.currentTarget.closest('.editor-notes'))
+                }
+              >
+                <span className="editor-note-meta">
+                  <NoteParagraph value={note.paragraph} paragraphs={paragraphs} />
+                  {note.kind && <span className="edit-note-kind"> · {note.kind}</span>}
+                </span>
+                <span className="edit-note-text">{note.note}</span>
+              </button>
+              <NoteStatus note={note} onChanged={onChanged} label={`Status of the note at paragraph ${note.paragraph}`} />
+            </li>
+          ))}
+        </ul>
+        {hidden > 0 && (
+          <button type="button" className="link-button editor-notes-toggle" onClick={() => setShowAll(!showAll)}>
+            {showAll ? 'Show open notes only' : `Show ${hidden} dealt with`}
+          </button>
+        )}
+      </>
+    )
+  }
+
+  const open = result.ok ? openCount(result.data) : null
+  return (
+    <aside className={`editor-notes${collapsed ? ' editor-notes-collapsed' : ''}`} aria-label="Edit notes">
+      <h2>
+        <button
+          type="button"
+          className="editor-notes-heading"
+          aria-expanded={!collapsed}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => setCollapsed(!collapsed)}
+        >
+          <span aria-hidden="true">{collapsed ? '▸' : '▾'}</span> Edit notes
+          {open ? <span className="prose-note-count">{open}</span> : null}
+        </button>
+      </h2>
+      {!collapsed && body}
+    </aside>
+  )
+}
 
 // Edits one scene's file (spec: Scene prose editor). The markdown source
 // is shown with its marks, styled as it reads. Saving is explicit; the
@@ -101,12 +193,46 @@ function Editor({ scene, onBack, onDirtyChange, onSaved }) {
   const saveRef = useRef(save)
   saveRef.current = save
 
+  // Edit notes: read here, shared by the panel, the counts in the margin
+  // and the popup a count opens. A change to any of them reads them again.
+  const [notesVersion, setNotesVersion] = useState(0)
+  const notes = useQuery(() => window.ficBible.editNotes(scene.id), scene.id, notesVersion)
+  const notesChanged = () => setNotesVersion((v) => v + 1)
+  const { editKinds } = useSuggestions(notesVersion)
+  const [popup, setPopup] = useState(null) // { paragraph, top, left } | null
+  const layout = useRef(null)
+  const closePopup = useCallback(() => setPopup(null), [])
+
+  // A count in the margin opens its paragraph's notes beside it; a
+  // paragraph number opens them ready to add one. Clicking the same thing
+  // again closes them. Placed just right of the margin, clear of both.
+  const openPopup = (paragraph, anchor, adding) => {
+    const frame = layout.current.getBoundingClientRect()
+    const at = (anchor.closest('.cm-gutterElement') ?? anchor).getBoundingClientRect()
+    setPopup((open) =>
+      open?.paragraph === paragraph && open.adding === adding
+        ? null
+        : { paragraph, adding, top: at.top - frame.top - 8, left: at.right - frame.left + 6 }
+    )
+  }
+  const openPopupRef = useRef(openPopup)
+  openPopupRef.current = openPopup
+
+  useEffect(() => {
+    const view = viewRef.current
+    if (!view || !notes.ok) return
+    const byParagraph = Map.groupBy(notes.data, (note) => note.paragraph)
+    const counts = new Map([...byParagraph].map(([paragraph, list]) => [paragraph, statusCounts(list)]))
+    view.dispatch({ effects: setNoteCounts.of(counts) })
+  }, [notes])
+
   useEffect(() => {
     const view = createProseEditor({
       parent: host.current,
       text: scene.text,
       onChange: setText,
-      onSave: () => saveRef.current()
+      onSave: () => saveRef.current(),
+      onNotes: (paragraph, anchor, adding) => openPopupRef.current(paragraph, anchor, adding)
     })
     viewRef.current = view
     view.focus()
@@ -178,7 +304,22 @@ function Editor({ scene, onBack, onDirtyChange, onSaved }) {
       </div>
       <SaveError error={status.error} />
 
-      <div className="editor-host" ref={host} title={scene.path} />
+      <div className="editor-layout" ref={layout}>
+        <div className="editor-host" ref={host} title={scene.path} />
+        <NotesPanel result={notes} onChanged={notesChanged} viewRef={viewRef} paragraphs={counts.paragraphs} />
+        {popup && (
+          <NotePopup
+            key={`${popup.paragraph}-${popup.adding}`}
+            sceneId={scene.id}
+            popup={popup}
+            notes={notes.ok ? notes.data.filter((n) => n.paragraph === popup.paragraph) : []}
+            editKinds={editKinds}
+            paragraphs={counts.paragraphs}
+            onChanged={notesChanged}
+            onClose={closePopup}
+          />
+        )}
+      </div>
     </article>
   )
 }

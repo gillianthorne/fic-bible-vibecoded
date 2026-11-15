@@ -923,7 +923,7 @@ p.beat-summary {
 
 .sheet-prose {
   max-width: 860px;
-  padding: 36px 72px 72px 44px;
+  padding: 36px 72px 72px 24px;
   background: var(--page);
   color: var(--page-ink);
 }
@@ -931,7 +931,8 @@ p.beat-summary {
 .prose-viewer {
   --prose-size: 18px;
   --prose-leading: 1.7;
-  --prose-gutter: 3.2rem;
+  /* Wide enough for a paragraph number and up to four edit-note counts. */
+  --prose-gutter: 5.2rem;
 }
 
 .prose-viewer header {
@@ -1646,4 +1647,513 @@ p.beat-summary {
 
 .editor-host .cm-prose-link {
   color: var(--link);
+}
+
+/* Edit notes (scene detail): a table of per-paragraph corrections and
+   notes, each status a select that saves as it changes. Dealt-with notes
+   fade so the open ones stand out. */
+
+.edit-notes-section {
+  margin-top: 28px;
+}
+
+table.edit-notes {
+  width: 100%;
+  margin-top: 10px;
+  border-collapse: collapse;
+}
+
+table.edit-notes th,
+table.edit-notes td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: top;
+}
+
+table.edit-notes th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+table.edit-notes th:not(:nth-child(3)),
+table.edit-notes td:not(:nth-child(3)) {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.edit-note-text {
+  white-space: pre-wrap;
+}
+
+.edit-note-kind {
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.edit-note:not(.edit-note-open) :is(.edit-note-text, .edit-note-kind, .edit-note-paragraph) {
+  color: var(--ink-soft);
+  opacity: 0.7;
+}
+
+.edit-note-cut .edit-note-text {
+  text-decoration: line-through;
+}
+
+/* Pencil and trash can: faint until the note's row (or popup entry) is
+   hovered, like the pencils after titles. The trash can turns red. */
+.edit-note-tools {
+  display: flex;
+  gap: 2px;
+}
+
+:is(.edit-note, .editor-note):hover .edit-button {
+  opacity: 1;
+  color: var(--gold-deep);
+}
+
+.main-pane .delete-button:hover,
+.main-pane .delete-button:focus-visible,
+:is(.edit-note, .editor-note):hover .delete-button:hover {
+  color: var(--danger);
+  background: var(--red-soft);
+}
+
+.edit-note-editing td {
+  background: var(--paper-sunk);
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+select.edit-note-status {
+  padding: 1px 4px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--paper-sunk);
+}
+
+select.edit-note-status-open {
+  border-color: var(--amber);
+  background: var(--chip-drafting);
+  color: var(--chip-drafting-ink);
+}
+
+select.edit-note-status-fixed {
+  background: var(--chip-posted);
+  color: var(--chip-posted-ink);
+}
+
+/* Prose viewer: each paragraph number is a button that opens a form to
+   add an edit note there. It keeps the number's quiet look until hovered.
+   A small count beside it shows the paragraph's open notes. */
+
+.prose-number-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.prose-number-button:hover,
+.prose-number-button:focus-visible,
+.prose-number-active {
+  color: var(--link);
+  text-decoration: underline;
+}
+
+.prose-number:has(.note-counts) {
+  opacity: 1;
+}
+
+.prose-frame {
+  position: relative;
+}
+
+/* The open count in the editor's notes panel heading. */
+.prose-note-count {
+  display: inline-block;
+  min-width: 15px;
+  padding: 0 3px;
+  border-radius: 8px;
+  font-family: var(--sans);
+  background: var(--chip-drafting);
+  color: var(--chip-drafting-ink);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 15px;
+  text-align: center;
+  vertical-align: 1px;
+}
+
+.prose-viewer header .prose-note-hint {
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.prose-add-note {
+  grid-column: 2;
+  margin: 8px 0 14px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--primary);
+  border-radius: 4px;
+  background: var(--paper-sunk);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* Prose editor: the scene's edit notes in a panel beside the text,
+   staying in view as the text scrolls. The page widens to make room.
+   In a narrow window the panel sits above the text instead. */
+
+.sheet-prose:has(.editor-notes) {
+  max-width: 1160px;
+}
+
+.editor-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 270px;
+  gap: 28px;
+  align-items: start;
+}
+
+.editor-notes {
+  position: sticky;
+  top: 64px;
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: var(--paper-sunk);
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.editor-notes h2 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.editor-notes .prose-note-count {
+  margin-left: 6px;
+  vertical-align: 2px;
+}
+
+.editor-notes > p {
+  margin: 0;
+}
+
+.editor-notes-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.editor-note {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.editor-note-jump {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.editor-note-jump:hover,
+.editor-note-jump:focus-visible {
+  background: var(--paper-shade);
+}
+
+.editor-note-meta {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.editor-note .edit-note-kind {
+  font-size: 12px;
+}
+
+.editor-notes-toggle {
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+/* Narrow (judged by the editor's own width, since the sidebar takes a
+   share of the window): the panel sits above the text and sticks just
+   under the toolbar, so it stays reachable after a jump. Its heading
+   collapses it to one line. */
+.prose-editor {
+  container-type: inline-size;
+}
+
+.editor-notes-heading {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.editor-notes-collapsed h2 {
+  margin: 0;
+}
+
+@container (max-width: 800px) {
+  .editor-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .editor-notes {
+    top: 58px;
+    z-index: 1;
+    order: -1;
+    max-height: 30vh;
+    margin-left: var(--prose-gutter);
+    padding: 8px 12px;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 0.08);
+  }
+}
+
+.editor-note:not(.edit-note-open) .editor-note-jump {
+  color: var(--ink-soft);
+}
+
+.editor-note.edit-note-cut .edit-note-text {
+  text-decoration: line-through;
+}
+
+/* Edit-note counts before a paragraph number, in the viewer and the
+   editor's margin: one small numbered badge per status the paragraph's
+   notes have, always in the order open, fixed, ignored, cut. The group
+   is one button that opens the paragraph's notes. */
+
+.editor-host .cm-paragraph-numbers .cm-gutterElement:has(.note-counts) {
+  opacity: 1;
+}
+
+.note-counts {
+  display: inline-flex;
+  gap: 1px;
+  margin-right: 3px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  font-family: var(--sans);
+  vertical-align: 1px;
+  cursor: pointer;
+}
+
+.note-counts:hover,
+.note-counts:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+
+.note-count {
+  min-width: 12px;
+  padding: 0 2px;
+  border-radius: 7px;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 13px;
+  text-align: center;
+}
+
+.note-count-open {
+  background: var(--chip-drafting);
+  color: var(--chip-drafting-ink);
+}
+
+.note-count-fixed {
+  background: var(--chip-posted);
+  color: var(--chip-posted-ink);
+}
+
+.note-count-ignored {
+  background: var(--chip-drafted);
+  color: var(--chip-drafted-ink);
+}
+
+.note-count-cut {
+  background: var(--red-line);
+  color: var(--red-ink);
+}
+
+.editor-layout {
+  position: relative;
+}
+
+.editor-popup {
+  position: absolute;
+  z-index: 3;
+  width: min(360px, 80%);
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 10px 14px 12px;
+  border: 1px solid var(--rule-strong);
+  border-left: 3px solid var(--primary);
+  border-radius: 6px;
+  background: var(--paper-sunk);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.16);
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.editor-popup-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.editor-popup > p {
+  margin: 4px 0 0;
+}
+
+.editor-popup-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.editor-popup .edit-note-text {
+  white-space: pre-wrap;
+}
+
+.editor-popup .editor-note:not(.edit-note-open) .edit-note-text {
+  color: var(--ink-soft);
+}
+
+.editor-popup .editor-note.edit-note-cut .edit-note-text {
+  text-decoration: line-through;
+}
+
+/* The viewer's counts sit in the paragraph-number column, whose line
+   height is the prose's; keep the badges their own small size. */
+.prose-number .note-count {
+  font-size: 9px;
+  line-height: 13px;
+}
+
+/* Editor margin: each paragraph number is a button that opens the notes
+   popup ready to add a note. Quiet until hovered, like the viewer's. */
+.editor-host .cm-paragraph-number {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.editor-host .cm-paragraph-number:hover,
+.editor-host .cm-paragraph-number:focus-visible {
+  color: var(--link);
+  text-decoration: underline;
+}
+
+.editor-host .cm-paragraph-numbers .cm-gutterElement:hover {
+  opacity: 1;
+}
+
+.editor-popup-new {
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.editor-popup-add {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--rule);
+}
+
+.editor-popup-head + .editor-popup-add {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* Chapter overview: the chapter's edit notes, a small table per kind.
+   The overview's scene-table rules (rows that open a scene, cells that
+   don't wrap) are undone here: these rows edit in place, and only the
+   scene name opens the scene. */
+
+.chapter-edit-notes {
+  margin-top: 32px;
+}
+
+.chapter-edit-notes .beat-summary .link-button {
+  font-size: inherit;
+}
+
+.chapter-edit-group h3 {
+  margin: 20px 0 0;
+  font-size: 16px;
+}
+
+.chapter-edit-count {
+  font-size: 13px;
+  font-weight: normal;
+}
+
+.chapter-overview table.edit-notes {
+  margin-top: 6px;
+}
+
+.chapter-overview table.edit-notes tbody tr {
+  cursor: default;
+}
+
+.chapter-overview table.edit-notes tbody tr:hover {
+  background: none;
+  box-shadow: none;
+}
+
+.chapter-overview table.edit-notes td:nth-child(3) {
+  white-space: normal;
+}
+
+.chapter-overview table.edit-notes td:first-child .link-button {
+  text-align: left;
+}
+
+/* Columns: everything shrinks to fit except the note, which takes the
+   rest. Specific enough to beat the overview's own column rules. */
+.chapter-overview .chapter-edit-group table.edit-notes tr > :is(th, td) {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.chapter-overview .chapter-edit-group table.edit-notes tr > :is(th, td):nth-child(3) {
+  width: auto;
+  white-space: normal;
 }

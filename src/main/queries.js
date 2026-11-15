@@ -101,13 +101,35 @@ export function chapterOverview(db, libraryRoot, chapterId) {
     return {
       ...scene,
       wordcount: file.wordcount,
+      paragraphs: file.paragraphs,
       fileError: file.fileError,
       beats: { total: beatTotal, planned, inDraft, cut }
     }
   })
 
   const { workId, workTitle, workFolder, ...rest } = chapter
-  return { chapter: { ...rest, work: { id: workId, title: workTitle, folder: workFolder } }, scenes, ...total(scenes) }
+  return {
+    chapter: { ...rest, work: { id: workId, title: workTitle, folder: workFolder } },
+    scenes,
+    ...total(scenes),
+    editNotes: chapterEditNotes(db, chapterId)
+  }
+}
+
+// Every edit note in a chapter, for its overview: by kind (ignoring case,
+// so "Typo" and "typo" fall together, and notes with no kind last), then
+// by scene, then by paragraph, then in the order added. Each carries its
+// scene's id, position and title. Reads no files.
+export function chapterEditNotes(db, chapterId) {
+  return db
+    .prepare(
+      `SELECT n.id, n.paragraph, n.kind, n.note, n.status,
+              s.id AS sceneId, s.position AS scenePosition, s.title AS sceneTitle
+       FROM edit_notes n JOIN scenes s ON s.id = n.scene_id
+       WHERE s.chapter_id = ?
+       ORDER BY n.kind = '', n.kind COLLATE NOCASE, s.position, n.paragraph, n.id`
+    )
+    .all(chapterId)
 }
 
 // Scene detail: the scene's fields, its file-derived counts, and its beats
@@ -145,8 +167,17 @@ export function sceneDetail(db, libraryRoot, sceneId) {
     wordcount: file.wordcount,
     paragraphs: file.paragraphs,
     fileError: file.fileError,
-    beats
+    beats,
+    editNotes: editNotes(db, sceneId)
   }
+}
+
+// A scene's edit notes: by paragraph, then in the order they were added.
+// Reads no files. An unknown scene just has none.
+export function editNotes(db, sceneId) {
+  return db
+    .prepare('SELECT id, paragraph, kind, note, status FROM edit_notes WHERE scene_id = ? ORDER BY paragraph, id')
+    .all(sceneId)
 }
 
 // Prose viewer: the scene's file split into paragraphs, in order. The
@@ -181,7 +212,8 @@ export function sceneProse(db, libraryRoot, sceneId) {
     work: { id: scene.workId, title: scene.workTitle },
     ...readProse(scenePath(libraryRoot, scene.workFolder, scene.chapterFolder, scene.filename)),
     previous: order[at - 1] ?? null,
-    next: order[at + 1] ?? null
+    next: order[at + 1] ?? null,
+    editNotes: editNotes(db, sceneId)
   }
 }
 
@@ -354,5 +386,11 @@ export function suggestions(db) {
        ORDER BY s.name COLLATE NOCASE`
     )
     .all()
-  return { kinds: usage('kind', 'beats'), povs: usage('pov', 'scenes'), fandoms, ships }
+  return {
+    kinds: usage('kind', 'beats'),
+    editKinds: usage('kind', 'edit_notes'),
+    povs: usage('pov', 'scenes'),
+    fandoms,
+    ships
+  }
 }

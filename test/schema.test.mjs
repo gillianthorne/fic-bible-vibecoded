@@ -34,7 +34,7 @@ test('creates exactly the spec tables, with no wordcount column', () => {
     .prepare("SELECT name FROM sqlite_schema WHERE type = 'table' ORDER BY name")
     .pluck()
     .all()
-  assert.deepEqual(tables, ['beats', 'chapters', 'fandoms', 'scenes', 'ships', 'works'])
+  assert.deepEqual(tables, ['beats', 'chapters', 'edit_notes', 'fandoms', 'scenes', 'ships', 'works'])
   for (const t of tables) {
     const cols = db.prepare(`SELECT name FROM pragma_table_info(?)`).pluck().all(t)
     assert.ok(!cols.some((c) => /word/i.test(c)), `${t} has a wordcount-like column`)
@@ -53,6 +53,10 @@ test('status defaults and CHECK constraints use the spec vocabulary', () => {
   assert.throws(() => db.prepare("UPDATE chapters SET status = 'done'").run(), /CHECK/)
   assert.throws(() => db.prepare("UPDATE scenes SET status = 'Drafted'").run(), /CHECK/)
   assert.throws(() => db.prepare("UPDATE beats SET status = 'landed'").run(), /CHECK/)
+  db.prepare("INSERT INTO edit_notes (scene_id, paragraph, note) VALUES (1, 1, 'x')").run()
+  assert.equal(db.prepare('SELECT status FROM edit_notes').pluck().get(), 'open')
+  for (const ok of ['fixed', 'ignored', 'cut']) db.prepare('UPDATE edit_notes SET status = ?').run(ok)
+  assert.throws(() => db.prepare("UPDATE edit_notes SET status = 'done'").run(), /CHECK/)
 })
 
 test('foreign keys reject orphans', () => {

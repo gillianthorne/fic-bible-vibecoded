@@ -7,12 +7,14 @@ import { useQuery } from './useQuery.js'
 export const BEAT_STATUSES = ['planned', 'in draft', 'cut']
 export const SCENE_STATUSES = ['outlined', 'drafting', 'drafted', 'revised']
 export const CHAPTER_STATUSES = ['drafting', 'ready to post', 'posted']
+export const EDIT_NOTE_STATUSES = ['open', 'fixed', 'ignored', 'cut']
 
-// Previously used kinds and POVs, and every fandom and ship, re-read
-// whenever refreshKey changes. A failed read just means no suggestions.
+// Previously used beat kinds, edit-note kinds and POVs, and every fandom
+// and ship, re-read whenever refreshKey changes. A failed read just means
+// no suggestions.
 export function useSuggestions(refreshKey) {
   const result = useQuery(() => window.ficBible.suggestions(), 'suggestions', refreshKey)
-  return result.ok ? result.data : { kinds: [], povs: [], fandoms: [], ships: [] }
+  return result.ok ? result.data : { kinds: [], editKinds: [], povs: [], fandoms: [], ships: [] }
 }
 
 // Runs a save call ({ ok, data } | { ok, error }) and tracks busy/error.
@@ -113,9 +115,9 @@ export function FormActions({ busy, onCancel, saveLabel = 'Save' }) {
 // A small pencil after a title that opens its edit form. Faint until the
 // title row is hovered or the button has focus. label names what it edits
 // ("Edit chapter"); it's the button's accessible name and its tooltip.
-export function EditButton({ label, onClick }) {
+export function EditButton({ label, onClick, disabled }) {
   return (
-    <button type="button" className="edit-button" aria-label={label} title={label} onClick={onClick}>
+    <button type="button" className="edit-button" aria-label={label} title={label} disabled={disabled} onClick={onClick}>
       <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
         <path
           d="M11.3 2.3a1.5 1.5 0 0 1 2.1 0l.3.3a1.5 1.5 0 0 1 0 2.1L5.5 12.9 2.5 13.5l.6-3 8.2-8.2Z"
@@ -125,6 +127,34 @@ export function EditButton({ label, onClick }) {
           strokeLinejoin="round"
         />
         <path d="M10 3.6 12.4 6" stroke="currentColor" strokeWidth="1.4" />
+      </svg>
+    </button>
+  )
+}
+
+// A small trash can, the pencil's partner, that starts deleting
+// something. Styled like the pencil, but red on hover. label names what
+// it deletes ("Delete edit note").
+export function DeleteButton({ label, onClick, disabled }) {
+  return (
+    <button
+      type="button"
+      className="edit-button delete-button"
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+        <path d="M2.5 4.2h11M6.2 4.2V2.7h3.6v1.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+        <path
+          d="M3.8 4.2l.7 9.1h7l.7-9.1"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinejoin="round"
+        />
+        <path d="M6.6 6.6v4.6M9.4 6.6v4.6" stroke="currentColor" strokeWidth="1.3" />
       </svg>
     </button>
   )
