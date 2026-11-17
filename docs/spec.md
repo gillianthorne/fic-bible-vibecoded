@@ -45,6 +45,8 @@ Works, each expanding to two groups, Characters (v2) and Chapters. Characters li
 
 Each work also has a third group, Notes (v2), holding the work's Lines (the line dictionary), its Timeline, and its note pages by name. New note pages are created here, at the end of the list.
 
+A work can be hidden (v2), for test works or ones set aside without deleting them. Each work's row has a Hide button, shown on hover or focus. A hidden work leaves the list of works, the home page (its table and its total wordcount) and search, and is listed instead in a Hidden works group at the bottom of the sidebar, folded by default. There it expands and opens as any work does, and has Unhide in place of Hide. Hiding changes only the database: the work's folder and files are untouched, and nothing is deleted.
+
 ### 2. Scene detail (main pane)
 
 The primary working view. Shows the scene's own fields — title, POV, status, position, wordcount — and its beats beneath them, in order.
@@ -91,7 +93,7 @@ The work's home page. At the top: the title, a link to the work page if one is s
 
 ### 6. Home page (main pane)
 
-The screen the app opens on. At the top, the total wordcount across every work. Below it, every work, grouped by fandom (works with none last), each group with its own wordcount, as a simple table: title, ship, chapter count, wordcount, and the work link if one is set. Clicking a work opens its work overview.
+The screen the app opens on. At the top, the total wordcount across every work that isn't hidden. Below it, every such work, grouped by fandom (works with none last), each group with its own wordcount, as a simple table: title, ship, chapter count, wordcount, and the work link if one is set. Clicking a work opens its work overview.
 
 ### 7. Character profile (main pane, v2)
 
@@ -105,7 +107,7 @@ Deleting a character deletes their row and fields; their notes file is left on d
 
 ### 8. Search (main pane, v2)
 
-Typing in the search box and pressing Enter lists every character, across every work, that matches. A character matches when the search text appears, ignoring case, in their name, age, birthday, any field's label or value, or their notes file. "bagel" finds every bagel order written down anywhere.
+Typing in the search box and pressing Enter lists every character, across every work that isn't hidden, that matches. A character matches when the search text appears, ignoring case, in their name, age, birthday, any field's label or value, or their notes file. "bagel" finds every bagel order written down anywhere.
 
 Results are grouped by work. Each shows the character's name and what matched: the field as "label: value", or a line of the notes around the match. Clicking a result opens that character's profile.
 
@@ -202,6 +204,7 @@ Four tables in a straight chain: a work has chapters, a chapter has scenes, a sc
 | works | notes | Free text: inspiration, anything general |
 | works | fandom_id | FK to fandoms, null until set |
 | works | ship_id | FK to ships, null for gen or until set; always a ship in the work's fandom |
+| works | hidden | 0 or 1, default 0; a hidden work is listed only under Hidden works (v2) |
 | chapters | work_id | FK to works |
 | chapters | number | Chapter number |
 | chapters | title | |
