@@ -16,15 +16,25 @@ import {
   createLine,
   createTimelineEvent,
   deleteLine,
+  deleteNotePage,
   deleteTimelineEvent,
   lineDictionary,
+  moveNotePage,
   moveTimelineEvent,
+  renameNotePage,
   timeline,
   updateLine,
   updateTimelineEvent
 } from './notes.js'
-import { readCharacterNotes, readSceneSource, saveCharacterNotes, saveSceneSource } from './save.js'
-import { createChapter, createCharacter, createScene, createWork } from './create.js'
+import {
+  readCharacterNotes,
+  readNotePage,
+  readSceneSource,
+  saveCharacterNotes,
+  saveNotePage,
+  saveSceneSource
+} from './save.js'
+import { createChapter, createCharacter, createNotePage, createScene, createWork } from './create.js'
 import { deleteWorks, importLibrary, worksMissingFrom } from './import.js'
 import {
   createBeat,
@@ -240,6 +250,28 @@ export function createHandlers(open, library = null, links = null) {
     'timeline:update': (eventId, patch) => respond(() => (updateTimelineEvent(open().db, eventId, patch), null)),
     'timeline:move': (eventId, direction) => respond(() => (moveTimelineEvent(open().db, eventId, direction), null)),
     'timeline:delete': (eventId) => respond(() => (deleteTimelineEvent(open().db, eventId), null)),
+
+    // Note pages: creating makes an empty <name>.md in the work's notes
+    // folder; renaming changes only the name shown; deleting leaves the
+    // file. Saving is guarded as scene:save is.
+    'notePage:create': (workId, name) =>
+      respond(() => {
+        const { db, libraryRoot } = open()
+        return createNotePage(db, libraryRoot, workId, name)
+      }),
+    'notePage:rename': (pageId, name) => respond(() => (renameNotePage(open().db, pageId, name), null)),
+    'notePage:move': (pageId, direction) => respond(() => (moveNotePage(open().db, pageId, direction), null)),
+    'notePage:delete': (pageId) => respond(() => (deleteNotePage(open().db, pageId), null)),
+    'notePage:read': (pageId) =>
+      respond(() => {
+        const { db, libraryRoot } = open()
+        return readNotePage(db, libraryRoot, pageId)
+      }),
+    'notePage:save': (pageId, text, baseHash) =>
+      respond(() => {
+        const { db, libraryRoot } = open()
+        return saveNotePage(db, libraryRoot, pageId, text, baseHash)
+      }),
 
     // Every work's characters whose name, age, birthday, fields or notes
     // file hold the text, ignoring case. Reads only.

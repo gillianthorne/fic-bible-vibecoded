@@ -1,16 +1,16 @@
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
-import { characterPath, scenePath } from './paths.js'
+import { characterPath, notePagePath, scenePath } from './paths.js'
 
-// Reading a scene file for the prose editor, or a character's notes file
-// for their profile, and saving it back. No Electron imports, so these are
+// Reading a scene file for the prose editor, a character's notes file for
+// their profile, or a note page, and saving it back. No Electron imports, so these are
 // tested with plain `node --test`.
 //
-// These two saves are the only writes the app makes to a file that has
+// These three saves are the only writes the app makes to a file that has
 // content (docs/spec.md, File handling). The guards, the same for both:
-// - only the scene's or character's own file, as its row names it, is
-//   written
+// - only the scene's, character's or note page's own file, as its row
+//   names it, is written
 // - the editor sends back the hash of the bytes it was given; if the file
 //   on disk no longer has that hash (another editor, a sync client), the
 //   save is refused and nothing is written
@@ -224,4 +224,37 @@ export function saveCharacterNotes(db, libraryRoot, characterId, text, baseHash)
   const character = findCharacter(db, libraryRoot, characterId)
   if (!character) throw new Error('That character no longer exists.')
   return saveSource(character.file, character.filename, text, baseHash, 'notes file')
+}
+
+// The note page's row and file path, or null for an unknown page.
+function findNotePage(db, libraryRoot, pageId) {
+  const page = db
+    .prepare(
+      `SELECT p.id, p.name, p.filename, w.id AS workId, w.title AS workTitle, w.folder AS workFolder
+       FROM note_pages p JOIN works w ON w.id = p.work_id WHERE p.id = ?`
+    )
+    .get(requireId(pageId, 'pageId'))
+  if (!page) return null
+  return { ...page, file: notePagePath(libraryRoot, page.workFolder, page.filename) }
+}
+
+// A note page for its editor, as readSceneSource. null for an unknown page.
+export function readNotePage(db, libraryRoot, pageId) {
+  const page = findNotePage(db, libraryRoot, pageId)
+  if (!page) return null
+  return {
+    id: page.id,
+    name: page.name,
+    filename: page.filename,
+    path: page.file,
+    work: { id: page.workId, title: page.workTitle },
+    ...readSource(page.file, 'note page file')
+  }
+}
+
+// Saves a note page over its file, as saveSceneSource.
+export function saveNotePage(db, libraryRoot, pageId, text, baseHash) {
+  const page = findNotePage(db, libraryRoot, pageId)
+  if (!page) throw new Error('That note page no longer exists.')
+  return saveSource(page.file, page.filename, text, baseHash, 'note page file')
 }

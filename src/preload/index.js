@@ -50,6 +50,12 @@ contextBridge.exposeInMainWorld('ficBible', {
   updateTimelineEvent: (eventId, patch) => ipcRenderer.invoke('timeline:update', eventId, patch),
   moveTimelineEvent: (eventId, direction) => ipcRenderer.invoke('timeline:move', eventId, direction),
   deleteTimelineEvent: (eventId) => ipcRenderer.invoke('timeline:delete', eventId),
+  createNotePage: (workId, name) => ipcRenderer.invoke('notePage:create', workId, name),
+  renameNotePage: (pageId, name) => ipcRenderer.invoke('notePage:rename', pageId, name),
+  moveNotePage: (pageId, direction) => ipcRenderer.invoke('notePage:move', pageId, direction),
+  deleteNotePage: (pageId) => ipcRenderer.invoke('notePage:delete', pageId),
+  notePage: (pageId) => ipcRenderer.invoke('notePage:read', pageId),
+  saveNotePage: (pageId, text, baseHash) => ipcRenderer.invoke('notePage:save', pageId, text, baseHash),
   searchCharacters: (query) => ipcRenderer.invoke('search:characters', query),
   suggestions: () => ipcRenderer.invoke('suggestions'),
   openLink: (url) => ipcRenderer.invoke('link:open', url)

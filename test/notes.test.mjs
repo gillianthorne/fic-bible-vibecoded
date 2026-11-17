@@ -8,15 +8,21 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { openSqlite } from '../src/main/sqlite.js'
 import { migrate } from '../src/main/migrate.js'
-import { createChapter, createCharacter, createScene, createWork } from '../src/main/create.js'
+import { createChapter, createCharacter, createNotePage, createScene, createWork } from '../src/main/create.js'
+import { importLibrary } from '../src/main/import.js'
+import { navigationTree } from '../src/main/queries.js'
+import { readNotePage, saveNotePage } from '../src/main/save.js'
 import { createBeat } from '../src/main/edit.js'
 import {
   createLine,
   createTimelineEvent,
   deleteLine,
+  deleteNotePage,
   deleteTimelineEvent,
   lineDictionary,
+  moveNotePage,
   moveTimelineEvent,
+  renameNotePage,
   timeline,
   updateLine,
   updateTimelineEvent
@@ -111,4 +117,40 @@ test('the timeline keeps the author’s order, with optional chapter links', () 
   assert.deepEqual(timeline(db, workId).events.map((e) => [e.id, e.position]), [[c, 1], [b, 2]])
   assert.deepEqual(timeline(db, workId).chapters.map((ch) => ch.title), ['Camp', 'Preseason'])
   assert.equal(timeline(db, 999), null)
+})
+
+test('note pages: empty file on create, renamed in name only, saved under the guards, file kept on delete', () => {
+  const { db, root, workId } = setup()
+  const logline = createNotePage(db, root, workId, 'Logline')
+  const thoughts = createNotePage(db, root, workId, 'random 3am thoughts')
+  const dir = path.join(root, 'Hockey AU', 'notes')
+  assert.deepEqual(fs.readdirSync(dir).sort(), ['Logline.md', 'random 3am thoughts.md'])
+  assert.equal(fs.readFileSync(path.join(dir, 'Logline.md'), 'utf8'), '')
+
+  renameNotePage(db, logline, 'Pitch')
+  moveNotePage(db, thoughts, 'up')
+  const tree = navigationTree(db).find((w) => w.id === workId)
+  assert.deepEqual(tree.notePages.map((p) => p.name), ['random 3am thoughts', 'Pitch'])
+  assert.ok(fs.existsSync(path.join(dir, 'Logline.md')))
+
+  const opened = readNotePage(db, root, logline)
+  assert.deepEqual([opened.name, opened.filename, opened.text], ['Pitch', 'Logline.md', ''])
+  const pitch = ['# Pitch', '', 'Two rivals, one team.', ''].join('\n')
+  const saved = saveNotePage(db, root, logline, pitch, opened.hash)
+  assert.equal(saved.written, true)
+  assert.equal(fs.readFileSync(path.join(dir, 'Logline.md'), 'utf8'), pitch)
+  fs.writeFileSync(path.join(dir, 'Logline.md'), 'changed elsewhere')
+  assert.throws(() => saveNotePage(db, root, logline, 'mine', saved.hash), /note page file has changed on disk/)
+  assert.equal(fs.readFileSync(path.join(dir, 'Logline.md'), 'utf8'), 'changed elsewhere')
+
+  assert.throws(() => createNotePage(db, root, workId, 'logline'), /already exists on disk/)
+  assert.throws(() => renameNotePage(db, logline, '  '), /Name can’t be blank/)
+  deleteNotePage(db, thoughts)
+  assert.ok(fs.existsSync(path.join(dir, 'random 3am thoughts.md')))
+  assert.deepEqual(navigationTree(db).find((w) => w.id === workId).notePages.map((p) => p.name), ['Pitch'])
+
+  // A re-import brings the deleted page back, at the end; the rest stay.
+  const { added } = importLibrary(db, root)
+  assert.equal(added.notePages, 1)
+  assert.deepEqual(navigationTree(db).find((w) => w.id === workId).notePages.map((p) => p.name), ['Pitch', 'random 3am thoughts'])
 })

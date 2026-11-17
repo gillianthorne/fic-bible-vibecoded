@@ -9,9 +9,10 @@ export default function ImportReport({ report }) {
     plural(added.works, 'work', 'works'),
     plural(added.chapters, 'chapter', 'chapters'),
     plural(added.scenes, 'scene', 'scenes'),
-    plural(added.characters ?? 0, 'character', 'characters')
+    plural(added.characters ?? 0, 'character', 'characters'),
+    plural(added.notePages ?? 0, 'note page', 'note pages')
   ]
-  const addedAny = added.works + added.chapters + added.scenes + (added.characters ?? 0) > 0
+  const addedAny = added.works + added.chapters + added.scenes + (added.characters ?? 0) + (added.notePages ?? 0) > 0
 
   return (
     <article className="import-report">

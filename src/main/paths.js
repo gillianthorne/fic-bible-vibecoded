@@ -30,3 +30,11 @@ export function charactersDir(libraryRoot, workFolder) {
 export function characterPath(libraryRoot, workFolder, filename) {
   return path.join(libraryRoot, workFolder, CHARACTERS, filename)
 }
+
+export function notesDir(libraryRoot, workFolder) {
+  return path.join(libraryRoot, workFolder, NOTES)
+}
+
+export function notePagePath(libraryRoot, workFolder, filename) {
+  return path.join(libraryRoot, workFolder, NOTES, filename)
+}

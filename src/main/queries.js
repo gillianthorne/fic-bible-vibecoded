@@ -31,8 +31,8 @@ function total(items) {
   return { wordcount, uncounted }
 }
 
-// Sidebar: works -> chapters -> scenes, with status, and each work's
-// characters by name. Reads no files. Works and chapters with no children
+// Sidebar: works -> chapters -> scenes, with status, each work's
+// characters by name, and its note pages in order. Reads no files. Works and chapters with no children
 // are included, with empty arrays.
 export function navigationTree(db) {
   const rows = db
@@ -53,7 +53,7 @@ export function navigationTree(db) {
   for (const r of rows) {
     let work = workById.get(r.workId)
     if (!work) {
-      work = { id: r.workId, title: r.workTitle, characters: [], chapters: [] }
+      work = { id: r.workId, title: r.workTitle, characters: [], notePages: [], chapters: [] }
       workById.set(r.workId, work)
       works.push(work)
     }
@@ -71,6 +71,8 @@ export function navigationTree(db) {
     .prepare('SELECT id, work_id AS workId, name FROM characters ORDER BY name COLLATE NOCASE, id')
     .all()
   for (const c of characters) workById.get(c.workId)?.characters.push({ id: c.id, name: c.name })
+  const pages = db.prepare('SELECT id, work_id AS workId, name FROM note_pages ORDER BY position').all()
+  for (const p of pages) workById.get(p.workId)?.notePages.push({ id: p.id, name: p.name })
   return works
 }
 
