@@ -35,7 +35,8 @@ test('creates exactly the spec tables, with no wordcount column', () => {
     .pluck()
     .all()
   assert.deepEqual(tables, [
-    'beats', 'chapters', 'character_fields', 'characters', 'edit_notes', 'fandoms', 'scenes', 'ships', 'works'
+    'beats', 'chapters', 'character_fields', 'characters', 'edit_notes', 'fandoms', 'lines', 'note_pages', 'scenes',
+    'ships', 'timeline_events', 'works'
   ])
   for (const t of tables) {
     const cols = db.prepare(`SELECT name FROM pragma_table_info(?)`).pluck().all(t)
@@ -122,7 +123,13 @@ test('only the spec-nullable columns accept NULL', () => {
     'chapters.notes',
     'chapters.posted_date',
     'chapters.posted_url',
+    'lines.beat_id',
+    'lines.chapter_id',
+    'lines.notes',
+    'lines.scene_id',
     'scenes.notes',
+    'timeline_events.chapter_id',
+    'timeline_events.notes',
     'works.fandom_id',
     'works.notes',
     'works.ship_id',
@@ -176,4 +183,41 @@ test('characters: filename is one segment, unique in its work ignoring case; fie
   db.exec('DELETE FROM works')
   assert.equal(db.prepare('SELECT count(*) FROM characters').pluck().get(), 0)
   assert.equal(db.prepare('SELECT count(*) FROM character_fields').pluck().get(), 0)
+})
+
+test('lines: statuses, a scene needs a chapter, deleting a chapter or scene clears links but keeps the line', () => {
+  const db = freshDb()
+  seed(db)
+  db.exec("INSERT INTO lines (id, work_id, line, chapter_id, scene_id, beat_id) VALUES (1, 1, 'Hi', 1, 1, 1)")
+  assert.equal(db.prepare('SELECT status FROM lines').pluck().get(), 'planned')
+  for (const ok of ['used', 'dropped']) db.prepare('UPDATE lines SET status = ?').run(ok)
+  assert.throws(() => db.exec("UPDATE lines SET status = 'cut'"), /CHECK/)
+  assert.throws(() => db.exec('UPDATE lines SET chapter_id = NULL'), /CHECK/)
+  assert.throws(() => db.exec('UPDATE lines SET scene_id = NULL'), /CHECK/)
+  assert.throws(() => db.exec("INSERT INTO lines (work_id, line) VALUES (1, '  ')"), /CHECK/)
+  db.exec('DELETE FROM beats')
+  assert.deepEqual(db.prepare('SELECT chapter_id, scene_id, beat_id FROM lines').get(), { chapter_id: 1, scene_id: 1, beat_id: null })
+  db.exec('UPDATE lines SET beat_id = NULL')
+  db.exec('DELETE FROM scenes')
+  assert.deepEqual(db.prepare('SELECT chapter_id, scene_id FROM lines').get(), { chapter_id: 1, scene_id: null })
+  db.exec("INSERT INTO scenes (id, chapter_id, position, title, filename, pov) VALUES (2, 1, 1, 'S', 's.md', '')")
+  db.exec('UPDATE lines SET scene_id = 2')
+  db.exec('DELETE FROM chapters')
+  assert.deepEqual(db.prepare('SELECT chapter_id, scene_id, beat_id FROM lines').get(), { chapter_id: null, scene_id: null, beat_id: null })
+  db.exec('DELETE FROM works')
+  assert.equal(db.prepare('SELECT count(*) FROM lines').pluck().get(), 0)
+})
+
+test('timeline events and note pages: ordered per work; note page files unique ignoring case', () => {
+  const db = freshDb()
+  seed(db)
+  db.exec("INSERT INTO timeline_events (work_id, position, event, chapter_id) VALUES (1, 1, 'Draft day', 1)")
+  assert.throws(() => db.exec("INSERT INTO timeline_events (work_id, position, event) VALUES (1, 1, 'x')"), /UNIQUE/)
+  db.exec('DELETE FROM chapters')
+  assert.equal(db.prepare('SELECT chapter_id FROM timeline_events').pluck().get(), null)
+  db.exec("INSERT INTO note_pages (work_id, position, name, filename) VALUES (1, 1, 'Logline', 'Logline.md')")
+  assert.throws(() => db.exec("INSERT INTO note_pages (work_id, position, name, filename) VALUES (1, 2, 'x', 'logline.md')"), /UNIQUE/)
+  assert.throws(() => db.exec("INSERT INTO note_pages (work_id, position, name, filename) VALUES (1, 3, 'x', 'a/b')"), /CHECK/)
+  db.exec('DELETE FROM works')
+  assert.equal(db.prepare('SELECT count(*) FROM note_pages').pluck().get(), 0)
 })

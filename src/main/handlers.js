@@ -12,8 +12,29 @@ import {
 } from './queries.js'
 import { checkLink } from './links.js'
 import { searchCharacters } from './search.js'
-import { readCharacterNotes, readSceneSource, saveCharacterNotes, saveSceneSource } from './save.js'
-import { createChapter, createCharacter, createScene, createWork } from './create.js'
+import {
+  createLine,
+  createTimelineEvent,
+  deleteLine,
+  deleteNotePage,
+  deleteTimelineEvent,
+  lineDictionary,
+  moveNotePage,
+  moveTimelineEvent,
+  renameNotePage,
+  timeline,
+  updateLine,
+  updateTimelineEvent
+} from './notes.js'
+import {
+  readCharacterNotes,
+  readNotePage,
+  readSceneSource,
+  saveCharacterNotes,
+  saveNotePage,
+  saveSceneSource
+} from './save.js'
+import { createChapter, createCharacter, createNotePage, createScene, createWork } from './create.js'
 import { deleteWorks, importLibrary, worksMissingFrom } from './import.js'
 import {
   createBeat,
@@ -217,6 +238,40 @@ export function createHandlers(open, library = null, links = null) {
     'characterField:move': (fieldId, direction) =>
       respond(() => (moveCharacterField(open().db, fieldId, direction), null)),
     'characterField:delete': (fieldId) => respond(() => (deleteCharacterField(open().db, fieldId), null)),
+
+    // A work's line dictionary and timeline: rows only. data is null for a
+    // work that doesn't exist.
+    'lines:list': (workId) => respond(() => lineDictionary(open().db, requireId(workId, 'workId'))),
+    'line:create': (workId, fields) => respond(() => createLine(open().db, workId, fields)),
+    'line:update': (lineId, patch) => respond(() => (updateLine(open().db, lineId, patch), null)),
+    'line:delete': (lineId) => respond(() => (deleteLine(open().db, lineId), null)),
+    'timeline:list': (workId) => respond(() => timeline(open().db, requireId(workId, 'workId'))),
+    'timeline:create': (workId, fields) => respond(() => createTimelineEvent(open().db, workId, fields)),
+    'timeline:update': (eventId, patch) => respond(() => (updateTimelineEvent(open().db, eventId, patch), null)),
+    'timeline:move': (eventId, direction) => respond(() => (moveTimelineEvent(open().db, eventId, direction), null)),
+    'timeline:delete': (eventId) => respond(() => (deleteTimelineEvent(open().db, eventId), null)),
+
+    // Note pages: creating makes an empty <name>.md in the work's notes
+    // folder; renaming changes only the name shown; deleting leaves the
+    // file. Saving is guarded as scene:save is.
+    'notePage:create': (workId, name) =>
+      respond(() => {
+        const { db, libraryRoot } = open()
+        return createNotePage(db, libraryRoot, workId, name)
+      }),
+    'notePage:rename': (pageId, name) => respond(() => (renameNotePage(open().db, pageId, name), null)),
+    'notePage:move': (pageId, direction) => respond(() => (moveNotePage(open().db, pageId, direction), null)),
+    'notePage:delete': (pageId) => respond(() => (deleteNotePage(open().db, pageId), null)),
+    'notePage:read': (pageId) =>
+      respond(() => {
+        const { db, libraryRoot } = open()
+        return readNotePage(db, libraryRoot, pageId)
+      }),
+    'notePage:save': (pageId, text, baseHash) =>
+      respond(() => {
+        const { db, libraryRoot } = open()
+        return saveNotePage(db, libraryRoot, pageId, text, baseHash)
+      }),
 
     // Every work's characters whose name, age, birthday, fields or notes
     // file hold the text, ignoring case. Reads only.

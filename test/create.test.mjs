@@ -70,7 +70,7 @@ test('a re-import finds everything created and adds nothing', () => {
   createScene(db, root, ch, 'Scene')
   createChapter(db, root, workId, 'Empty chapter')
   const result = importLibrary(db, root)
-  assert.deepEqual(result.added, { works: 0, chapters: 0, scenes: 0, characters: 0 })
+  assert.deepEqual(result.added, { works: 0, chapters: 0, scenes: 0, characters: 0, notePages: 0 })
   assert.deepEqual(result.skipped, [])
 })
 
@@ -164,7 +164,7 @@ test('a character is a row and an empty notes file in the work’s characters fo
   })
   assert.equal(fs.readFileSync(path.join(root, 'Hockey AU', 'characters', 'Marie-Philip.md'), 'utf8'), '')
   // A re-import recognises it.
-  assert.deepEqual(importLibrary(db, root).added, { works: 0, chapters: 0, scenes: 0, characters: 0 })
+  assert.deepEqual(importLibrary(db, root).added, { works: 0, chapters: 0, scenes: 0, characters: 0, notePages: 0 })
 })
 
 test('a character’s name already taken on disk, in any case, is refused and the file left alone', () => {

@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { CHAPTERS, CHARACTERS, chapterDir, chaptersDir, charactersDir } from './paths.js'
+import { CHAPTERS, CHARACTERS, NOTES, chapterDir, chaptersDir, charactersDir, notesDir } from './paths.js'
 
 // Importing a library folder into the database. No Electron imports, so
 // this runs under plain `node --test`.
@@ -10,7 +10,8 @@ import { CHAPTERS, CHARACTERS, chapterDir, chaptersDir, charactersDir } from './
 //     <work folder>/            a work, titled with the folder name
 //       characters/
 //         <name>.md             a character, named <name>: their notes
-//       notes/                  not used yet
+//       notes/
+//         <name>.md             a note page, named <name>
 //       chapters/
 //         ##-<title>/           a chapter: number ##, title <title>
 //           ##-<title>.md       a scene: position ##, title <title>
@@ -64,7 +65,8 @@ export function scanLibrary(libraryRoot) {
       works.push({
         folder: entry.name,
         title: entry.name,
-        characters: scanCharacters(libraryRoot, entry.name, skip),
+        characters: scanMarkdown(libraryRoot, entry.name, CHARACTERS, charactersDir, 'characters', skip),
+        notePages: scanMarkdown(libraryRoot, entry.name, NOTES, notesDir, 'note pages', skip),
         chapters: scanWork(libraryRoot, entry.name, skip)
       })
   }
@@ -108,33 +110,33 @@ function scanWork(libraryRoot, workFolder, skip) {
   return chapters
 }
 
-// A work's characters folder: each .md file is a character, named by the
-// filename without .md. No folder is fine (nothing to import); a work
-// made before v2 has none.
-function scanCharacters(libraryRoot, workFolder, skip) {
-  const characters = []
-  const dir = charactersDir(libraryRoot, workFolder)
+// A work's characters or notes folder: each .md file is a character or a
+// note page, named by the filename without .md. No folder is fine
+// (nothing to import); a work made before v2 has none.
+function scanMarkdown(libraryRoot, workFolder, folder, dirOf, what, skip) {
+  const found = []
+  const dir = dirOf(libraryRoot, workFolder)
   let stat = null
   try {
     stat = fs.lstatSync(dir)
   } catch (e) {
     if (e.code !== 'ENOENT') throw e
   }
-  if (!stat) return characters
+  if (!stat) return found
   if (!stat.isDirectory() || stat.isSymbolicLink()) {
-    skip([workFolder, CHARACTERS], 'not a folder')
-    return characters
+    skip([workFolder, folder], 'not a folder')
+    return found
   }
   for (const entry of sortedEntries(dir)) {
-    const at = [workFolder, CHARACTERS, entry.name]
+    const at = [workFolder, folder, entry.name]
     if (entry.isSymbolicLink()) skip(at, 'symbolic link')
-    else if (entry.isDirectory()) skip(at, 'folder inside the characters folder; only .md files there are characters')
+    else if (entry.isDirectory()) skip(at, `folder inside the ${folder} folder; only .md files there are ${what}`)
     else if (!entry.isFile()) skip(at, 'not a regular file')
     else if (!entry.name.endsWith('.md')) skip(at, 'not a .md file')
     else if (entry.name.slice(0, -3).trim() === '') skip(at, 'nothing before .md to use as a name')
-    else characters.push({ filename: entry.name, name: entry.name.slice(0, -3).trim() })
+    else found.push({ filename: entry.name, name: entry.name.slice(0, -3).trim() })
   }
-  return characters
+  return found
 }
 
 function scanChapter(libraryRoot, workFolder, chapterFolder, skip) {
@@ -166,10 +168,10 @@ function duplicateNumbers(items, key) {
 // Adds rows for everything on disk that the database doesn't have yet.
 // One transaction: if anything throws, nothing is added.
 //
-// Returns { added: { works, chapters, scenes, characters }, skipped: [{ path, reason }] }.
+// Returns { added: { works, chapters, scenes, characters, notePages }, skipped: [{ path, reason }] }.
 export function importLibrary(db, libraryRoot) {
   const { works, skipped } = scanLibrary(libraryRoot)
-  const added = { works: 0, chapters: 0, scenes: 0, characters: 0 }
+  const added = { works: 0, chapters: 0, scenes: 0, characters: 0, notePages: 0 }
   const skip = (segments, reason) => skipped.push({ path: path.join(...segments), reason })
 
   const q = {
@@ -187,6 +189,13 @@ export function importLibrary(db, libraryRoot) {
       .prepare('SELECT filename FROM characters WHERE work_id = ? AND filename = ? COLLATE NOCASE')
       .pluck(),
     addCharacter: db.prepare('INSERT INTO characters (work_id, name, filename) VALUES (?, ?, ?)'),
+    notePageByCase: db
+      .prepare('SELECT filename FROM note_pages WHERE work_id = ? AND filename = ? COLLATE NOCASE')
+      .pluck(),
+    addNotePage: db.prepare(
+      `INSERT INTO note_pages (work_id, position, name, filename)
+       VALUES (?, (SELECT coalesce(max(position), 0) + 1 FROM note_pages WHERE work_id = ?), ?, ?)`
+    ),
     addScene: db.prepare(
       `INSERT INTO scenes (chapter_id, position, title, filename, pov) VALUES (?, ?, ?, ?, '')`
     )
@@ -214,6 +223,20 @@ export function importLibrary(db, libraryRoot) {
         }
         q.addCharacter.run(workId, character.name, character.filename)
         added.characters++
+      }
+
+      for (const page of work.notePages) {
+        const existing = q.notePageByCase.get(workId, page.filename)
+        if (existing === page.filename) continue
+        if (existing !== undefined) {
+          skip(
+            [work.folder, NOTES, page.filename],
+            `name differs only in case from ${existing}, which Windows treats as the same file`
+          )
+          continue
+        }
+        q.addNotePage.run(workId, workId, page.name, page.filename)
+        added.notePages++
       }
 
       const chapterDupes = duplicateNumbers(work.chapters, 'number')
