@@ -33,11 +33,12 @@ function total(items) {
 
 // Sidebar: works -> chapters -> scenes, with status, each work's
 // characters by name, and its note pages in order. Reads no files. Works and chapters with no children
-// are included, with empty arrays.
+// are included, with empty arrays. Each work has hidden: true or false;
+// the sidebar lists hidden works in their own group.
 export function navigationTree(db) {
   const rows = db
     .prepare(
-      `SELECT w.id AS workId, w.title AS workTitle,
+      `SELECT w.id AS workId, w.title AS workTitle, w.hidden AS workHidden,
               c.id AS chapterId, c.number, c.title AS chapterTitle, c.status AS chapterStatus,
               s.id AS sceneId, s.position, s.title AS sceneTitle, s.status AS sceneStatus
        FROM works w
@@ -53,7 +54,7 @@ export function navigationTree(db) {
   for (const r of rows) {
     let work = workById.get(r.workId)
     if (!work) {
-      work = { id: r.workId, title: r.workTitle, characters: [], notePages: [], chapters: [] }
+      work = { id: r.workId, title: r.workTitle, hidden: r.workHidden === 1, characters: [], notePages: [], chapters: [] }
       workById.set(r.workId, work)
       works.push(work)
     }
@@ -369,7 +370,8 @@ export function workOverview(db, libraryRoot, workId) {
 // total, plus the total across all of them. Works are grouped by fandom,
 // fandoms in name order with works that have none last; within a fandom,
 // in the sidebar's order. A work's uncounted scenes are left out of the
-// totals and reported, as on its overview.
+// totals and reported, as on its overview. Hidden works are left out
+// entirely, from the table and the total.
 export function libraryOverview(db, libraryRoot) {
   const works = db
     .prepare(
@@ -378,6 +380,7 @@ export function libraryOverview(db, libraryRoot) {
        LEFT JOIN fandoms f ON f.id = w.fandom_id
        LEFT JOIN ships s ON s.id = w.ship_id
        LEFT JOIN chapters c ON c.work_id = w.id
+       WHERE w.hidden = 0
        GROUP BY w.id
        ORDER BY f.name IS NULL, f.name COLLATE NOCASE, w.title COLLATE NOCASE, w.id`
     )

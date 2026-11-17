@@ -34,7 +34,8 @@ const contains = (value, needle) => value.toLowerCase().includes(needle)
 // characters are in the sidebar's order. Each match is
 // { where: 'name' | 'age' | 'birthday' | 'field' | 'notes', label, value }.
 // A notes file that can't be read is listed in unreadable rather than
-// silently left out. A blank query finds nothing.
+// silently left out. A blank query finds nothing. Hidden works' characters
+// are not searched.
 export function searchCharacters(db, libraryRoot, query) {
   if (typeof query !== 'string') throw new Error('Search text must be text')
   const trimmed = query.trim()
@@ -46,6 +47,7 @@ export function searchCharacters(db, libraryRoot, query) {
     .prepare(
       `SELECT c.id, c.name, c.age, c.birthday, c.filename, w.id AS workId, w.title AS workTitle, w.folder AS workFolder
        FROM characters c JOIN works w ON w.id = c.work_id
+       WHERE w.hidden = 0
        ORDER BY w.title COLLATE NOCASE, w.id, c.name COLLATE NOCASE, c.id`
     )
     .all()

@@ -74,7 +74,7 @@ test('a chapter number used in the same work is refused', () => {
 test('updateWork edits the title, link and notes; never folder', () => {
   const db = setup()
   updateWork(db, 1, { title: 'Renamed work' })
-  assert.deepEqual(row(db, 'works', 1), { id: 1, title: 'Renamed work', folder: 'W-folder', url: null, notes: null, fandom_id: null, ship_id: null })
+  assert.deepEqual(row(db, 'works', 1), { id: 1, title: 'Renamed work', folder: 'W-folder', url: null, notes: null, fandom_id: null, ship_id: null, hidden: 0 })
   assert.throws(() => updateWork(db, 1, { folder: 'x' }), /no editable field/)
   assert.throws(() => updateWork(db, 9, { title: 'x' }), /Work 9 not found/)
   updateWork(db, 1, { url: ' https://archiveofourown.org/works/42 ', notes: 'Inspired by a song.\n\nSecond line.' })
@@ -84,6 +84,16 @@ test('updateWork edits the title, link and notes; never folder', () => {
   assert.equal(row(db, 'works', 1).url, null)
   assert.equal(row(db, 'works', 1).notes, null)
   assert.throws(() => updateWork(db, 1, { notes: 5 }), /Notes must be text/)
+})
+
+test('updateWork hides and unhides a work; hidden must be true or false', () => {
+  const db = setup()
+  updateWork(db, 1, { hidden: true })
+  assert.equal(row(db, 'works', 1).hidden, 1)
+  updateWork(db, 1, { hidden: false })
+  assert.equal(row(db, 'works', 1).hidden, 0)
+  assert.throws(() => updateWork(db, 1, { hidden: 1 }), /Hidden must be true or false/)
+  assert.throws(() => updateWork(db, 1, { hidden: 'yes' }), /Hidden must be true or false/)
 })
 
 const names = (db, id) =>

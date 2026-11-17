@@ -302,7 +302,14 @@ const CHAPTER_FIELDS = {
 const WORK_FIELDS = {
   title: ['title', line, 'Title'],
   url: ['url', optionalLine, 'Work link'],
-  notes: ['notes', optionalText, 'Notes']
+  notes: ['notes', optionalText, 'Notes'],
+  hidden: ['hidden', flag, 'Hidden']
+}
+
+// true or false, stored as 1 or 0.
+function flag(value, label) {
+  if (typeof value !== 'boolean') throw new Error(`${label} must be true or false`)
+  return value ? 1 : 0
 }
 
 // Positions and numbers are UNIQUE among siblings. A taken one is refused

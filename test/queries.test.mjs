@@ -346,3 +346,24 @@ test('scene prose is null for an unknown scene and reports a missing file', () =
     fs.renameSync(file + '.hidden', file)
   }
 })
+
+test('a hidden work stays in the tree, marked, and leaves the home page and its total', () => {
+  const before = libraryOverview(db, root)
+  const lantern = navigationTree(db).find((w) => w.title === 'The Lantern Road')
+  assert.equal(lantern.hidden, false)
+  try {
+    updateWork(db, lantern.id, { hidden: true })
+    const tree = navigationTree(db)
+    assert.equal(tree.length, 3)
+    assert.equal(tree.find((w) => w.id === lantern.id).hidden, true)
+    const after = libraryOverview(db, root)
+    assert.deepEqual(after.works, before.works.filter((w) => w.id !== lantern.id))
+    const lanternCount = before.works.find((w) => w.id === lantern.id).wordcount
+    assert.ok(lanternCount > 0)
+    assert.equal(after.wordcount, before.wordcount - lanternCount)
+    assert.notEqual(workOverview(db, root, lantern.id), null)
+  } finally {
+    updateWork(db, lantern.id, { hidden: false })
+  }
+  assert.deepEqual(libraryOverview(db, root), before)
+})
