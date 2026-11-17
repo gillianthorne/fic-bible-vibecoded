@@ -608,6 +608,58 @@ h2 {
   margin-top: 12px;
 }
 
+/* Hide / Unhide sits at the end of a work's row, out of sight until the
+   row is hovered or something in it has focus, so it doesn't crowd the
+   titles. Keyboard users reach it by tabbing. */
+.sidebar .tree-work h2 {
+  display: flex;
+  align-items: baseline;
+}
+
+.sidebar .tree-work h2 .tree-work-title {
+  flex: 1;
+}
+
+.sidebar .tree-hide {
+  flex: none;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--desk-muted);
+  opacity: 0;
+}
+
+.sidebar .tree-work h2:hover .tree-hide,
+.sidebar .tree-work h2:focus-within .tree-hide {
+  opacity: 1;
+}
+
+.sidebar .tree-hide:hover,
+.sidebar .tree-hide:focus-visible {
+  color: var(--gold);
+}
+
+/* The Hidden works group, last in the sidebar: quieter than the works. */
+.sidebar .tree-hidden-works {
+  margin-top: 20px;
+  padding-top: 8px;
+  border-top: 1px solid var(--desk-hover-solid);
+}
+
+.sidebar .tree-hidden-works > h2 {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--desk-muted);
+}
+
+.sidebar .tree-hidden-works > h2 button {
+  letter-spacing: inherit;
+  color: inherit;
+}
+
 /* Chapter overview */
 
 :is(.chapter-overview, .work-overview, .home-page) header p {

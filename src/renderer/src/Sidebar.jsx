@@ -16,6 +16,11 @@ import LibraryBar from './LibraryBar.jsx'
 // place, Enter creates it (a row plus its empty folder or file), Escape
 // cancels. They're hidden for a test library, which can't be changed.
 //
+// Each work has a Hide button, shown on hover or focus. Hidden works move
+// to a Hidden works group at the bottom, folded by default, where they open
+// as usual and have Unhide instead. Hiding changes only the database, so
+// it works on a test library too.
+//
 // Titles are one line, cut with an ellipsis; the full title is in the
 // row's tooltip. A collapsed row that hides the open item is marked, so the
 // selection can't vanish by folding its parent.
@@ -25,6 +30,13 @@ const isSelected = (selection, kind, id) => selection?.kind === kind && selectio
 const chapterHolds = (chapter, selection) =>
   isSelected(selection, 'chapter', chapter.id) ||
   (selection?.kind === 'scene' && chapter.scenes.some((s) => s.id === selection.id))
+
+// Whether the open item is this work or anything inside it.
+const workHolds = (work, selection) =>
+  isSelected(selection, 'work', work.id) ||
+  work.characters.some((c) => isSelected(selection, 'character', c.id)) ||
+  work.chapters.some((ch) => chapterHolds(ch, selection)) ||
+  notesHold(work, selection)
 
 function HiddenSelection() {
   return <span className="visually-hidden">(contains the open item)</span>
@@ -292,7 +304,7 @@ const notesHold = (work, selection) =>
 
 // Clicking a work opens its overview and unfolds it. Clicking it again
 // while its overview is open folds or unfolds it.
-function Work({ work, selection, onSelect, isExpanded, onToggle, canCreate, onCreated }) {
+function Work({ work, selection, onSelect, isExpanded, onToggle, canCreate, onCreated, onSetHidden }) {
   const key = `work:${work.id}`
   const open = isExpanded(key)
   const selected = isSelected(selection, 'work', work.id)
@@ -321,6 +333,15 @@ function Work({ work, selection, onSelect, isExpanded, onToggle, canCreate, onCr
           </span>
           <span className="tree-title">{work.title}</span>
           {hidesSelection && <HiddenSelection />}
+        </button>
+        <button
+          type="button"
+          className="tree-hide"
+          aria-label={`${work.hidden ? 'Unhide' : 'Hide'} ${work.title}`}
+          title={work.hidden ? 'Show this work in the list again' : 'Move this work to Hidden works'}
+          onClick={() => onSetHidden(work.id, !work.hidden)}
+        >
+          {work.hidden ? 'Unhide' : 'Hide'}
         </button>
       </h2>
       {open && (
@@ -385,13 +406,64 @@ function Work({ work, selection, onSelect, isExpanded, onToggle, canCreate, onCr
   )
 }
 
+function WorkList({ works, ...props }) {
+  return (
+    <ul className="tree">
+      {works.map((work) => (
+        <Work key={work.id} work={work} {...props} />
+      ))}
+    </ul>
+  )
+}
+
+// Folded by default. Folded, it's marked if the open item is inside it.
+function HiddenWorks({ works, selection, isExpanded, onToggle, ...props }) {
+  const key = 'hidden-works'
+  const open = isExpanded(key)
+  const hidesSelection = !open && works.some((w) => workHolds(w, selection))
+  return (
+    <section className="tree-hidden-works">
+      <h2>
+        <button
+          type="button"
+          className={['tree-work-title', hidesSelection && 'hides-selection'].filter(Boolean).join(' ')}
+          aria-expanded={open}
+          onClick={() => onToggle(key)}
+        >
+          <span className="tree-toggle-mark" aria-hidden="true">
+            {open ? '▾' : '▸'}
+          </span>
+          <span className="tree-title">Hidden works</span>
+          <span className="tree-count">{works.length}</span>
+          {hidesSelection && <HiddenSelection />}
+        </button>
+      </h2>
+      {open && <WorkList works={works} selection={selection} isExpanded={isExpanded} onToggle={onToggle} {...props} />}
+    </section>
+  )
+}
+
 // refreshKey changes after an import, so the tree is read again.
 // onCreated(selection, expandKeys) runs after something is created: App
 // reads the library again, unfolds expandKeys and opens the new item.
-export default function Sidebar({ selection, onSelect, isExpanded, onToggle, refreshKey, onImported, onCreated }) {
+// onChanged runs after hiding or unhiding a work, so every screen reads
+// the library again.
+export default function Sidebar({ selection, onSelect, isExpanded, onToggle, refreshKey, onImported, onCreated, onChanged }) {
   const tree = useQuery(() => window.ficBible.navigationTree(), `tree:${refreshKey}`)
   const info = useQuery(() => window.ficBible.libraryInfo(), 'library-info', refreshKey)
   const canCreate = info.ok === true && info.data.canChange
+  const [hideError, setHideError] = useState(null)
+
+  async function setHidden(workId, hidden) {
+    setHideError(null)
+    const result = await window.ficBible.updateWork(workId, { hidden })
+    if (result.ok) onChanged()
+    else setHideError(result.error)
+  }
+
+  const shown = tree.ok ? tree.data.filter((w) => !w.hidden) : []
+  const hidden = tree.ok ? tree.data.filter((w) => w.hidden) : []
+  const listProps = { selection, onSelect, isExpanded, onToggle, canCreate, onCreated, onSetHidden: setHidden }
 
   return (
     <nav className="sidebar" aria-label="Works, characters, chapters and scenes">
@@ -401,23 +473,14 @@ export default function Sidebar({ selection, onSelect, isExpanded, onToggle, ref
       </Item>
       {tree.loading && <p className="muted">Loading…</p>}
       {tree.ok === false && <QueryError what="the library" error={tree.error} />}
-      {tree.ok && tree.data.length === 0 && <p className="muted">No works yet.</p>}
-      {tree.ok && tree.data.length > 0 && (
-        <ul className="tree">
-          {tree.data.map((work) => (
-            <Work
-              key={work.id}
-              work={work}
-              selection={selection}
-              onSelect={onSelect}
-              isExpanded={isExpanded}
-              onToggle={onToggle}
-              canCreate={canCreate}
-              onCreated={onCreated}
-            />
-          ))}
-        </ul>
+      {hideError && (
+        <p className="tree-new-error" role="alert">
+          {hideError}
+        </p>
       )}
+      {tree.ok && tree.data.length === 0 && <p className="muted">No works yet.</p>}
+      {tree.ok && tree.data.length > 0 && shown.length === 0 && <p className="muted">Every work is hidden.</p>}
+      {shown.length > 0 && <WorkList works={shown} {...listProps} />}
       {tree.ok && canCreate && (
         <NewItem
           what="work"
@@ -426,6 +489,7 @@ export default function Sidebar({ selection, onSelect, isExpanded, onToggle, ref
           onCreated={(id) => onCreated({ kind: 'work', id }, [`work:${id}`])}
         />
       )}
+      {hidden.length > 0 && <HiddenWorks works={hidden} {...listProps} />}
     </nav>
   )
 }
