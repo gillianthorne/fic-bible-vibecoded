@@ -273,7 +273,7 @@ test('.md files in a work’s characters folder are imported as characters, once
   const root = makeLibrary({
     'W/chapters/': null,
     'W/characters/Marie-Philip.md': 'Tims order: medium double-double',
-    'W/characters/Sarah.md': '',
+    'W/characters/Laura Stacey.md': '',
     'W/characters/photo.png': '',
     'W/characters/old/': null,
     'W/characters/.hidden.md': ''
@@ -283,8 +283,8 @@ test('.md files in a work’s characters folder are imported as characters, once
   const { added, skipped } = importLibrary(db, root)
   assert.deepEqual(added, { works: 1, chapters: 0, scenes: 0, characters: 2 })
   assert.deepEqual(db.prepare('SELECT name, filename, age FROM characters ORDER BY name').all(), [
-    { name: 'Marie-Philip', filename: 'Marie-Philip.md', age: '' },
-    { name: 'Sarah', filename: 'Sarah.md', age: '' }
+    { name: 'Laura Stacey', filename: 'Laura Stacey.md', age: '' },
+    { name: 'Marie-Philip', filename: 'Marie-Philip.md', age: '' }
   ])
   assert.match(reasonFor(skipped, 'W', 'characters', 'photo.png'), /not a \.md file/)
   assert.match(reasonFor(skipped, 'W', 'characters', 'old'), /folder inside the characters folder/)
