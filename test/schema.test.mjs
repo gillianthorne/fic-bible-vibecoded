@@ -34,7 +34,9 @@ test('creates exactly the spec tables, with no wordcount column', () => {
     .prepare("SELECT name FROM sqlite_schema WHERE type = 'table' ORDER BY name")
     .pluck()
     .all()
-  assert.deepEqual(tables, ['beats', 'chapters', 'edit_notes', 'fandoms', 'scenes', 'ships', 'works'])
+  assert.deepEqual(tables, [
+    'beats', 'chapters', 'character_fields', 'characters', 'edit_notes', 'fandoms', 'scenes', 'ships', 'works'
+  ])
   for (const t of tables) {
     const cols = db.prepare(`SELECT name FROM pragma_table_info(?)`).pluck().all(t)
     assert.ok(!cols.some((c) => /word/i.test(c)), `${t} has a wordcount-like column`)
@@ -156,4 +158,22 @@ test('notes and the work link start out null', () => {
   for (const t of ['works', 'chapters', 'scenes']) {
     assert.equal(db.prepare(`SELECT notes FROM ${t}`).pluck().get(), null, t)
   }
+})
+
+test('characters: filename is one segment, unique in its work ignoring case; fields need a label', () => {
+  const db = freshDb()
+  seed(db)
+  db.exec("INSERT INTO characters (id, work_id, name, filename) VALUES (1, 1, 'Marie', 'Marie.md')")
+  assert.deepEqual(db.prepare('SELECT age, birthday FROM characters').get(), { age: '', birthday: '' })
+  assert.throws(() => db.exec("INSERT INTO characters (work_id, name, filename) VALUES (1, 'M', 'marie.md')"), /UNIQUE/)
+  for (const bad of ['', '.', '..', 'a/b', 'a\\b']) {
+    assert.throws(() => db.prepare('UPDATE characters SET filename = ?').run(bad), /CHECK/, JSON.stringify(bad))
+  }
+  assert.throws(() => db.exec("INSERT INTO characters (work_id, name, filename) VALUES (1, '  ', 'x.md')"), /CHECK/)
+  db.exec("INSERT INTO character_fields (character_id, position, label, value) VALUES (1, 1, 'Team', 'Toronto')")
+  assert.throws(() => db.exec("INSERT INTO character_fields (character_id, position, label) VALUES (1, 2, ' ')"), /CHECK/)
+  assert.throws(() => db.exec("INSERT INTO character_fields (character_id, position, label) VALUES (1, 1, 'Dup')"), /UNIQUE/)
+  db.exec('DELETE FROM works')
+  assert.equal(db.prepare('SELECT count(*) FROM characters').pluck().get(), 0)
+  assert.equal(db.prepare('SELECT count(*) FROM character_fields').pluck().get(), 0)
 })
