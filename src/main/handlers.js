@@ -11,6 +11,7 @@ import {
   workOverview
 } from './queries.js'
 import { checkLink } from './links.js'
+import { searchCharacters } from './search.js'
 import { readCharacterNotes, readSceneSource, saveCharacterNotes, saveSceneSource } from './save.js'
 import { createChapter, createCharacter, createScene, createWork } from './create.js'
 import { deleteWorks, importLibrary, worksMissingFrom } from './import.js'
@@ -216,6 +217,14 @@ export function createHandlers(open, library = null, links = null) {
     'characterField:move': (fieldId, direction) =>
       respond(() => (moveCharacterField(open().db, fieldId, direction), null)),
     'characterField:delete': (fieldId) => respond(() => (deleteCharacterField(open().db, fieldId), null)),
+
+    // Every work's characters whose name, age, birthday, fields or notes
+    // file hold the text, ignoring case. Reads only.
+    'search:characters': (query) =>
+      respond(() => {
+        const { db, libraryRoot } = open()
+        return searchCharacters(db, libraryRoot, query)
+      }),
 
     // A character's notes file, for the profile's editor. data is null for
     // a character that doesn't exist. Saving is guarded as scene:save is.

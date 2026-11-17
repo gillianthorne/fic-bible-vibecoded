@@ -10,6 +10,7 @@ import ProseEditor from './ProseEditor.jsx'
 import ChapterProse from './ChapterProse.jsx'
 import ImportReport from './ImportReport.jsx'
 import CharacterProfile from './CharacterProfile.jsx'
+import SearchResults from './SearchResults.jsx'
 import SidebarHandle, { useSidebarWidth } from './SidebarHandle.jsx'
 
 // Each screen sits on a sheet of paper; the kind sets how wide it may grow.
@@ -23,7 +24,8 @@ const HOME = { kind: 'home' }
 const sameScreen = (a, b) => a.kind === b.kind && a.id === b.id && a.view === b.view
 
 // selection is { kind: 'home' }, { kind: 'work', id }, { kind: 'chapter', id, view },
-// { kind: 'scene', id, view }, { kind: 'character', id }
+// { kind: 'scene', id, view }, { kind: 'character', id },
+// { kind: 'search', id: <the search text> }
 // or { kind: 'import', report } for the result of the last import.
 // view is 'prose' for the prose viewer (a scene's, or the whole chapter's),
 // or 'edit' for a scene's prose editor; anything else is the scene detail or chapter overview. The sidebar
@@ -186,6 +188,7 @@ export default function App() {
           onOpenChapter={openChapter}
           onOpenScene={openScene}
           onOpenCharacter={openCharacter}
+          onSearch={(query) => navigate({ kind: 'search', id: query })}
         />
         <div className={`sheet sheet-${sheetKind(selection)}`}>
           {selection.kind === 'home' && <HomePage refreshKey={libraryVersion} onOpenWork={openWork} />}
@@ -198,6 +201,9 @@ export default function App() {
             />
           )}
           {selection.kind === 'import' && <ImportReport report={selection.report} />}
+          {selection.kind === 'search' && (
+            <SearchResults query={selection.id} refreshKey={libraryVersion} onOpenCharacter={openCharacter} />
+          )}
           {selection.kind === 'character' && (
             <CharacterProfile
               characterId={selection.id}

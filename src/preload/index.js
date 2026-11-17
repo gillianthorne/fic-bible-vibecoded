@@ -41,6 +41,7 @@ contextBridge.exposeInMainWorld('ficBible', {
   characterNotes: (characterId) => ipcRenderer.invoke('character:notes', characterId),
   saveCharacterNotes: (characterId, text, baseHash) =>
     ipcRenderer.invoke('character:saveNotes', characterId, text, baseHash),
+  searchCharacters: (query) => ipcRenderer.invoke('search:characters', query),
   suggestions: () => ipcRenderer.invoke('suggestions'),
   openLink: (url) => ipcRenderer.invoke('link:open', url)
 })

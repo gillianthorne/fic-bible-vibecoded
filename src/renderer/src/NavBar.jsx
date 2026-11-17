@@ -1,10 +1,12 @@
+import { useState } from 'react'
 import { useQuery } from './useQuery.js'
 
 // The bar above the sheet: a back button, then where the open screen sits,
 // as Home / work / chapter / scene, or Home / work / character. Every part but the last opens its
 // screen; the last is the open screen itself. A prose view (a scene's or
 // a whole chapter's) adds a last part, Prose; the prose editor adds Edit
-// prose.
+// prose. On the right, a search box searches every work's characters;
+// Enter opens the results.
 //
 // Titles come from the navigation tree, the same read the sidebar does, so
 // this reads no files. refreshKey re-reads it after an import or edit, so
@@ -53,8 +55,10 @@ export default function NavBar({
   onOpenWork,
   onOpenChapter,
   onOpenScene,
-  onOpenCharacter
+  onOpenCharacter,
+  onSearch
 }) {
+  const [search, setSearch] = useState(selection.kind === 'search' ? selection.id : '')
   const tree = useQuery(() => window.ficBible.navigationTree(), 'navbar', refreshKey)
   const { work, character, chapter, scene } = tree.ok ? locate(tree.data, selection) : {}
   const prose = selection.view === 'prose' || selection.view === 'edit'
@@ -99,8 +103,25 @@ export default function NavBar({
           )}
           {prose && (scene || chapter) && <Crumb current>{selection.view === 'edit' ? 'Edit prose' : 'Prose'}</Crumb>}
           {selection.kind === 'import' && <Crumb current>Import report</Crumb>}
+          {selection.kind === 'search' && <Crumb current>Search</Crumb>}
         </ol>
       </nav>
+      <form
+        className="nav-search"
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (search.trim()) onSearch(search.trim())
+        }}
+      >
+        <input
+          type="search"
+          value={search}
+          aria-label="Search characters in every work"
+          placeholder="Search characters…"
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </form>
     </div>
   )
 }

@@ -251,6 +251,7 @@ body {
 
 .sheet-scene,
 .sheet-character,
+.sheet-search,
 .sheet-import {
   max-width: 820px;
 }
@@ -270,6 +271,7 @@ h2 {
 
 /* A gold rule under each screen's heading block. */
 .chapter-overview > header,
+.search-results > header,
 .work-overview > header,
 .home-page > header,
 .scene-detail > header,
@@ -2233,4 +2235,83 @@ select.edit-note-status-fixed {
 .character-notes .editor-host .cm-content {
   min-height: 12em;
   padding: 10px 6px 3em;
+}
+
+/* Search: a box at the right of the bar above the sheet, and the results
+   screen, grouped by work. */
+.nav-search {
+  margin-left: auto;
+}
+
+.nav-search input {
+  width: 14em;
+  padding: 4px 8px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 4px;
+  background: var(--paper-sunk);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+.nav-search input:focus {
+  border-color: var(--gold-deep);
+  outline: none;
+}
+
+.search-results header p {
+  margin: 0;
+}
+
+.search-results h1 {
+  margin: 2px 0 6px;
+  font-size: 24px;
+}
+
+.search-results h2 {
+  margin: 24px 0 6px;
+  font-size: 17px;
+}
+
+.search-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.search-list > li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.search-name {
+  font-weight: 600;
+}
+
+.search-matches {
+  margin: 4px 0 0;
+}
+
+.search-matches > div {
+  display: flex;
+  gap: 8px;
+}
+
+.search-matches dt {
+  flex: none;
+  min-width: 8em;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.search-matches dd {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.search-results mark {
+  padding: 0 1px;
+  border-radius: 2px;
+  background: rgba(212, 160, 79, 0.35);
+  color: inherit;
 }
