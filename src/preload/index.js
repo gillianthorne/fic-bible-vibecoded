@@ -41,6 +41,15 @@ contextBridge.exposeInMainWorld('ficBible', {
   characterNotes: (characterId) => ipcRenderer.invoke('character:notes', characterId),
   saveCharacterNotes: (characterId, text, baseHash) =>
     ipcRenderer.invoke('character:saveNotes', characterId, text, baseHash),
+  lineDictionary: (workId) => ipcRenderer.invoke('lines:list', workId),
+  createLine: (workId, fields) => ipcRenderer.invoke('line:create', workId, fields),
+  updateLine: (lineId, patch) => ipcRenderer.invoke('line:update', lineId, patch),
+  deleteLine: (lineId) => ipcRenderer.invoke('line:delete', lineId),
+  timeline: (workId) => ipcRenderer.invoke('timeline:list', workId),
+  createTimelineEvent: (workId, fields) => ipcRenderer.invoke('timeline:create', workId, fields),
+  updateTimelineEvent: (eventId, patch) => ipcRenderer.invoke('timeline:update', eventId, patch),
+  moveTimelineEvent: (eventId, direction) => ipcRenderer.invoke('timeline:move', eventId, direction),
+  deleteTimelineEvent: (eventId) => ipcRenderer.invoke('timeline:delete', eventId),
   searchCharacters: (query) => ipcRenderer.invoke('search:characters', query),
   suggestions: () => ipcRenderer.invoke('suggestions'),
   openLink: (url) => ipcRenderer.invoke('link:open', url)

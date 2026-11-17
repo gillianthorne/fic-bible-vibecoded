@@ -17,7 +17,7 @@ export const EDIT_NOTE_STATUSES = ['open', 'fixed', 'ignored', 'cut']
 
 // --- validation -----------------------------------------------------------
 
-function requireId(value, name) {
+export function requireId(value, name) {
   if (!Number.isSafeInteger(value) || value < 1) {
     throw new Error(`${name} must be a positive integer, got ${JSON.stringify(value)}`)
   }
@@ -25,7 +25,7 @@ function requireId(value, name) {
 }
 
 // One-line text: trimmed, and required unless allowBlank.
-function line(value, label, { allowBlank = false } = {}) {
+export function line(value, label, { allowBlank = false } = {}) {
   if (typeof value !== 'string') throw new Error(`${label} must be text`)
   const trimmed = value.trim()
   if (!allowBlank && trimmed === '') throw new Error(`${label} can’t be blank`)
@@ -33,13 +33,13 @@ function line(value, label, { allowBlank = false } = {}) {
 }
 
 // Multi-line text (beat content): kept as written, but not blank.
-function text(value, label) {
+export function text(value, label) {
   if (typeof value !== 'string') throw new Error(`${label} must be text`)
   if (value.trim() === '') throw new Error(`${label} can’t be blank`)
   return value
 }
 
-function oneOf(value, allowed, label) {
+export function oneOf(value, allowed, label) {
   if (!allowed.includes(value)) throw new Error(`${label} must be one of: ${allowed.join(', ')}`)
   return value
 }
@@ -49,11 +49,11 @@ function positiveInt(value, label) {
   return value
 }
 
-const nullable = (check) => (value, label) => (value === null ? null : check(value, label))
+export const nullable = (check) => (value, label) => (value === null ? null : check(value, label))
 
 // Turns a patch into [[column, value], ...] using a map of
 // key -> [column, validator]. Unknown keys and empty patches are errors.
-function columns(patch, fields, what) {
+export function columns(patch, fields, what) {
   if (patch === null || typeof patch !== 'object' || Array.isArray(patch)) {
     throw new Error(`${what} changes must be an object`)
   }
@@ -67,12 +67,12 @@ function columns(patch, fields, what) {
   })
 }
 
-function update(db, table, id, cols) {
+export function update(db, table, id, cols) {
   const sets = cols.map(([column]) => `${column} = ?`).join(', ')
   db.prepare(`UPDATE ${table} SET ${sets} WHERE id = ?`).run(...cols.map(([, v]) => v), id)
 }
 
-function mustExist(db, table, id, what) {
+export function mustExist(db, table, id, what) {
   const row = db.prepare(`SELECT * FROM ${table} WHERE id = ?`).get(requireId(id, `${what} id`))
   if (!row) throw new Error(`${what} ${id} not found`)
   return row
@@ -115,7 +115,7 @@ export function updateBeat(db, beatId, patch) {
 // fields on a character). Moving the first up or the last down does
 // nothing. Positions are UNIQUE per parent, so the row is parked past the
 // end while its neighbour takes its place.
-function moveInList(db, table, parent, row, direction) {
+export function moveInList(db, table, parent, row, direction) {
   oneOf(direction, ['up', 'down'], 'Direction')
   db.transaction(() => {
     const neighbour = db
@@ -135,7 +135,7 @@ function moveInList(db, table, parent, row, direction) {
 }
 
 // Deletes a row from a positioned list and closes the gap it leaves.
-function deleteFromList(db, table, parent, row) {
+export function deleteFromList(db, table, parent, row) {
   db.transaction(() => {
     db.prepare(`DELETE FROM ${table} WHERE id = ?`).run(row.id)
     // One row at a time, lowest first, so no step collides with UNIQUE.
@@ -276,7 +276,7 @@ function optionalLine(value, label) {
 }
 
 // Notes: multi-line, kept as written. Blank is stored as null, "no notes".
-function optionalText(value, label) {
+export function optionalText(value, label) {
   if (value === null) return null
   if (typeof value !== 'string') throw new Error(`${label} must be text`)
   return value.trim() === '' ? null : value
