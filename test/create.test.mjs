@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url'
 import { openSqlite } from '../src/main/sqlite.js'
 import { migrate } from '../src/main/migrate.js'
 import { importLibrary } from '../src/main/import.js'
-import { createChapter, createScene, createWork } from '../src/main/create.js'
+import { createChapter, createCharacter, createScene, createWork } from '../src/main/create.js'
 import { createHandlers } from '../src/main/handlers.js'
 
 const MIGRATIONS = fileURLToPath(new URL('../migrations', import.meta.url))
@@ -70,7 +70,7 @@ test('a re-import finds everything created and adds nothing', () => {
   createScene(db, root, ch, 'Scene')
   createChapter(db, root, workId, 'Empty chapter')
   const result = importLibrary(db, root)
-  assert.deepEqual(result.added, { works: 0, chapters: 0, scenes: 0 })
+  assert.deepEqual(result.added, { works: 0, chapters: 0, scenes: 0, characters: 0 })
   assert.deepEqual(result.skipped, [])
 })
 
@@ -153,4 +153,41 @@ test('handlers return the new id, or the error', () => {
   const scene = handlers['scene:create'](chapter.data, 'S')
   assert.equal(db.prepare('SELECT title FROM scenes WHERE id = ?').pluck().get(scene.data), 'S')
   assert.deepEqual(handlers['work:create']('a/b'), { ok: false, error: 'Title can’t contain “/”: it becomes a file name' })
+})
+
+test('a character is a row and an empty notes file in the work’s characters folder', () => {
+  const { db, root } = setup()
+  const workId = createWork(db, root, 'Hockey AU')
+  const id = createCharacter(db, root, workId, '  Marie-Philip ')
+  assert.deepEqual(db.prepare('SELECT name, age, birthday, filename FROM characters WHERE id = ?').get(id), {
+    name: 'Marie-Philip', age: '', birthday: '', filename: 'Marie-Philip.md'
+  })
+  assert.equal(fs.readFileSync(path.join(root, 'Hockey AU', 'characters', 'Marie-Philip.md'), 'utf8'), '')
+  // A re-import recognises it.
+  assert.deepEqual(importLibrary(db, root).added, { works: 0, chapters: 0, scenes: 0, characters: 0 })
+})
+
+test('a character’s name already taken on disk, in any case, is refused and the file left alone', () => {
+  const { db, root } = setup()
+  const workId = createWork(db, root, 'W')
+  const mine = path.join(root, 'W', 'characters', 'Marie.md')
+  fs.writeFileSync(mine, 'my notes')
+  assert.throws(() => createCharacter(db, root, workId, 'marie'), /already exists on disk/)
+  assert.equal(fs.readFileSync(mine, 'utf8'), 'my notes')
+  assert.equal(count(db, 'characters'), 0)
+  for (const [name, message] of [['', /Name can’t be blank/], ['A/B', /contain “\/”/], ['.x', /start with a dot/], ['aux', /reserves/]]) {
+    assert.throws(() => createCharacter(db, root, workId, name), message, name)
+  }
+  assert.equal(count(db, 'characters'), 0)
+})
+
+test('a work made before v2 gets its characters folder when its first character is made', () => {
+  const { db, root } = setup()
+  fs.mkdirSync(path.join(root, 'Old'))
+  const workId = db.prepare("INSERT INTO works (title, folder) VALUES ('Old', 'Old')").run().lastInsertRowid
+  createCharacter(db, root, Number(workId), 'Ana')
+  assert.ok(fs.existsSync(path.join(root, 'Old', 'characters', 'Ana.md')))
+  fs.rmSync(path.join(root, 'Old'), { recursive: true })
+  assert.throws(() => createCharacter(db, root, Number(workId), 'Bo'), /work folder is missing on disk/)
+  assert.equal(count(db, 'characters'), 1)
 })

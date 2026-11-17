@@ -1,9 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { WORK_FOLDERS, chapterDir, chaptersDir } from './paths.js'
+import { WORK_FOLDERS, chapterDir, chaptersDir, charactersDir } from './paths.js'
 
-// Creating works, chapters and scenes: a database row plus an empty folder
-// or an empty scene file. No Electron imports, so these are tested with
+// Creating works, chapters, scenes and characters: a database row plus an
+// empty folder or an empty scene or character notes file. No Electron imports, so these are tested with
 // plain `node --test`.
 //
 // The write boundary (docs/spec.md, File handling): the app may create an
@@ -38,16 +38,17 @@ function requireId(value, name) {
 }
 
 // A title that can stand as (part of) a file or folder name, trimmed.
-export function checkTitle(value) {
-  if (typeof value !== 'string') throw new Error('Title must be text')
+// `what` names it in messages ("Title", "Name").
+export function checkTitle(value, what = 'Title') {
+  if (typeof value !== 'string') throw new Error(`${what} must be text`)
   const title = value.trim()
-  if (title === '') throw new Error('Title can’t be blank')
+  if (title === '') throw new Error(`${what} can’t be blank`)
   const bad = title.match(BAD_CHARACTERS)
   if (bad) {
     const shown = bad[0] < ' ' ? 'control characters' : `“${bad[0]}”`
-    throw new Error(`Title can’t contain ${shown}: it becomes a file name`)
+    throw new Error(`${what} can’t contain ${shown}: it becomes a file name`)
   }
-  if (title.endsWith('.')) throw new Error('Title can’t end with a dot: it becomes a file name')
+  if (title.endsWith('.')) throw new Error(`${what} can’t end with a dot: it becomes a file name`)
   return title
 }
 
@@ -147,6 +148,37 @@ export function createScene(db, libraryRoot, chapterId, title) {
     } catch (e) {
       throw missingParent(e, 'chapter')
     }
+    return Number(info.lastInsertRowid)
+  })()
+}
+
+// A new character in a work: a row plus an empty <name>.md notes file in
+// the work's characters folder, which is made first if it's missing (a
+// work created before v2 has none). Returns the new character's id.
+export function createCharacter(db, libraryRoot, workId, name) {
+  const work = db.prepare('SELECT id, folder FROM works WHERE id = ?').get(requireId(workId, 'Work id'))
+  if (!work) throw new Error(`Work ${workId} not found`)
+  const clean = checkTitle(name, 'Name')
+  if (clean.startsWith('.')) throw new Error('Name can’t start with a dot: import skips hidden files')
+  if (RESERVED.test(clean)) throw new Error(`“${clean}” is a name Windows reserves for files; add something to it`)
+  const filename = `${clean}.md`
+  const dir = charactersDir(libraryRoot, work.folder)
+  refuseTaken(dir, filename)
+  return db.transaction(() => {
+    const taken = db
+      .prepare('SELECT name FROM characters WHERE work_id = ? AND filename = ? COLLATE NOCASE')
+      .pluck()
+      .get(work.id, filename)
+    if (taken !== undefined) throw new Error(`“${taken}” already has the notes file ${filename} in this work`)
+    const info = db
+      .prepare('INSERT INTO characters (work_id, name, filename) VALUES (?, ?, ?)')
+      .run(work.id, clean, filename)
+    try {
+      fs.mkdirSync(dir)
+    } catch (e) {
+      if (e.code !== 'EEXIST') throw missingParent(e, 'work')
+    }
+    fs.writeFileSync(path.join(dir, filename), '', { flag: 'wx' })
     return Number(info.lastInsertRowid)
   })()
 }

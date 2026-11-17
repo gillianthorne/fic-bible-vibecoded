@@ -56,7 +56,7 @@ test('maps folders and ##-title names to works, chapters and scenes', () => {
   const db = freshDb()
   const result = importLibrary(db, root)
 
-  assert.deepEqual(result.added, { works: 2, chapters: 2, scenes: 2 })
+  assert.deepEqual(result.added, { works: 2, chapters: 2, scenes: 2, characters: 0 })
   assert.deepEqual(result.skipped, [])
 
   const rows = db
@@ -141,7 +141,7 @@ test('two new items with the same number are both skipped', () => {
   })
   const db = freshDb()
   const { added, skipped } = importLibrary(db, root)
-  assert.deepEqual(added, { works: 1, chapters: 0, scenes: 0 })
+  assert.deepEqual(added, { works: 1, chapters: 0, scenes: 0, characters: 0 })
   assert.match(reasonFor(skipped, 'W', 'chapters', '01-A'), /also uses number 1/)
   assert.match(reasonFor(skipped, 'W', 'chapters', '01-B'), /also uses number 1/)
 })
@@ -159,7 +159,7 @@ test('re-import adds only what is new and leaves existing rows alone', () => {
   fs.mkdirSync(path.join(root, 'W', 'chapters', '02-Two'))
 
   const again = importLibrary(db, root)
-  assert.deepEqual(again.added, { works: 0, chapters: 1, scenes: 1 })
+  assert.deepEqual(again.added, { works: 0, chapters: 1, scenes: 1, characters: 0 })
   assert.deepEqual(again.skipped, [])
   assert.deepEqual(db.prepare('SELECT title, pov, status FROM scenes ORDER BY position').all(), [
     { title: 'Renamed', pov: 'Mara', status: 'drafted' },
@@ -168,7 +168,7 @@ test('re-import adds only what is new and leaves existing rows alone', () => {
   assert.equal(db.prepare('SELECT title FROM chapters WHERE number = 1').pluck().get(), 'Edited chapter')
 
   const third = importLibrary(db, root)
-  assert.deepEqual(third.added, { works: 0, chapters: 0, scenes: 0 })
+  assert.deepEqual(third.added, { works: 0, chapters: 0, scenes: 0, characters: 0 })
 })
 
 test('a new file whose number is taken by an existing row is skipped', () => {
@@ -179,7 +179,7 @@ test('a new file whose number is taken by an existing row is skipped', () => {
   fs.writeFileSync(path.join(root, 'W', 'chapters', '01-One', '01-rival.md'), '')
   fs.mkdirSync(path.join(root, 'W', 'chapters', '01-Other'))
   const { added, skipped } = importLibrary(db, root)
-  assert.deepEqual(added, { works: 0, chapters: 0, scenes: 0 })
+  assert.deepEqual(added, { works: 0, chapters: 0, scenes: 0, characters: 0 })
   // The existing file is also on disk, so the scan sees two scenes numbered
   // 1; the new one is the one reported.
   assert.match(reasonFor(skipped, 'W', 'chapters', '01-One', '01-rival.md'), /number 1/)
@@ -221,7 +221,7 @@ test('a work laid out the pre-v2 way is imported with no chapters, and reported'
   const root = makeLibrary({ 'Old/01-One/01-a.md': 'words' })
   const db = freshDb()
   const { added, skipped } = importLibrary(db, root)
-  assert.deepEqual(added, { works: 1, chapters: 0, scenes: 0 })
+  assert.deepEqual(added, { works: 1, chapters: 0, scenes: 0, characters: 0 })
   assert.match(reasonFor(skipped, 'Old'), /move this work’s chapter folders into one/)
   assert.equal(skipped.length, 1)
 })
@@ -267,4 +267,31 @@ test('worksMissingFrom lists works with no folder in the new library; deleteWork
   assert.equal(db.prepare('SELECT count(*) FROM beats').pluck().get(), 0)
   assert.equal(db.prepare('SELECT count(*) FROM scenes').pluck().get(), 1)
   assert.deepEqual(snapshot(oldRoot), before)
+})
+
+test('.md files in a work’s characters folder are imported as characters, once', () => {
+  const root = makeLibrary({
+    'W/chapters/': null,
+    'W/characters/Marie-Philip.md': 'Tims order: medium double-double',
+    'W/characters/Sarah.md': '',
+    'W/characters/photo.png': '',
+    'W/characters/old/': null,
+    'W/characters/.hidden.md': ''
+  })
+  const db = freshDb()
+  const before = snapshot(root)
+  const { added, skipped } = importLibrary(db, root)
+  assert.deepEqual(added, { works: 1, chapters: 0, scenes: 0, characters: 2 })
+  assert.deepEqual(db.prepare('SELECT name, filename, age FROM characters ORDER BY name').all(), [
+    { name: 'Marie-Philip', filename: 'Marie-Philip.md', age: '' },
+    { name: 'Sarah', filename: 'Sarah.md', age: '' }
+  ])
+  assert.match(reasonFor(skipped, 'W', 'characters', 'photo.png'), /not a \.md file/)
+  assert.match(reasonFor(skipped, 'W', 'characters', 'old'), /folder inside the characters folder/)
+  assert.equal(skipped.length, 2)
+  assert.deepEqual(snapshot(root), before)
+
+  db.prepare("UPDATE characters SET name = 'Poulin' WHERE filename = 'Marie-Philip.md'").run()
+  assert.deepEqual(importLibrary(db, root).added, { works: 0, chapters: 0, scenes: 0, characters: 0 })
+  assert.equal(db.prepare("SELECT name FROM characters WHERE filename = 'Marie-Philip.md'").pluck().get(), 'Poulin')
 })
