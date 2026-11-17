@@ -14,7 +14,7 @@ export const EDIT_NOTE_STATUSES = ['open', 'fixed', 'ignored', 'cut']
 // no suggestions.
 export function useSuggestions(refreshKey) {
   const result = useQuery(() => window.ficBible.suggestions(), 'suggestions', refreshKey)
-  return result.ok ? result.data : { kinds: [], editKinds: [], povs: [], fandoms: [], ships: [] }
+  return result.ok ? result.data : { kinds: [], editKinds: [], povs: [], fieldLabels: [], fandoms: [], ships: [] }
 }
 
 // Runs a save call ({ ok, data } | { ok, error }) and tracks busy/error.

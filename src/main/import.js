@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { CHAPTERS, CHARACTERS, chapterDir, chaptersDir, charactersDir } from './paths.js'
 
 // Importing a library folder into the database. No Electron imports, so
 // this runs under plain `node --test`.
@@ -7,8 +8,16 @@ import path from 'node:path'
 // Layout (the author's convention):
 //   <library root>/
 //     <work folder>/            a work, titled with the folder name
-//       ##-<title>/             a chapter: number ##, title <title>
-//         ##-<title>.md         a scene: position ##, title <title>
+//       characters/
+//         <name>.md             a character, named <name>: their notes
+//       notes/                  not used yet
+//       chapters/
+//         ##-<title>/           a chapter: number ##, title <title>
+//           ##-<title>.md       a scene: position ##, title <title>
+//
+// Anything else in a work folder is ignored. A work folder with no
+// chapters folder is reported: it's laid out the pre-v2 way, with chapter
+// folders directly inside it, and needs moving by hand.
 //
 // Reads only. Nothing on disk is created, renamed or written: the import
 // adds database rows and nothing else.
@@ -51,17 +60,39 @@ export function scanLibrary(libraryRoot) {
   for (const entry of sortedEntries(libraryRoot)) {
     if (entry.isSymbolicLink()) skip([entry.name], 'symbolic link')
     else if (!entry.isDirectory()) skip([entry.name], 'file at the top of the library, not in a work folder')
-    else works.push({ folder: entry.name, title: entry.name, chapters: scanWork(libraryRoot, entry.name, skip) })
+    else
+      works.push({
+        folder: entry.name,
+        title: entry.name,
+        characters: scanCharacters(libraryRoot, entry.name, skip),
+        chapters: scanWork(libraryRoot, entry.name, skip)
+      })
   }
   return { works, skipped }
 }
 
 function scanWork(libraryRoot, workFolder, skip) {
   const chapters = []
-  for (const entry of sortedEntries(path.join(libraryRoot, workFolder))) {
-    const at = [workFolder, entry.name]
+  const dir = chaptersDir(libraryRoot, workFolder)
+  let stat = null
+  try {
+    stat = fs.lstatSync(dir)
+  } catch (e) {
+    if (e.code !== 'ENOENT') throw e
+  }
+  if (!stat || !stat.isDirectory() || stat.isSymbolicLink()) {
+    skip(
+      [workFolder],
+      stat
+        ? `“${CHAPTERS}” in this work is not a folder`
+        : `no “${CHAPTERS}” folder; move this work’s chapter folders into one`
+    )
+    return chapters
+  }
+  for (const entry of sortedEntries(dir)) {
+    const at = [workFolder, CHAPTERS, entry.name]
     if (entry.isSymbolicLink()) skip(at, 'symbolic link')
-    else if (!entry.isDirectory()) skip(at, 'file in a work folder, not in a chapter folder')
+    else if (!entry.isDirectory()) skip(at, 'file in a chapters folder, not in a chapter folder')
     else {
       const parsed = parseNumbered(CHAPTER_NAME.exec(entry.name))
       if (parsed.reason) skip(at, parsed.reason)
@@ -77,10 +108,39 @@ function scanWork(libraryRoot, workFolder, skip) {
   return chapters
 }
 
+// A work's characters folder: each .md file is a character, named by the
+// filename without .md. No folder is fine (nothing to import); a work
+// made before v2 has none.
+function scanCharacters(libraryRoot, workFolder, skip) {
+  const characters = []
+  const dir = charactersDir(libraryRoot, workFolder)
+  let stat = null
+  try {
+    stat = fs.lstatSync(dir)
+  } catch (e) {
+    if (e.code !== 'ENOENT') throw e
+  }
+  if (!stat) return characters
+  if (!stat.isDirectory() || stat.isSymbolicLink()) {
+    skip([workFolder, CHARACTERS], 'not a folder')
+    return characters
+  }
+  for (const entry of sortedEntries(dir)) {
+    const at = [workFolder, CHARACTERS, entry.name]
+    if (entry.isSymbolicLink()) skip(at, 'symbolic link')
+    else if (entry.isDirectory()) skip(at, 'folder inside the characters folder; only .md files there are characters')
+    else if (!entry.isFile()) skip(at, 'not a regular file')
+    else if (!entry.name.endsWith('.md')) skip(at, 'not a .md file')
+    else if (entry.name.slice(0, -3).trim() === '') skip(at, 'nothing before .md to use as a name')
+    else characters.push({ filename: entry.name, name: entry.name.slice(0, -3).trim() })
+  }
+  return characters
+}
+
 function scanChapter(libraryRoot, workFolder, chapterFolder, skip) {
   const scenes = []
-  for (const entry of sortedEntries(path.join(libraryRoot, workFolder, chapterFolder))) {
-    const at = [workFolder, chapterFolder, entry.name]
+  for (const entry of sortedEntries(chapterDir(libraryRoot, workFolder, chapterFolder))) {
+    const at = [workFolder, CHAPTERS, chapterFolder, entry.name]
     if (entry.isSymbolicLink()) skip(at, 'symbolic link')
     else if (entry.isDirectory()) skip(at, 'folder inside a chapter; only .md files there are scenes')
     else if (!entry.isFile()) skip(at, 'not a regular file')
@@ -106,10 +166,10 @@ function duplicateNumbers(items, key) {
 // Adds rows for everything on disk that the database doesn't have yet.
 // One transaction: if anything throws, nothing is added.
 //
-// Returns { added: { works, chapters, scenes }, skipped: [{ path, reason }] }.
+// Returns { added: { works, chapters, scenes, characters }, skipped: [{ path, reason }] }.
 export function importLibrary(db, libraryRoot) {
   const { works, skipped } = scanLibrary(libraryRoot)
-  const added = { works: 0, chapters: 0, scenes: 0 }
+  const added = { works: 0, chapters: 0, scenes: 0, characters: 0 }
   const skip = (segments, reason) => skipped.push({ path: path.join(...segments), reason })
 
   const q = {
@@ -123,6 +183,10 @@ export function importLibrary(db, libraryRoot) {
       .prepare('SELECT filename FROM scenes WHERE chapter_id = ? AND filename = ? COLLATE NOCASE')
       .pluck(),
     sceneByPosition: db.prepare('SELECT filename FROM scenes WHERE chapter_id = ? AND position = ?').pluck(),
+    characterByCase: db
+      .prepare('SELECT filename FROM characters WHERE work_id = ? AND filename = ? COLLATE NOCASE')
+      .pluck(),
+    addCharacter: db.prepare('INSERT INTO characters (work_id, name, filename) VALUES (?, ?, ?)'),
     addScene: db.prepare(
       `INSERT INTO scenes (chapter_id, position, title, filename, pov) VALUES (?, ?, ?, ?, '')`
     )
@@ -138,9 +202,23 @@ export function importLibrary(db, libraryRoot) {
         added.works++
       }
 
+      for (const character of work.characters) {
+        const existing = q.characterByCase.get(workId, character.filename)
+        if (existing === character.filename) continue
+        if (existing !== undefined) {
+          skip(
+            [work.folder, CHARACTERS, character.filename],
+            `name differs only in case from ${existing}, which Windows treats as the same file`
+          )
+          continue
+        }
+        q.addCharacter.run(workId, character.name, character.filename)
+        added.characters++
+      }
+
       const chapterDupes = duplicateNumbers(work.chapters, 'number')
       for (const chapter of work.chapters) {
-        const at = [work.folder, chapter.folder]
+        const at = [work.folder, CHAPTERS, chapter.folder]
         let chapterId = q.chapter.get(workId, chapter.folder)
         if (chapterId === undefined) {
           const taken = q.chapterByNumber.get(workId, chapter.number)

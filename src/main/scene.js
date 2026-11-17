@@ -4,7 +4,7 @@ import { countProse } from './prose.js'
 
 // Hardcoded for the spike: the one test scene, as path segments under the
 // library root.
-const TEST_SCENE = ['test-fic', 'chapter-1', 'scene-1.md']
+const TEST_SCENE = ['test-fic', 'chapters', 'chapter-1', 'scene-1.md']
 
 // Read-only. Counts are computed from the file on every call, never stored.
 export function readTestScene(libraryRoot) {

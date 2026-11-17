@@ -111,42 +111,113 @@ export function updateBeat(db, beatId, patch) {
   update(db, 'beats', beatId, columns(patch, BEAT_FIELDS, 'Beat'))
 }
 
-// Swaps a beat with its neighbour. Moving the first beat up or the last
-// down does nothing. Positions are UNIQUE per scene, so the beat is parked
-// past the end while its neighbour takes its place.
-export function moveBeat(db, beatId, direction) {
-  const beat = mustExist(db, 'beats', beatId, 'Beat')
+// Swaps a row with its neighbour in a positioned list (beats in a scene,
+// fields on a character). Moving the first up or the last down does
+// nothing. Positions are UNIQUE per parent, so the row is parked past the
+// end while its neighbour takes its place.
+function moveInList(db, table, parent, row, direction) {
   oneOf(direction, ['up', 'down'], 'Direction')
   db.transaction(() => {
     const neighbour = db
       .prepare(
         direction === 'up'
-          ? 'SELECT id, position FROM beats WHERE scene_id = ? AND position < ? ORDER BY position DESC LIMIT 1'
-          : 'SELECT id, position FROM beats WHERE scene_id = ? AND position > ? ORDER BY position LIMIT 1'
+          ? `SELECT id, position FROM ${table} WHERE ${parent} = ? AND position < ? ORDER BY position DESC LIMIT 1`
+          : `SELECT id, position FROM ${table} WHERE ${parent} = ? AND position > ? ORDER BY position LIMIT 1`
       )
-      .get(beat.scene_id, beat.position)
+      .get(row[parent], row.position)
     if (!neighbour) return
-    const park = db.prepare('SELECT max(position) + 1 FROM beats WHERE scene_id = ?').pluck().get(beat.scene_id)
-    const setPosition = db.prepare('UPDATE beats SET position = ? WHERE id = ?')
-    setPosition.run(park, beat.id)
-    setPosition.run(beat.position, neighbour.id)
-    setPosition.run(neighbour.position, beat.id)
+    const park = db.prepare(`SELECT max(position) + 1 FROM ${table} WHERE ${parent} = ?`).pluck().get(row[parent])
+    const setPosition = db.prepare(`UPDATE ${table} SET position = ? WHERE id = ?`)
+    setPosition.run(park, row.id)
+    setPosition.run(row.position, neighbour.id)
+    setPosition.run(neighbour.position, row.id)
   })()
 }
 
-// Deletes a beat's row and closes the gap it leaves in the order.
-export function deleteBeat(db, beatId) {
-  const beat = mustExist(db, 'beats', beatId, 'Beat')
+// Deletes a row from a positioned list and closes the gap it leaves.
+function deleteFromList(db, table, parent, row) {
   db.transaction(() => {
-    db.prepare('DELETE FROM beats WHERE id = ?').run(beat.id)
+    db.prepare(`DELETE FROM ${table} WHERE id = ?`).run(row.id)
     // One row at a time, lowest first, so no step collides with UNIQUE.
     const later = db
-      .prepare('SELECT id FROM beats WHERE scene_id = ? AND position > ? ORDER BY position')
+      .prepare(`SELECT id FROM ${table} WHERE ${parent} = ? AND position > ? ORDER BY position`)
       .pluck()
-      .all(beat.scene_id, beat.position)
-    const shift = db.prepare('UPDATE beats SET position = position - 1 WHERE id = ?')
+      .all(row[parent], row.position)
+    const shift = db.prepare(`UPDATE ${table} SET position = position - 1 WHERE id = ?`)
     for (const id of later) shift.run(id)
   })()
+}
+
+export function moveBeat(db, beatId, direction) {
+  moveInList(db, 'beats', 'scene_id', mustExist(db, 'beats', beatId, 'Beat'), direction)
+}
+
+export function deleteBeat(db, beatId) {
+  deleteFromList(db, 'beats', 'scene_id', mustExist(db, 'beats', beatId, 'Beat'))
+}
+
+// --- characters -------------------------------------------------------------
+
+// The filename isn't editable: renaming a character leaves their notes
+// file's name as it was (spec: File handling).
+const CHARACTER_FIELDS = {
+  name: ['name', line, 'Name'],
+  age: ['age', (v, l) => line(v, l, { allowBlank: true }), 'Age'],
+  birthday: ['birthday', (v, l) => line(v, l, { allowBlank: true }), 'Birthday']
+}
+
+export function updateCharacter(db, characterId, patch) {
+  mustExist(db, 'characters', characterId, 'Character')
+  update(db, 'characters', characterId, columns(patch, CHARACTER_FIELDS, 'Character'))
+}
+
+// Deletes the character's row and fields. Their notes file stays on disk.
+export function deleteCharacter(db, characterId) {
+  mustExist(db, 'characters', characterId, 'Character')
+  db.prepare('DELETE FROM characters WHERE id = ?').run(characterId)
+}
+
+// A field's value may run to several lines and may be blank. It's
+// trimmed, not otherwise changed.
+function fieldValue(value, label) {
+  if (typeof value !== 'string') throw new Error(`${label} must be text`)
+  return value.trim()
+}
+
+const CHARACTER_FIELD_FIELDS = {
+  label: ['label', line, 'Label'],
+  value: ['value', fieldValue, 'Value']
+}
+
+// Adds a field at the end of the character's list. Returns its id.
+export function createCharacterField(db, characterId, fields) {
+  mustExist(db, 'characters', characterId, 'Character')
+  const values = Object.fromEntries(columns(fields, CHARACTER_FIELD_FIELDS, 'Field'))
+  if (!('label' in values)) throw new Error('A new field needs a label')
+  return db.transaction(() => {
+    const position = db
+      .prepare('SELECT coalesce(max(position), 0) + 1 FROM character_fields WHERE character_id = ?')
+      .pluck()
+      .get(characterId)
+    const info = db
+      .prepare('INSERT INTO character_fields (character_id, position, label, value) VALUES (?, ?, ?, ?)')
+      .run(characterId, position, values.label, values.value ?? '')
+    return Number(info.lastInsertRowid)
+  })()
+}
+
+export function updateCharacterField(db, fieldId, patch) {
+  mustExist(db, 'character_fields', fieldId, 'Field')
+  update(db, 'character_fields', fieldId, columns(patch, CHARACTER_FIELD_FIELDS, 'Field'))
+}
+
+export function moveCharacterField(db, fieldId, direction) {
+  const field = mustExist(db, 'character_fields', fieldId, 'Field')
+  moveInList(db, 'character_fields', 'character_id', field, direction)
+}
+
+export function deleteCharacterField(db, fieldId) {
+  deleteFromList(db, 'character_fields', 'character_id', mustExist(db, 'character_fields', fieldId, 'Field'))
 }
 
 // --- edit notes -----------------------------------------------------------

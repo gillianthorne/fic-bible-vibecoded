@@ -107,12 +107,17 @@ creates, renames or changes a file.
 ```
 fic-library/
   The Long Winter/          a work, titled "The Long Winter"
-    01-First Snow/          chapter 1, "First Snow"
-      01-arrival.md         scene 1, "arrival"
-      02-the cabin.md       scene 2, "the cabin"
-    02-Thaw/                chapter 2, "Thaw"
+    characters/
+      Marie.md              a character, "Marie": her notes
+    notes/                  not used by the app yet
+    chapters/
+      01-First Snow/        chapter 1, "First Snow"
+        01-arrival.md       scene 1, "arrival"
+        02-the cabin.md     scene 2, "the cabin"
+      02-Thaw/              chapter 2, "Thaw"
 ```
 
+- A work folder with no `chapters/` folder is reported and gets no chapters. Before this layout, chapter folders sat directly in the work folder: move them into `chapters/` by hand. The app doesn't move files.
 - The number before the hyphen sets the order. The title is everything after `##-`.
 - Rows that already exist are left as they are, so edits made in the app survive a re-import.
 - Anything that doesn't fit this layout is skipped and listed with a reason. That includes:

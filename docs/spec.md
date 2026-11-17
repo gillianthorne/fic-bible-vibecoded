@@ -35,13 +35,15 @@ The app must be packaged and installable on both platforms — running it from a
 
 ## Screens
 
-Six views in v1. A persistent sidebar on the left, one main pane on the right.
+Six views in v1, and two more in v2 (character profile and search). A persistent sidebar on the left, one main pane on the right.
 
-Above the main pane, a Back button returns to the previous screen, and a breadcrumb (Home / work / chapter / scene) opens any level above the current one. History lasts until the app closes.
+Above the main pane, a Back button returns to the previous screen, and a breadcrumb (Home / work / chapter / scene, or Home / work / character) opens any level above the current one. History lasts until the app closes. Beside the breadcrumb, a search box (v2) searches every work's characters: see Search.
 
 ### 1. Navigation tree (sidebar, always visible)
 
-Works, expanding to chapters, expanding to scenes. Click a work to open the work overview; click a scene to open it in the main pane; click a chapter to open the chapter overview. Shows scene status at a glance. New works, chapters and scenes are created here. Each is added at the end: the next chapter number, or the next scene position in its chapter. Home, above the works, opens the home page.
+Works, each expanding to two groups, Characters (v2) and Chapters. Characters lists the work's characters by name; Chapters expands to chapters, expanding to scenes. Click a work to open the work overview; click a character to open their profile; click a scene to open it in the main pane; click a chapter to open the chapter overview. Shows scene status at a glance. New works, characters, chapters and scenes are created here. Each chapter and scene is added at the end: the next chapter number, or the next scene position in its chapter. Home, above the works, opens the home page.
+
+The work's `notes/` folder (see Work folder layout) has no group in the sidebar yet: nothing in the app uses it.
 
 ### 2. Scene detail (main pane)
 
@@ -91,9 +93,27 @@ The work's home page. At the top: the title, a link to the work page if one is s
 
 The screen the app opens on. At the top, the total wordcount across every work. Below it, every work, grouped by fandom (works with none last), each group with its own wordcount, as a simple table: title, ship, chapter count, wordcount, and the work link if one is set. Clicking a work opens its work overview.
 
+### 7. Character profile (main pane, v2)
+
+One character in one work. At the top, the three fields every character has: name, age in the fic, and birthday. Each is free text: an age can be "17" or "early thirties", and a birthday can be "14 March" with or without a year.
+
+Below those, the character's own fields, in an order the author sets: as many as wanted, each a label and a value, both free text. They hold whatever this character and this fic need — "Team: Toronto", "Position: left wing", "Tims order: medium double-double", "Bagel order: everything, plain cream cheese". Each is editable in place, can be reordered, added or deleted. Labels offer previously-used labels as you type, from every work's characters, so a label used once ("Position") is offered for the next character.
+
+Below the fields, the character's notes: freeform text with no labels, for anything that isn't a field. They live in the character's own markdown file (see Work folder layout), not in the database, and are edited here with the same editor as scene prose (see Scene prose editor): markdown markers left visible and the text styled as it would read, the same formatting toolbar, and Ctrl-B and Ctrl-I. Unlike the scene editor, it shows no paragraph numbers, wordcount or edit notes. Saving is explicit, with a Save button or Ctrl-S, under the same guards as saving a scene (see File handling). There is no autosave; leaving the profile, or closing the app, with unsaved notes asks first. Field edits are database rows and save straight away, separately from the notes.
+
+Deleting a character deletes their row and fields; their notes file is left on disk.
+
+### 8. Search (main pane, v2)
+
+Typing in the search box and pressing Enter lists every character, across every work, that matches. A character matches when the search text appears, ignoring case, in their name, age, birthday, any field's label or value, or their notes file. "bagel" finds every bagel order written down anywhere.
+
+Results are grouped by work. Each shows the character's name and what matched: the field as "label: value", or a line of the notes around the match. Clicking a result opens that character's profile.
+
+Notes files are read at search time, as wordcounts are. Nothing from them is copied into the database to make searching faster: an index of their text would be a field in both stores.
+
 ### What the app does not have in v1
 
-No search, no settings UI beyond picking the library root, no themes, no keyboard-shortcut system, no onboarding, no splash screen. (The prose editor's own Ctrl-B, Ctrl-I and Ctrl-S work only inside the editor, and are not a shortcut system.)
+No search (character search added in v2: see Search), no settings UI beyond picking the library root, no themes, no keyboard-shortcut system, no onboarding, no splash screen. (The prose editor's own Ctrl-B, Ctrl-I and Ctrl-S work only inside the editor, and are not a shortcut system.)
 
 ## Storage model
 
@@ -106,20 +126,38 @@ Why this split rather than one or the other:
 - Markdown files mean the drafts stay readable and editable without the app, work with git, and are not trapped in software built in a week
 - SQLite means the structural data is queryable and consistent, where it would get chaotic as JSON, and remains inspectable in sqlitebrowser when the app misbehaves
 
+### Work folder layout
+
+Each work's folder holds three folders, with fixed names (v2):
+
+```
+<library root>/
+  <work folder>/
+    characters/
+      <name>.md         a character's notes
+    notes/              not used by the app yet
+    chapters/
+      ##-<title>/       a chapter
+        ##-<title>.md   a scene
+```
+
+Before v2, chapter folders sat directly in the work folder. Works laid out that way are moved into `chapters/` by the author, by hand, before using v2: the app does not move files. A work folder with no `chapters/` folder is reported by import, and its scenes can't be opened until it is reorganised.
+
 ### Path layering
 
 Paths nest rather than repeating. Each level stores only its own segment, relative to its parent:
 
 - **App config** holds the library root — one value, the only absolute path anywhere
 - **Work** holds a folder name, relative to the library root
-- **Chapter** holds a folder name, relative to its work's folder
+- **Chapter** holds a folder name, relative to its work's `chapters/` folder
 - **Scene** holds a filename only
+- **Character** holds a filename only, relative to its work's `characters/` folder
 
-A scene's full path is assembled at runtime from those four parts. Absolute paths are never stored in the database: moving or renaming the project is then a one-line config change rather than an UPDATE across every row.
+A scene's full path is assembled at runtime from those four parts, with the fixed `chapters` segment between the work and the chapter; a character's notes path from the library root, the work folder, the fixed `characters` segment and the filename. The fixed segments are never stored, so moving existing chapter folders into `chapters/` needs no change to any row. Absolute paths are never stored in the database: moving or renaming the project is then a one-line config change rather than an UPDATE across every row.
 
 ## Data model
 
-Four tables in a straight chain: a work has chapters, a chapter has scenes, a scene has beats. A scene also has edit notes (v2), beside its beats. Beside the chain, two small tables name each work's fandom and ship. Every relationship is one-to-many; nothing is many-to-many.
+Four tables in a straight chain: a work has chapters, a chapter has scenes, a scene has beats. A scene also has edit notes (v2), beside its beats. A work also has characters (v2), and a character has fields. Beside the chain, two small tables name each work's fandom and ship. Characters live in the same database as everything else: there is one database file, never one per work. Every relationship is one-to-many; nothing is many-to-many.
 
 | Table | Field | Notes |
 | --- | --- | --- |
@@ -155,6 +193,15 @@ Four tables in a straight chain: a work has chapters, a chapter has scenes, a sc
 | edit_notes | kind | Free text, suggestion-sourced; may be blank |
 | edit_notes | note | The correction or note itself — free text |
 | edit_notes | status | Fixed vocabulary — see below |
+| characters | work_id | FK to works (v2) |
+| characters | name | Free text; required |
+| characters | age | Free text: age in the fic; may be blank |
+| characters | birthday | Free text; may be blank |
+| characters | filename | The notes file in the work's `characters/` folder; filename only |
+| character_fields | character_id | FK to characters (v2) |
+| character_fields | position | Ordered within the character |
+| character_fields | label | Free text, suggestion-sourced |
+| character_fields | value | Free text |
 | fandoms | name | Unique, ignoring case |
 | ships | fandom_id | FK to fandoms |
 | ships | name | Unique within its fandom, ignoring case |
@@ -162,6 +209,12 @@ Four tables in a straight chain: a work has chapters, a chapter has scenes, a sc
 ### Notes are about the prose, not prose
 
 `notes` on works, chapters and scenes are plain multi-line text, written in the app: inspiration, where supporting files live, anything worth remembering. They describe the prose and never hold it, so the rule that no field lives in both stores still holds. Any `http` or `https` URL in a note is shown as a link.
+
+### Character fields are label and value, not columns
+
+Name, age and birthday are columns because every character has them. Everything else is a row in `character_fields`, because what's worth tracking differs by fic: a hockey AU wants team and position, another fic wants neither. A new kind of field never needs a schema change, the same reasoning as beat kinds.
+
+A character's notes are the one part of the profile kept in a file rather than a column. Fields describe the character in short values; the notes are longer writing, and live with the prose. As with every other split, nothing is in both: the notes are never copied into a column.
 
 ### Beats are deliberately heterogeneous
 
@@ -210,7 +263,7 @@ Only the status fields have a closed set of values. Each describes progress rath
 
 ### Suggestion-sourced free text
 
-`beats.kind`, `edit_notes.kind` and `scenes.pov` are free text. Beat kinds and edit-note kinds are suggested separately. The app offers previously-used values as suggestions, pulled live from existing rows with a DISTINCT query.
+`beats.kind`, `edit_notes.kind`, `character_fields.label` and `scenes.pov` are free text. Beat kinds, edit-note kinds and field labels are suggested separately. The app offers previously-used values as suggestions, pulled live from existing rows with a DISTINCT query.
 
 There is no lookup table for either. The vocabulary emerges from use rather than being declared up front, there is nothing to maintain, and a new kind of beat never requires a schema change. A "kinds I have used, and how often" view falls out of the same query for free.
 
@@ -224,20 +277,23 @@ The v1 write boundary, stated precisely because it is easy to widen by accident:
 
 - The app **may read** any file under the library root
 - The app **may create** a new empty folder when a work or chapter is created, and a new empty scene file when a scene is created. Each is named as import expects (a work's folder is its title; a chapter is `##-title`; a scene is `##-title.md`) and always comes after the existing ones. If the name is already taken on disk, nothing is created.
-- The app **must never write to a file that has content**, with one exception, added in v2: saving a scene from the prose editor
+- In v2, creating a work also creates its three empty folders, `characters/`, `notes/` and `chapters/`, and a new chapter's folder goes in `chapters/`. Creating a character creates a new empty notes file, `<name>.md`, in the work's `characters/` folder, creating that folder first if it is missing. If the file's name is already taken on disk, or the name can't be used as a filename on both Linux and Windows, nothing is created and the app says why.
+- The app **must never write to a file that has content**, with two exceptions, added in v2: saving a scene from the prose editor, and saving a character's notes from their profile
 
-Saving from the prose editor is the only write to an existing file, and it is guarded:
+Those two saves are the only writes to an existing file, and both are guarded the same way:
 
-- It writes only that scene's own file, the one its row points at
+- It writes only that scene's or character's own file, the one its row points at
 - It refuses to save if the file has changed on disk since the editor opened it (another editor, a sync client), and says so rather than overwriting
 - It writes to a temporary file beside the scene, then renames it over the original, so a failed save leaves the old file whole
 - It keeps the file's line endings (CRLF or LF) and any byte-order mark as they were. A file that mixes CRLF and LF is saved with whichever it uses most
 - Saving text that hasn't changed writes nothing
-- A file that isn't valid UTF-8 can't be opened in the editor, since saving it would change bytes the author never touched
+- A file that isn't valid UTF-8 can't be opened in the editor (or, for a character's notes, edited on the profile), since saving it would change bytes the author never touched
 
 Creating a scene creates its file immediately, empty. A scene therefore always has a file and always has a wordcount, which is zero until it is written. This keeps outlining ahead of drafting possible without making `filename` nullable or special-casing missing files everywhere.
 
-The app does not rename, move or delete prose files in v1, and it does not assemble chapter files. Deleting a scene row leaves its file on disk.
+The app does not rename, move or delete prose files in v1, and it does not assemble chapter files. Deleting a scene row leaves its file on disk. The same holds for character notes in v2: renaming a character leaves their file's name as it was, and deleting a character leaves the file.
+
+Import reads `.md` files in a work's `characters/` folder as characters, named by the filename without `.md`, with blank age, birthday and no fields. A file already pointed at by a character row is left alone.
 
 ## Cross-platform requirements
 
@@ -270,5 +326,6 @@ Explicitly not in v1:
 3. Cross-reference views — every scene where a given beat kind or POV appears
 4. Synced database — keep the database in the library folder so a cloud folder (e.g. OneDrive) carries it between laptops with the prose. Replaces "the data is per-machine"; a cloud service can't merge a database, so the app would need to warn when it finds a conflict copy
 5. Edit notes — per-paragraph corrections and notes for revising, added from the prose viewer and worked through in the editor. Built: see Scene detail, Scene prose viewer, Scene prose editor, and the edit_notes table
+6. Characters — a profile per character in each work, with fixed fields, the author's own label-and-value fields, and freeform notes in a file, plus a search across every work's characters. Changes the work folder layout to `characters/`, `notes/` and `chapters/`. See Character profile, Search, Work folder layout, and the characters and character_fields tables
 
 Anything added in v2 must not break the two rules this model rests on: no field in both stores, and no stored wordcounts outside a snapshots table.

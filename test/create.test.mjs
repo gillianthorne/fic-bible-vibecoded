@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url'
 import { openSqlite } from '../src/main/sqlite.js'
 import { migrate } from '../src/main/migrate.js'
 import { importLibrary } from '../src/main/import.js'
-import { createChapter, createScene, createWork } from '../src/main/create.js'
+import { createChapter, createCharacter, createScene, createWork } from '../src/main/create.js'
 import { createHandlers } from '../src/main/handlers.js'
 
 const MIGRATIONS = fileURLToPath(new URL('../migrations', import.meta.url))
@@ -28,6 +28,7 @@ test('creates a work folder, ##-title chapter folders and empty ##-title.md scen
   const workId = createWork(db, root, '  Salt and Static ')
   assert.deepEqual(db.prepare('SELECT title, folder FROM works').get(), { title: 'Salt and Static', folder: 'Salt and Static' })
   assert.ok(fs.statSync(path.join(root, 'Salt and Static')).isDirectory())
+  assert.deepEqual(fs.readdirSync(path.join(root, 'Salt and Static')).sort(), ['chapters', 'characters', 'notes'])
 
   const one = createChapter(db, root, workId, 'Signal')
   const two = createChapter(db, root, workId, 'The Tide Tables')
@@ -49,7 +50,7 @@ test('creates a work folder, ##-title chapter folders and empty ##-title.md scen
       { position: 2, title: 'Second', filename: '02-Second.md', pov: '', status: 'outlined' }
     ]
   )
-  const file = path.join(root, 'Salt and Static', '01-Signal', '02-Second.md')
+  const file = path.join(root, 'Salt and Static', 'chapters', '01-Signal', '02-Second.md')
   assert.equal(fs.readFileSync(file, 'utf8'), '')
 })
 
@@ -57,7 +58,7 @@ test('numbers continue from the highest, padded to two digits until 100', () => 
   const { db, root } = setup()
   const workId = createWork(db, root, 'W')
   db.prepare("INSERT INTO chapters (work_id, number, title, folder) VALUES (?, 99, 'Late', '99-Late')").run(workId)
-  fs.mkdirSync(path.join(root, 'W', '99-Late'))
+  fs.mkdirSync(path.join(root, 'W', 'chapters', '99-Late'))
   const id = createChapter(db, root, workId, 'Next')
   assert.equal(db.prepare('SELECT folder FROM chapters WHERE id = ?').pluck().get(id), '100-Next')
 })
@@ -69,7 +70,7 @@ test('a re-import finds everything created and adds nothing', () => {
   createScene(db, root, ch, 'Scene')
   createChapter(db, root, workId, 'Empty chapter')
   const result = importLibrary(db, root)
-  assert.deepEqual(result.added, { works: 0, chapters: 0, scenes: 0 })
+  assert.deepEqual(result.added, { works: 0, chapters: 0, scenes: 0, characters: 0 })
   assert.deepEqual(result.skipped, [])
 })
 
@@ -96,7 +97,7 @@ test('titles that cannot be file names are refused, and nothing is created', () 
   // "CON" is only reserved as a whole name: 01-CON is fine for a chapter.
   const workId = createWork(db, root, 'W')
   createChapter(db, root, workId, 'CON')
-  assert.ok(fs.existsSync(path.join(root, 'W', '01-CON')))
+  assert.ok(fs.existsSync(path.join(root, 'W', 'chapters', '01-CON')))
 })
 
 test('a name already on disk, in any case, is refused and left untouched', () => {
@@ -111,13 +112,13 @@ test('a name already on disk, in any case, is refused and left untouched', () =>
 test('a number already used on disk by something not imported is refused', () => {
   const { db, root } = setup()
   const workId = createWork(db, root, 'W')
-  fs.mkdirSync(path.join(root, 'W', '01-Not imported yet'))
+  fs.mkdirSync(path.join(root, 'W', 'chapters', '01-Not imported yet'))
   assert.throws(() => createChapter(db, root, workId, 'New'), /already a chapter 1 on disk \(“01-Not imported yet”\)/)
   assert.equal(count(db, 'chapters'), 0)
 
   db.prepare("INSERT INTO chapters (work_id, number, title, folder) VALUES (?, 1, 'Not imported yet', '01-Not imported yet')").run(workId)
   const chapterId = db.prepare('SELECT id FROM chapters').pluck().get()
-  const stray = path.join(root, 'W', '01-Not imported yet', '01-Draft.md')
+  const stray = path.join(root, 'W', 'chapters', '01-Not imported yet', '01-Draft.md')
   fs.writeFileSync(stray, 'words already here')
   assert.throws(() => createScene(db, root, chapterId, 'Draft'), /already exists on disk/)
   assert.throws(() => createScene(db, root, chapterId, 'Other'), /already a scene 1 on disk/)
@@ -131,7 +132,7 @@ test('if the parent folder is missing on disk, the row is rolled back', () => {
   const chapterId = createChapter(db, root, workId, 'One')
   fs.rmSync(path.join(root, 'W'), { recursive: true })
   assert.throws(() => createScene(db, root, chapterId, 'S'), /chapter folder is missing on disk/)
-  assert.throws(() => createChapter(db, root, workId, 'Two'), /work folder is missing on disk/)
+  assert.throws(() => createChapter(db, root, workId, 'Two'), /work’s chapters folder is missing on disk/)
   assert.equal(count(db, 'scenes'), 0)
   assert.equal(count(db, 'chapters'), 1)
 })
@@ -152,4 +153,41 @@ test('handlers return the new id, or the error', () => {
   const scene = handlers['scene:create'](chapter.data, 'S')
   assert.equal(db.prepare('SELECT title FROM scenes WHERE id = ?').pluck().get(scene.data), 'S')
   assert.deepEqual(handlers['work:create']('a/b'), { ok: false, error: 'Title can’t contain “/”: it becomes a file name' })
+})
+
+test('a character is a row and an empty notes file in the work’s characters folder', () => {
+  const { db, root } = setup()
+  const workId = createWork(db, root, 'Hockey AU')
+  const id = createCharacter(db, root, workId, '  Marie-Philip ')
+  assert.deepEqual(db.prepare('SELECT name, age, birthday, filename FROM characters WHERE id = ?').get(id), {
+    name: 'Marie-Philip', age: '', birthday: '', filename: 'Marie-Philip.md'
+  })
+  assert.equal(fs.readFileSync(path.join(root, 'Hockey AU', 'characters', 'Marie-Philip.md'), 'utf8'), '')
+  // A re-import recognises it.
+  assert.deepEqual(importLibrary(db, root).added, { works: 0, chapters: 0, scenes: 0, characters: 0 })
+})
+
+test('a character’s name already taken on disk, in any case, is refused and the file left alone', () => {
+  const { db, root } = setup()
+  const workId = createWork(db, root, 'W')
+  const mine = path.join(root, 'W', 'characters', 'Marie.md')
+  fs.writeFileSync(mine, 'my notes')
+  assert.throws(() => createCharacter(db, root, workId, 'marie'), /already exists on disk/)
+  assert.equal(fs.readFileSync(mine, 'utf8'), 'my notes')
+  assert.equal(count(db, 'characters'), 0)
+  for (const [name, message] of [['', /Name can’t be blank/], ['A/B', /contain “\/”/], ['.x', /start with a dot/], ['aux', /reserves/]]) {
+    assert.throws(() => createCharacter(db, root, workId, name), message, name)
+  }
+  assert.equal(count(db, 'characters'), 0)
+})
+
+test('a work made before v2 gets its characters folder when its first character is made', () => {
+  const { db, root } = setup()
+  fs.mkdirSync(path.join(root, 'Old'))
+  const workId = db.prepare("INSERT INTO works (title, folder) VALUES ('Old', 'Old')").run().lastInsertRowid
+  createCharacter(db, root, Number(workId), 'Ana')
+  assert.ok(fs.existsSync(path.join(root, 'Old', 'characters', 'Ana.md')))
+  fs.rmSync(path.join(root, 'Old'), { recursive: true })
+  assert.throws(() => createCharacter(db, root, Number(workId), 'Bo'), /work folder is missing on disk/)
+  assert.equal(count(db, 'characters'), 1)
 })

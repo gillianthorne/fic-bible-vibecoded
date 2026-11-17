@@ -5,7 +5,13 @@ const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`
 
 export default function ImportReport({ report }) {
   const { libraryRoot, added, cleared, skipped } = report
-  const addedAny = added.works + added.chapters + added.scenes > 0
+  const counts = [
+    plural(added.works, 'work', 'works'),
+    plural(added.chapters, 'chapter', 'chapters'),
+    plural(added.scenes, 'scene', 'scenes'),
+    plural(added.characters ?? 0, 'character', 'characters')
+  ]
+  const addedAny = added.works + added.chapters + added.scenes + (added.characters ?? 0) > 0
 
   return (
     <article className="import-report">
@@ -16,11 +22,7 @@ export default function ImportReport({ report }) {
 
       <p role="status">
         {addedAny
-          ? `Added ${plural(added.works, 'work', 'works')}, ${plural(added.chapters, 'chapter', 'chapters')} and ${plural(
-              added.scenes,
-              'scene',
-              'scenes'
-            )}.`
+          ? `Added ${counts.slice(0, -1).join(', ')} and ${counts.at(-1)}.`
           : 'Nothing new to add. Everything in this folder was already imported.'}
         {cleared > 0 && ` Cleared ${plural(cleared, 'work', 'works')} that had no folder here.`}
       </p>

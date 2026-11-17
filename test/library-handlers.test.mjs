@@ -45,12 +45,12 @@ function setup({ current, pick, answer = 'keep' }) {
 const workTitles = (db) => db.prepare('SELECT title FROM works ORDER BY title').pluck().all()
 
 test('choosing a folder saves it and imports it', async () => {
-  const root = library(['W/01-One'])
+  const root = library(['W/chapters/01-One'])
   const { db, state, handlers } = setup({ current: null, pick: root })
   const result = await handlers['library:choose']()
   assert.equal(result.ok, true, result.error)
   assert.deepEqual(state.saved, [root])
-  assert.deepEqual(result.data.added, { works: 1, chapters: 1, scenes: 0 })
+  assert.deepEqual(result.data.added, { works: 1, chapters: 1, scenes: 0, characters: 0 })
   assert.equal(result.data.cleared, 0)
   assert.deepEqual(state.asked, [])
   assert.deepEqual(workTitles(db), ['W'])
@@ -89,13 +89,13 @@ for (const [answer, expected] of [
 }
 
 test('library:import re-imports the current library', () => {
-  const root = library(['W/01-One'])
+  const root = library(['W/chapters/01-One'])
   const { handlers } = setup({ current: root, pick: null })
   const first = handlers['library:import']()
-  assert.deepEqual(first.data.added, { works: 1, chapters: 1, scenes: 0 })
-  fs.writeFileSync(path.join(root, 'W', '01-One', '01-new.md'), '')
+  assert.deepEqual(first.data.added, { works: 1, chapters: 1, scenes: 0, characters: 0 })
+  fs.writeFileSync(path.join(root, 'W', 'chapters', '01-One', '01-new.md'), '')
   const second = handlers['library:import']()
-  assert.deepEqual(second.data.added, { works: 0, chapters: 0, scenes: 1 })
+  assert.deepEqual(second.data.added, { works: 0, chapters: 0, scenes: 1, characters: 0 })
   assert.equal(second.data.libraryRoot, root)
 })
 

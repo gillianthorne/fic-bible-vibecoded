@@ -31,8 +31,9 @@ function total(items) {
   return { wordcount, uncounted }
 }
 
-// Sidebar: works -> chapters -> scenes, with status. Reads no files.
-// Works and chapters with no children are included, with empty arrays.
+// Sidebar: works -> chapters -> scenes, with status, and each work's
+// characters by name. Reads no files. Works and chapters with no children
+// are included, with empty arrays.
 export function navigationTree(db) {
   const rows = db
     .prepare(
@@ -52,7 +53,7 @@ export function navigationTree(db) {
   for (const r of rows) {
     let work = workById.get(r.workId)
     if (!work) {
-      work = { id: r.workId, title: r.workTitle, chapters: [] }
+      work = { id: r.workId, title: r.workTitle, characters: [], chapters: [] }
       workById.set(r.workId, work)
       works.push(work)
     }
@@ -66,7 +67,29 @@ export function navigationTree(db) {
     if (r.sceneId === null) continue
     chapter.scenes.push({ id: r.sceneId, position: r.position, title: r.sceneTitle, status: r.sceneStatus })
   }
+  const characters = db
+    .prepare('SELECT id, work_id AS workId, name FROM characters ORDER BY name COLLATE NOCASE, id')
+    .all()
+  for (const c of characters) workById.get(c.workId)?.characters.push({ id: c.id, name: c.name })
   return works
+}
+
+// One character's profile: their columns and fields, in order. The notes
+// file isn't read here; the notes editor reads it (save.js). Returns null
+// for an unknown character.
+export function characterProfile(db, characterId) {
+  const character = db
+    .prepare(
+      `SELECT c.id, c.name, c.age, c.birthday, c.filename, w.id AS workId, w.title AS workTitle
+       FROM characters c JOIN works w ON w.id = c.work_id WHERE c.id = ?`
+    )
+    .get(characterId)
+  if (!character) return null
+  const { workId, workTitle, ...rest } = character
+  const fields = db
+    .prepare('SELECT id, position, label, value FROM character_fields WHERE character_id = ? ORDER BY position')
+    .all(characterId)
+  return { ...rest, work: { id: workId, title: workTitle }, fields }
 }
 
 // Chapter overview table. Returns null for an unknown chapter.
@@ -365,7 +388,8 @@ export function libraryOverview(db, libraryRoot) {
   return { works, wordcount: sum('wordcount'), uncounted: sum('uncounted') }
 }
 
-// Previously used beat kinds and POVs, most used first, ties alphabetical.
+// Previously used beat kinds, edit-note kinds, POVs and character field
+// labels (from every work), most used first, ties alphabetical.
 // Case-sensitive, like the spec's DISTINCT. Blank values (an imported
 // scene's POV before it's filled in) aren't suggestions.
 export function suggestions(db) {
@@ -390,6 +414,7 @@ export function suggestions(db) {
     kinds: usage('kind', 'beats'),
     editKinds: usage('kind', 'edit_notes'),
     povs: usage('pov', 'scenes'),
+    fieldLabels: usage('label', 'character_fields'),
     fandoms,
     ships
   }

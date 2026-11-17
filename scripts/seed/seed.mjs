@@ -15,7 +15,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { requireTestLibrary } from './guard.mjs'
 import { openSqlite } from '../../src/main/sqlite.js'
 import { migrate } from '../../src/main/migrate.js'
-import { scenePath } from '../../src/main/paths.js'
+import { WORK_FOLDERS, chapterDir, scenePath } from '../../src/main/paths.js'
 import { TEST_DB_NAME } from '../../src/main/test-library.js'
 import * as data from './data.mjs'
 
@@ -126,6 +126,7 @@ function generate(db, root, created) {
   for (const work of data.OUTLINE) {
     const workId = insertWork.run(work.title, work.folder).lastInsertRowid
     makeDir(root, work.folder, created)
+    for (const sub of WORK_FOLDERS) makeDir(root, path.join(work.folder, sub), created)
     summary.works++
     if (work.chapters.length === 0) summary.edgeCases.workWithNoChapters = work.title
 
@@ -139,7 +140,7 @@ function generate(db, root, created) {
         posted ? `https://example.invalid/${work.folder}/chapter-${number}` : null
       ).lastInsertRowid
       if (posted) postedDay += 14 * 86400000
-      makeDir(root, path.join(work.folder, chFolder), created)
+      makeDir(root, path.relative(root, chapterDir(root, work.folder, chFolder)), created)
       summary.chapters++
       if (ch.scenes === 1) summary.edgeCases.chapterWithOneScene = `${work.title} ch ${number}`
       if (ch.title.length > 40) summary.edgeCases.longChapterTitle = `${work.title} ch ${number}`

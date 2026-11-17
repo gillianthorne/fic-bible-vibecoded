@@ -44,8 +44,8 @@ test('re-running produces identical rows and files', () => {
 
 test('never overwrites a file it did not create', () => {
   const root = markedLibrary()
-  fs.mkdirSync(path.join(root, 'lantern-road', 'chapter-01'), { recursive: true })
-  const mine = path.join(root, 'lantern-road', 'chapter-01', 'scene-01.md')
+  fs.mkdirSync(path.join(root, 'lantern-road', 'chapters', 'chapter-01'), { recursive: true })
+  const mine = path.join(root, 'lantern-road', 'chapters', 'chapter-01', 'scene-01.md')
   fs.writeFileSync(mine, 'Not the seeder\'s.')
   assert.throws(() => seed(root), /Refusing to overwrite/)
   assert.equal(fs.readFileSync(mine, 'utf8'), 'Not the seeder\'s.')

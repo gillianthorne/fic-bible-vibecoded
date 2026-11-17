@@ -3,9 +3,10 @@ import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
 import LibraryBar from './LibraryBar.jsx'
 
-// The navigation tree: works, expanding to chapters, expanding to scenes.
-// Clicking a work opens its overview, a chapter its overview, and a scene
-// its detail. Home, above the tree, opens the home page.
+// The navigation tree: works, each holding two groups, Characters and
+// Chapters; chapters expand to scenes. Clicking a work opens its overview,
+// a character their profile, a chapter its overview, and a scene its
+// detail. Home, above the tree, opens the home page.
 //
 // Built as nested lists with disclosure buttons (aria-expanded), not an
 // ARIA tree: role="tree" promises arrow-key navigation, which v1 doesn't
@@ -72,7 +73,7 @@ function StatusDot({ status }) {
 // to { ok, data: newId } or { ok: false, error }; onCreated(newId) runs
 // after a successful create. A failed create keeps the box open with the
 // error under it.
-function NewItem({ what, create, onCreated, className }) {
+function NewItem({ what, label = 'title', create, onCreated, className }) {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState('')
   const [busy, setBusy] = useState(false)
@@ -114,8 +115,8 @@ function NewItem({ what, create, onCreated, className }) {
       <input
         type="text"
         value={title}
-        aria-label={`New ${what} title`}
-        placeholder={`New ${what} title`}
+        aria-label={`New ${what} ${label}`}
+        placeholder={`New ${what} ${label}`}
         autoFocus
         disabled={busy}
         onChange={(e) => setTitle(e.target.value)}
@@ -174,10 +175,68 @@ function Chapter({ chapter, workId, selection, onSelect, isExpanded, onToggle, c
           what="scene"
           className="tree-new-scene"
           create={(title) => window.ficBible.createScene(chapter.id, title)}
-          onCreated={(id) => onCreated({ kind: 'scene', id }, [`work:${workId}`, `chapter:${chapter.id}`])}
+          onCreated={(id) => onCreated({ kind: 'scene', id }, [`work:${workId}`, `chapters:${workId}`, `chapter:${chapter.id}`])}
         />
       )}
     </li>
+  )
+}
+
+// One of a work's two groups, Characters and Chapters: a heading that
+// folds and unfolds, not a link, since neither has a screen of its own.
+function Group({ groupKey, label, count, hidesSelection, isExpanded, onToggle, children }) {
+  const open = isExpanded(groupKey)
+  return (
+    <li className="tree-group">
+      <div className={['tree-row', !open && hidesSelection && 'hides-selection'].filter(Boolean).join(' ')}>
+        <button type="button" className="tree-group-title" aria-expanded={open} onClick={() => onToggle(groupKey)}>
+          <span className="tree-toggle-mark" aria-hidden="true">
+            {open ? '▾' : '▸'}
+          </span>
+          <span className="tree-title">{label}</span>
+          <span className="tree-count">{count}</span>
+          {!open && hidesSelection && <HiddenSelection />}
+        </button>
+      </div>
+      {open && <div className="tree-group-body">{children}</div>}
+    </li>
+  )
+}
+
+function Characters({ work, selection, onSelect, isExpanded, onToggle, canCreate, onCreated }) {
+  const groupKey = `characters:${work.id}`
+  return (
+    <Group
+      groupKey={groupKey}
+      label="Characters"
+      count={work.characters.length}
+      hidesSelection={work.characters.some((c) => isSelected(selection, 'character', c.id))}
+      isExpanded={isExpanded}
+      onToggle={onToggle}
+    >
+      {work.characters.length === 0 ? (
+        <p className="tree-empty muted">No characters</p>
+      ) : (
+        <ul className="tree-characters">
+          {work.characters.map((c) => (
+            <li key={c.id} title={c.name}>
+              <Item kind="character" id={c.id} selection={selection} onSelect={onSelect} className="tree-character">
+                <span className="tree-title">{c.name}</span>
+              </Item>
+            </li>
+          ))}
+        </ul>
+      )}
+      {canCreate && (
+        <NewItem
+          what="character"
+          label="name"
+          className="tree-new-character"
+          create={(name) => window.ficBible.createCharacter(work.id, name)}
+          onCreated={(id) => onCreated({ kind: 'character', id }, [`work:${work.id}`, groupKey])}
+        />
+      )}
+    </Group>
   )
 }
 
@@ -187,7 +246,9 @@ function Work({ work, selection, onSelect, isExpanded, onToggle, canCreate, onCr
   const key = `work:${work.id}`
   const open = isExpanded(key)
   const selected = isSelected(selection, 'work', work.id)
-  const hidesSelection = !open && work.chapters.some((ch) => chapterHolds(ch, selection))
+  const holdsCharacter = work.characters.some((c) => isSelected(selection, 'character', c.id))
+  const holdsChapter = work.chapters.some((ch) => chapterHolds(ch, selection))
+  const hidesSelection = !open && (holdsCharacter || holdsChapter)
   function click() {
     if (selected || !open) onToggle(key)
     if (!selected) onSelect({ kind: 'work', id: work.id })
@@ -212,33 +273,54 @@ function Work({ work, selection, onSelect, isExpanded, onToggle, canCreate, onCr
           {hidesSelection && <HiddenSelection />}
         </button>
       </h2>
-      {open &&
-        (work.chapters.length === 0 ? (
-          <p className="tree-empty muted">No chapters</p>
-        ) : (
-          <ul className="tree-chapters">
-            {work.chapters.map((chapter) => (
-              <Chapter
-                key={chapter.id}
-                chapter={chapter}
-                workId={work.id}
-                selection={selection}
-                onSelect={onSelect}
-                isExpanded={isExpanded}
-                onToggle={onToggle}
-                canCreate={canCreate}
-                onCreated={onCreated}
+      {open && (
+        <ul className="tree-groups">
+          <Characters
+            work={work}
+            selection={selection}
+            onSelect={onSelect}
+            isExpanded={isExpanded}
+            onToggle={onToggle}
+            canCreate={canCreate}
+            onCreated={onCreated}
+          />
+          <Group
+            groupKey={`chapters:${work.id}`}
+            label="Chapters"
+            count={work.chapters.length}
+            hidesSelection={holdsChapter}
+            isExpanded={isExpanded}
+            onToggle={onToggle}
+          >
+            {work.chapters.length === 0 ? (
+              <p className="tree-empty muted">No chapters</p>
+            ) : (
+              <ul className="tree-chapters">
+                {work.chapters.map((chapter) => (
+                  <Chapter
+                    key={chapter.id}
+                    chapter={chapter}
+                    workId={work.id}
+                    selection={selection}
+                    onSelect={onSelect}
+                    isExpanded={isExpanded}
+                    onToggle={onToggle}
+                    canCreate={canCreate}
+                    onCreated={onCreated}
+                  />
+                ))}
+              </ul>
+            )}
+            {canCreate && (
+              <NewItem
+                what="chapter"
+                className="tree-new-chapter"
+                create={(title) => window.ficBible.createChapter(work.id, title)}
+                onCreated={(id) => onCreated({ kind: 'chapter', id }, [`work:${work.id}`, `chapters:${work.id}`])}
               />
-            ))}
-          </ul>
-        ))}
-      {open && canCreate && (
-        <NewItem
-          what="chapter"
-          className="tree-new-chapter"
-          create={(title) => window.ficBible.createChapter(work.id, title)}
-          onCreated={(id) => onCreated({ kind: 'chapter', id }, [`work:${work.id}`])}
-        />
+            )}
+          </Group>
+        </ul>
       )}
     </li>
   )
@@ -253,7 +335,7 @@ export default function Sidebar({ selection, onSelect, isExpanded, onToggle, ref
   const canCreate = info.ok === true && info.data.canChange
 
   return (
-    <nav className="sidebar" aria-label="Works, chapters and scenes">
+    <nav className="sidebar" aria-label="Works, characters, chapters and scenes">
       <LibraryBar refreshKey={refreshKey} onImported={onImported} />
       <Item kind="home" selection={selection} onSelect={onSelect} className="tree-home">
         <span className="tree-title">Home</span>
