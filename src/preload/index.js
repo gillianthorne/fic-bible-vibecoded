@@ -38,6 +38,9 @@ contextBridge.exposeInMainWorld('ficBible', {
   updateCharacterField: (fieldId, patch) => ipcRenderer.invoke('characterField:update', fieldId, patch),
   moveCharacterField: (fieldId, direction) => ipcRenderer.invoke('characterField:move', fieldId, direction),
   deleteCharacterField: (fieldId) => ipcRenderer.invoke('characterField:delete', fieldId),
+  characterNotes: (characterId) => ipcRenderer.invoke('character:notes', characterId),
+  saveCharacterNotes: (characterId, text, baseHash) =>
+    ipcRenderer.invoke('character:saveNotes', characterId, text, baseHash),
   suggestions: () => ipcRenderer.invoke('suggestions'),
   openLink: (url) => ipcRenderer.invoke('link:open', url)
 })

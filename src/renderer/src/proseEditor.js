@@ -191,9 +191,10 @@ const proseHighlight = HighlightStyle.define([
 // Creates the editor in `parent` with `text`. onChange(text) is called
 // after each edit, onSave() on Ctrl-S, onNotes(paragraph, element,
 // adding) when an edit-note count or a paragraph number in the margin is
-// clicked. Returns the
-// EditorView; call destroy() on it when done.
-export function createProseEditor({ parent, text, onChange, onSave, onNotes }) {
+// clicked. Without onNotes there's no margin at all: a character's notes
+// have no paragraph numbers or edit notes. label is the text area's
+// accessible name. Returns the EditorView; call destroy() on it when done.
+export function createProseEditor({ parent, text, onChange, onSave, onNotes, label = 'Scene prose' }) {
   const ownKeys = keymap.of([
     // Before the default keymap, which uses Mod-i to select the
     // surrounding syntax.
@@ -215,8 +216,8 @@ export function createProseEditor({ parent, text, onChange, onSave, onNotes }) {
         keymap.of([...defaultKeymap, ...historyKeymap]),
         markdown({ base: markdownLanguage }),
         syntaxHighlighting(proseHighlight),
-        paragraphGutter(onNotes),
-        EditorView.contentAttributes.of({ spellcheck: 'true', autocorrect: 'on', 'aria-label': 'Scene prose' }),
+        onNotes ? paragraphGutter(onNotes) : [],
+        EditorView.contentAttributes.of({ spellcheck: 'true', autocorrect: 'on', 'aria-label': label }),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) onChange(update.state.doc.toString())
         })

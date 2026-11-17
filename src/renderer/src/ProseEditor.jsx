@@ -109,8 +109,8 @@ function NotesPanel({ result, onChanged, viewRef, paragraphs }) {
 
 const count = (n, noun) => `${number(n)} ${noun}${n === 1 ? '' : 's'}`
 
-const isMac = navigator.platform.startsWith('Mac')
-const mod = isMac ? '⌘' : 'Ctrl+'
+export const isMac = navigator.platform.startsWith('Mac')
+export const mod = isMac ? '⌘' : 'Ctrl+'
 
 // The toolbar: [command name, label, accessible name, class]
 const TOOLS = [
@@ -126,7 +126,7 @@ const TOOLS = [
   ['sceneBreak', '* * *', 'Scene break', 'tool-break']
 ]
 
-function Toolbar({ viewRef }) {
+export function Toolbar({ viewRef }) {
   return (
     <div className="editor-toolbar" role="toolbar" aria-label="Formatting">
       {TOOLS.map((tool, i) => {

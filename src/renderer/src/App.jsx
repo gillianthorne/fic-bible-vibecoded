@@ -56,14 +56,15 @@ export default function App() {
     mainPane.current?.scrollTo(0, 0)
   }, [selection])
 
-  // True while the prose editor has unsaved changes. Every way of leaving
-  // a screen asks first while it is; the editor clears it as it closes.
+  // True while the prose editor, or a character's notes, have unsaved
+  // changes. Every way of leaving a screen asks first while it is; the
+  // editor clears it as it closes.
   const unsaved = useRef(false)
   const setUnsaved = (dirty) => {
     unsaved.current = dirty
   }
   const mayLeave = () =>
-    !unsaved.current || window.confirm('Leave without saving? Your changes to this scene will be lost.')
+    !unsaved.current || window.confirm('Leave without saving? Your unsaved changes will be lost.')
 
   // Opening the screen that's already open adds nothing to history.
   const navigate = (next) => {
@@ -203,6 +204,7 @@ export default function App() {
               refreshKey={libraryVersion}
               onChanged={changed}
               onDeleted={characterDeleted}
+              onDirtyChange={setUnsaved}
             />
           )}
           {selection.kind === 'chapter' && selection.view !== 'prose' && (

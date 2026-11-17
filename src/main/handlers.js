@@ -11,7 +11,7 @@ import {
   workOverview
 } from './queries.js'
 import { checkLink } from './links.js'
-import { readSceneSource, saveSceneSource } from './save.js'
+import { readCharacterNotes, readSceneSource, saveCharacterNotes, saveSceneSource } from './save.js'
 import { createChapter, createCharacter, createScene, createWork } from './create.js'
 import { deleteWorks, importLibrary, worksMissingFrom } from './import.js'
 import {
@@ -217,6 +217,19 @@ export function createHandlers(open, library = null, links = null) {
       respond(() => (moveCharacterField(open().db, fieldId, direction), null)),
     'characterField:delete': (fieldId) => respond(() => (deleteCharacterField(open().db, fieldId), null)),
 
+    // A character's notes file, for the profile's editor. data is null for
+    // a character that doesn't exist. Saving is guarded as scene:save is.
+    'character:notes': (characterId) =>
+      respond(() => {
+        const { db, libraryRoot } = open()
+        return readCharacterNotes(db, libraryRoot, characterId)
+      }),
+    'character:saveNotes': (characterId, text, baseHash) =>
+      respond(() => {
+        const { db, libraryRoot } = open()
+        return saveCharacterNotes(db, libraryRoot, characterId, text, baseHash)
+      }),
+
     // Previously used beat kinds and POVs, for the inputs' suggestions.
     suggestions: () => respond(() => suggestions(open().db)),
 
@@ -235,8 +248,9 @@ export function createHandlers(open, library = null, links = null) {
         return readSceneSource(db, libraryRoot, sceneId)
       }),
 
-    // The only write to a file with content: refused if the file changed
-    // on disk since baseHash was read. data is { hash, written }.
+    // One of the two writes to a file with content (with
+    // character:saveNotes): refused if the file changed on disk since
+    // baseHash was read. data is { hash, written }.
     'scene:save': (sceneId, text, baseHash) =>
       respond(() => {
         const { db, libraryRoot } = open()

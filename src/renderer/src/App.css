@@ -2211,3 +2211,26 @@ select.edit-note-status-fixed {
   margin: 2px 0 0;
   white-space: pre-wrap;
 }
+
+/* A character's notes: the prose editor's toolbar and styling, at the
+   profile's size, with no paragraph-number margin. */
+.character-notes {
+  --prose-size: 16px;
+  --prose-leading: 1.6;
+  --prose-gutter: 0px;
+}
+
+.character-notes .save-error {
+  margin: 0 0 12px;
+}
+
+.character-notes .editor-host .cm-editor {
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--page);
+}
+
+.character-notes .editor-host .cm-content {
+  min-height: 12em;
+  padding: 10px 6px 3em;
+}

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
+import CharacterNotes from './CharacterNotes.jsx'
 import { DeleteButton, EditButton, Field, FormActions, SaveError, SuggestInput, useSave, useSuggestions } from './editing.jsx'
 
 // One character's profile (spec: Character profile): name, age and
@@ -242,7 +243,7 @@ function AddField({ characterId, labels, onChanged }) {
 
 // refreshKey re-reads the character without blanking it. onDeleted runs
 // after the character is deleted, so App can move off this screen.
-export default function CharacterProfile({ characterId, refreshKey, onChanged, onDeleted }) {
+export default function CharacterProfile({ characterId, refreshKey, onChanged, onDeleted, onDirtyChange }) {
   const result = useQuery(() => window.ficBible.characterProfile(characterId), characterId, refreshKey)
   const { fieldLabels = [] } = useSuggestions(refreshKey)
 
@@ -279,6 +280,13 @@ export default function CharacterProfile({ characterId, refreshKey, onChanged, o
         )}
         <AddField characterId={character.id} labels={fieldLabels} onChanged={onChanged} />
       </section>
+
+      <CharacterNotes
+        key={`notes-${character.id}`}
+        characterId={character.id}
+        characterName={character.name}
+        onDirtyChange={onDirtyChange}
+      />
 
     </article>
   )

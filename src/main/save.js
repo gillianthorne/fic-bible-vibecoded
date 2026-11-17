@@ -1,14 +1,16 @@
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
-import { scenePath } from './paths.js'
+import { characterPath, scenePath } from './paths.js'
 
-// Reading a scene file for the prose editor, and saving it back. No
-// Electron imports, so these are tested with plain `node --test`.
+// Reading a scene file for the prose editor, or a character's notes file
+// for their profile, and saving it back. No Electron imports, so these are
+// tested with plain `node --test`.
 //
-// Saving is the one write the app makes to a file that has content
-// (docs/spec.md, File handling). The guards:
-// - only the scene's own file, as its row names it, is written
+// These two saves are the only writes the app makes to a file that has
+// content (docs/spec.md, File handling). The guards, the same for both:
+// - only the scene's or character's own file, as its row names it, is
+//   written
 // - the editor sends back the hash of the bytes it was given; if the file
 //   on disk no longer has that hash (another editor, a sync client), the
 //   save is refused and nothing is written
@@ -30,12 +32,12 @@ export const hashBytes = (bytes) => crypto.createHash('sha256').update(bytes).di
 // breaks are CRLF, otherwise '\n' (an empty or one-line file is LF). A
 // file that mixes the two is saved with whichever it uses most. Throws on
 // bytes that aren't UTF-8, which the editor can't round-trip.
-export function decodeScene(bytes) {
+export function decodeScene(bytes, what = 'scene file') {
   let raw
   try {
     raw = utf8.decode(bytes)
   } catch {
-    throw new Error('The scene file isn’t UTF-8 text, so it can’t be edited here.')
+    throw new Error(`The ${what} isn’t UTF-8 text, so it can’t be edited here.`)
   }
   const bom = raw.startsWith(BOM)
   const body = bom ? raw.slice(1) : raw
@@ -79,31 +81,61 @@ function findScene(db, libraryRoot, sceneId) {
   return { ...scene, file: scenePath(libraryRoot, scene.workFolder, scene.chapterFolder, scene.filename) }
 }
 
+// A file's text for an editor, and the hash to send back on save. A file
+// that can't be read or decoded gives text: null plus fileError, and
+// can't be edited.
+function readSource(file, what) {
+  let bytes
+  try {
+    bytes = fs.readFileSync(file)
+  } catch (e) {
+    return { text: null, hash: null, fileError: e.code ?? e.message }
+  }
+  try {
+    const { text, hash } = decodeScene(bytes, what)
+    return { text, hash, fileError: null }
+  } catch (e) {
+    return { text: null, hash: null, fileError: e.message }
+  }
+}
+
 // What the editor opens: the scene's text and the hash to send back on
-// save. null for an unknown scene. A file that can't be read or decoded
-// gives text: null plus fileError, and can't be edited.
+// save. null for an unknown scene.
 export function readSceneSource(db, libraryRoot, sceneId) {
   const scene = findScene(db, libraryRoot, sceneId)
   if (!scene) return null
-  const base = {
+  return {
     id: scene.id,
     title: scene.title,
     filename: scene.filename,
     path: scene.file,
     chapter: { id: scene.chapterId, number: scene.chapterNumber, title: scene.chapterTitle },
-    work: { id: scene.workId, title: scene.workTitle }
+    work: { id: scene.workId, title: scene.workTitle },
+    ...readSource(scene.file, 'scene file')
   }
-  let bytes
-  try {
-    bytes = fs.readFileSync(scene.file)
-  } catch (e) {
-    return { ...base, text: null, hash: null, fileError: e.code ?? e.message }
-  }
-  try {
-    const { text, hash } = decodeScene(bytes)
-    return { ...base, text, hash, fileError: null }
-  } catch (e) {
-    return { ...base, text: null, hash: null, fileError: e.message }
+}
+
+// The character's row and notes file path, or null for an unknown one.
+function findCharacter(db, libraryRoot, characterId) {
+  const character = db
+    .prepare(
+      `SELECT c.id, c.name, c.filename, w.folder AS workFolder
+       FROM characters c JOIN works w ON w.id = c.work_id WHERE c.id = ?`
+    )
+    .get(requireId(characterId, 'characterId'))
+  if (!character) return null
+  return { ...character, file: characterPath(libraryRoot, character.workFolder, character.filename) }
+}
+
+// A character's notes for the profile's editor, as readSceneSource.
+export function readCharacterNotes(db, libraryRoot, characterId) {
+  const character = findCharacter(db, libraryRoot, characterId)
+  if (!character) return null
+  return {
+    id: character.id,
+    filename: character.filename,
+    path: character.file,
+    ...readSource(character.file, 'notes file')
   }
 }
 
@@ -147,35 +179,49 @@ function replaceFile(file, bytes, mode) {
   }
 }
 
-// Saves editor text over the scene's file. baseHash is the hash the
-// editor was given when it opened (or last saved) the file. Returns the
-// new hash, which the editor sends with its next save, and whether
-// anything was written.
-export function saveSceneSource(db, libraryRoot, sceneId, text, baseHash) {
-  if (typeof text !== 'string') throw new Error('Scene text must be a string')
+// Saves editor text over `file`, which an editor opened with baseHash.
+// `what` names the file in messages ("scene file", "notes file").
+function saveSource(file, filename, text, baseHash, what) {
+  if (typeof text !== 'string') throw new Error('The text must be a string')
   if (typeof baseHash !== 'string' || baseHash === '') throw new Error('Missing the hash of the file as it was opened')
-  const scene = findScene(db, libraryRoot, sceneId)
-  if (!scene) throw new Error('That scene no longer exists.')
 
   let current
   try {
-    current = fs.readFileSync(scene.file)
+    current = fs.readFileSync(file)
   } catch (e) {
-    if (e.code === 'ENOENT') throw new Error(`The scene file is gone from disk (${scene.filename}). Nothing was saved.`)
+    if (e.code === 'ENOENT') throw new Error(`The ${what} is gone from disk (${filename}). Nothing was saved.`)
     throw e
   }
   if (hashBytes(current) !== baseHash) {
     throw new Error(
-      'The scene file has changed on disk since the editor opened it, so it wasn’t saved over. ' +
+      `The ${what} has changed on disk since the editor opened it, so it wasn’t saved over. ` +
         'Copy anything you want to keep, then reopen the editor to see the file as it is now.'
     )
   }
 
   // Compared as editor text, so a file with mixed line endings isn't
   // rewritten just by being opened and saved.
-  const decoded = decodeScene(current)
+  const decoded = decodeScene(current, what)
   if (text.replace(/\r\n?/g, '\n') === decoded.text) return { hash: baseHash, written: false }
   const bytes = encodeScene(text, decoded)
-  replaceFile(scene.file, bytes, fs.statSync(scene.file).mode)
+  replaceFile(file, bytes, fs.statSync(file).mode)
   return { hash: hashBytes(bytes), written: true }
+}
+
+// Saves editor text over the scene's file. baseHash is the hash the
+// editor was given when it opened (or last saved) the file. Returns the
+// new hash, which the editor sends with its next save, and whether
+// anything was written.
+export function saveSceneSource(db, libraryRoot, sceneId, text, baseHash) {
+  if (typeof text !== 'string') throw new Error('Scene text must be a string')
+  const scene = findScene(db, libraryRoot, sceneId)
+  if (!scene) throw new Error('That scene no longer exists.')
+  return saveSource(scene.file, scene.filename, text, baseHash, 'scene file')
+}
+
+// Saves a character's notes over their notes file, as saveSceneSource.
+export function saveCharacterNotes(db, libraryRoot, characterId, text, baseHash) {
+  const character = findCharacter(db, libraryRoot, characterId)
+  if (!character) throw new Error('That character no longer exists.')
+  return saveSource(character.file, character.filename, text, baseHash, 'notes file')
 }

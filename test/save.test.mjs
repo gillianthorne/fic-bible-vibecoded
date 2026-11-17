@@ -8,9 +8,17 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { openSqlite } from '../src/main/sqlite.js'
 import { migrate } from '../src/main/migrate.js'
-import { createChapter, createScene, createWork } from '../src/main/create.js'
+import { createChapter, createCharacter, createScene, createWork } from '../src/main/create.js'
 import { createHandlers } from '../src/main/handlers.js'
-import { decodeScene, encodeScene, hashBytes, readSceneSource, saveSceneSource } from '../src/main/save.js'
+import {
+  decodeScene,
+  encodeScene,
+  hashBytes,
+  readCharacterNotes,
+  readSceneSource,
+  saveCharacterNotes,
+  saveSceneSource
+} from '../src/main/save.js'
 
 const MIGRATIONS = fileURLToPath(new URL('../migrations', import.meta.url))
 
@@ -138,4 +146,46 @@ test('handlers: null for an unknown scene, errors as ok: false, bad ids refused'
   assert.match(handlers['scene:save'](999999, 'x', 'h').error, /no longer exists/)
   const opened = handlers['scene:source'](s.sceneId).data
   assert.deepEqual(handlers['scene:save'](s.sceneId, 'Saved.', opened.hash).data.written, true)
+})
+
+// Character notes: the second write to a file with content, under the
+// same guards.
+function characterSetup() {
+  const db = openSqlite(':memory:')
+  migrate(db, MIGRATIONS)
+  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'fic-bible-notes-')))
+  const workId = createWork(db, root, 'Hockey AU')
+  const characterId = createCharacter(db, root, workId, 'Marie')
+  const file = path.join(root, 'Hockey AU', 'characters', 'Marie.md')
+  return { db, root, characterId, file, dir: path.dirname(file) }
+}
+
+test('character notes open, save, keep CRLF and BOM, and leave no temporary file', () => {
+  const c = characterSetup()
+  fs.writeFileSync(c.file, '﻿Tims: medium double-double\r\n')
+  const opened = readCharacterNotes(c.db, c.root, c.characterId)
+  assert.equal(opened.text, 'Tims: medium double-double\n')
+  assert.equal(opened.fileError, null)
+  const saved = saveCharacterNotes(c.db, c.root, c.characterId, '**Tims:** medium double-double\n\nBagel: everything\n', opened.hash)
+  assert.equal(saved.written, true)
+  assert.equal(fs.readFileSync(c.file, 'utf8'), '﻿**Tims:** medium double-double\r\n\r\nBagel: everything\r\n')
+  assert.deepEqual(fs.readdirSync(c.dir), ['Marie.md'])
+  assert.deepEqual(saveCharacterNotes(c.db, c.root, c.characterId, '**Tims:** medium double-double\n\nBagel: everything\n', saved.hash), {
+    hash: saved.hash,
+    written: false
+  })
+})
+
+test('character notes changed on disk since opening are not saved over', () => {
+  const c = characterSetup()
+  const opened = readCharacterNotes(c.db, c.root, c.characterId)
+  fs.writeFileSync(c.file, 'Written elsewhere.')
+  assert.throws(() => saveCharacterNotes(c.db, c.root, c.characterId, 'Mine', opened.hash), /notes file has changed on disk/)
+  assert.equal(fs.readFileSync(c.file, 'utf8'), 'Written elsewhere.')
+  fs.rmSync(c.file)
+  assert.equal(readCharacterNotes(c.db, c.root, c.characterId).fileError, 'ENOENT')
+  assert.throws(() => saveCharacterNotes(c.db, c.root, c.characterId, 'Mine', opened.hash), /notes file is gone from disk/)
+  assert.equal(fs.existsSync(c.file), false)
+  assert.equal(readCharacterNotes(c.db, c.root, 999), null)
+  assert.throws(() => saveCharacterNotes(c.db, c.root, 999, 'x', 'h'), /no longer exists/)
 })
