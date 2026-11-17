@@ -38,6 +38,6 @@ test('any run of whitespace separates words', () => {
 
 test('the library test scene: 3 paragraphs, 143 words (wc -w)', () => {
   const here = path.dirname(fileURLToPath(import.meta.url))
-  const file = path.join(here, '..', 'library', 'test-fic', 'chapter-1', 'scene-1.md')
+  const file = path.join(here, '..', 'library', 'test-fic', 'chapters', 'chapter-1', 'scene-1.md')
   assert.deepEqual(countProse(fs.readFileSync(file, 'utf8')), { paragraphs: 3, words: 143 })
 })

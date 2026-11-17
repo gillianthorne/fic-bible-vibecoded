@@ -88,7 +88,7 @@ test('a missing scene file is reported per scene and in the total', () => {
        WHERE c.id = ? ORDER BY s.position LIMIT 1`
     )
     .get(id)
-  const file = path.join(root, victim.w, victim.c, victim.f)
+  const file = path.join(root, victim.w, 'chapters', victim.c, victim.f)
   fs.renameSync(file, file + '.moved')
   try {
     const after = handlers['chapter:overview'](id).data

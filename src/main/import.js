@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { CHAPTERS, chapterDir, chaptersDir } from './paths.js'
 
 // Importing a library folder into the database. No Electron imports, so
 // this runs under plain `node --test`.
@@ -7,8 +8,15 @@ import path from 'node:path'
 // Layout (the author's convention):
 //   <library root>/
 //     <work folder>/            a work, titled with the folder name
-//       ##-<title>/             a chapter: number ##, title <title>
-//         ##-<title>.md         a scene: position ##, title <title>
+//       characters/             (read by the character import)
+//       notes/                  not used yet
+//       chapters/
+//         ##-<title>/           a chapter: number ##, title <title>
+//           ##-<title>.md       a scene: position ##, title <title>
+//
+// Anything else in a work folder is ignored. A work folder with no
+// chapters folder is reported: it's laid out the pre-v2 way, with chapter
+// folders directly inside it, and needs moving by hand.
 //
 // Reads only. Nothing on disk is created, renamed or written: the import
 // adds database rows and nothing else.
@@ -58,10 +66,26 @@ export function scanLibrary(libraryRoot) {
 
 function scanWork(libraryRoot, workFolder, skip) {
   const chapters = []
-  for (const entry of sortedEntries(path.join(libraryRoot, workFolder))) {
-    const at = [workFolder, entry.name]
+  const dir = chaptersDir(libraryRoot, workFolder)
+  let stat = null
+  try {
+    stat = fs.lstatSync(dir)
+  } catch (e) {
+    if (e.code !== 'ENOENT') throw e
+  }
+  if (!stat || !stat.isDirectory() || stat.isSymbolicLink()) {
+    skip(
+      [workFolder],
+      stat
+        ? `“${CHAPTERS}” in this work is not a folder`
+        : `no “${CHAPTERS}” folder; move this work’s chapter folders into one`
+    )
+    return chapters
+  }
+  for (const entry of sortedEntries(dir)) {
+    const at = [workFolder, CHAPTERS, entry.name]
     if (entry.isSymbolicLink()) skip(at, 'symbolic link')
-    else if (!entry.isDirectory()) skip(at, 'file in a work folder, not in a chapter folder')
+    else if (!entry.isDirectory()) skip(at, 'file in a chapters folder, not in a chapter folder')
     else {
       const parsed = parseNumbered(CHAPTER_NAME.exec(entry.name))
       if (parsed.reason) skip(at, parsed.reason)
@@ -79,8 +103,8 @@ function scanWork(libraryRoot, workFolder, skip) {
 
 function scanChapter(libraryRoot, workFolder, chapterFolder, skip) {
   const scenes = []
-  for (const entry of sortedEntries(path.join(libraryRoot, workFolder, chapterFolder))) {
-    const at = [workFolder, chapterFolder, entry.name]
+  for (const entry of sortedEntries(chapterDir(libraryRoot, workFolder, chapterFolder))) {
+    const at = [workFolder, CHAPTERS, chapterFolder, entry.name]
     if (entry.isSymbolicLink()) skip(at, 'symbolic link')
     else if (entry.isDirectory()) skip(at, 'folder inside a chapter; only .md files there are scenes')
     else if (!entry.isFile()) skip(at, 'not a regular file')
@@ -140,7 +164,7 @@ export function importLibrary(db, libraryRoot) {
 
       const chapterDupes = duplicateNumbers(work.chapters, 'number')
       for (const chapter of work.chapters) {
-        const at = [work.folder, chapter.folder]
+        const at = [work.folder, CHAPTERS, chapter.folder]
         let chapterId = q.chapter.get(workId, chapter.folder)
         if (chapterId === undefined) {
           const taken = q.chapterByNumber.get(workId, chapter.number)

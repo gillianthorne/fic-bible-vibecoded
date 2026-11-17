@@ -18,7 +18,7 @@ function freshDb() {
   return db
 }
 
-// Builds a library from { 'work/01-ch/01-scene.md': 'text', 'work/01-ch/': null }.
+// Builds a library from { 'work/chapters/01-ch/01-scene.md': 'text', 'work/chapters/01-ch/': null }.
 // A key ending in a separator is an empty folder.
 function makeLibrary(files) {
   const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'fic-bible-import-')))
@@ -48,10 +48,10 @@ const reasonFor = (skipped, ...segments) => skipped.find((s) => s.path === path.
 
 test('maps folders and ##-title names to works, chapters and scenes', () => {
   const root = makeLibrary({
-    'Ash and Iron/01-The Gate/01-arrival.md': 'One two three.',
-    'Ash and Iron/01-The Gate/02-the argument.md': '',
-    'Ash and Iron/02-Smoke/': null,
-    'Second Work/': null
+    'Ash and Iron/chapters/01-The Gate/01-arrival.md': 'One two three.',
+    'Ash and Iron/chapters/01-The Gate/02-the argument.md': '',
+    'Ash and Iron/chapters/02-Smoke/': null,
+    'Second Work/chapters/': null
   })
   const db = freshDb()
   const result = importLibrary(db, root)
@@ -80,7 +80,7 @@ test('maps folders and ##-title names to works, chapters and scenes', () => {
 })
 
 test('the title is everything after ##-, kept as written', () => {
-  const root = makeLibrary({ 'W/007-Part-two, the  return/12-a-b-c.md': '' })
+  const root = makeLibrary({ 'W/chapters/007-Part-two, the  return/12-a-b-c.md': '' })
   const { works } = scanLibrary(root)
   assert.equal(works[0].chapters[0].number, 7)
   assert.equal(works[0].chapters[0].title, 'Part-two, the  return')
@@ -92,57 +92,62 @@ test('skips what does not fit the layout, with a reason, and ignores hidden entr
   const root = makeLibrary({
     'loose.md': '',
     '.ficbible-test-library': '',
-    'W/notes.txt': '',
-    'W/chapter one/': null,
-    'W/00-Prologue/': null,
-    'W/01-/': null,
-    'W/01-Real/01-ok.md': '',
-    'W/01-Real/02-notes.txt': '',
-    'W/01-Real/draft.md': '',
-    'W/01-Real/03-SHOUT.MD': '',
-    'W/01-Real/04-.md': '',
-    'W/01-Real/old/': null,
-    'W/01-Real/.swp': ''
+    'W/chapters/notes.txt': '',
+    'W/chapters/chapter one/': null,
+    'Old Layout/01-Chapter/01-a.md': '',
+    'W/characters/': null,
+    'W/notes/': null,
+    'W/chapters/00-Prologue/': null,
+    'W/chapters/01-/': null,
+    'W/chapters/01-Real/01-ok.md': '',
+    'W/chapters/01-Real/02-notes.txt': '',
+    'W/chapters/01-Real/draft.md': '',
+    'W/chapters/01-Real/03-SHOUT.MD': '',
+    'W/chapters/01-Real/04-.md': '',
+    'W/chapters/01-Real/old/': null,
+    'W/chapters/01-Real/.swp': ''
   })
   const { works, skipped } = scanLibrary(root)
 
   assert.match(reasonFor(skipped, 'loose.md'), /top of the library/)
-  assert.match(reasonFor(skipped, 'W', 'notes.txt'), /not in a chapter folder/)
-  assert.match(reasonFor(skipped, 'W', 'chapter one'), /##-title/)
-  assert.match(reasonFor(skipped, 'W', '00-Prologue'), /1 or more/)
-  assert.match(reasonFor(skipped, 'W', '01-'), /##-title/)
-  assert.match(reasonFor(skipped, 'W', '01-Real', '02-notes.txt'), /not a \.md file/)
-  assert.match(reasonFor(skipped, 'W', '01-Real', 'draft.md'), /##-title/)
-  assert.match(reasonFor(skipped, 'W', '01-Real', '03-SHOUT.MD'), /not a \.md file/)
-  assert.match(reasonFor(skipped, 'W', '01-Real', '04-.md'), /##-title/)
-  assert.match(reasonFor(skipped, 'W', '01-Real', 'old'), /folder inside a chapter/)
-  assert.equal(skipped.length, 10, JSON.stringify(skipped))
+  assert.match(reasonFor(skipped, 'W', 'chapters', 'notes.txt'), /not in a chapter folder/)
+  assert.match(reasonFor(skipped, 'W', 'chapters', 'chapter one'), /##-title/)
+  assert.match(reasonFor(skipped, 'Old Layout'), /no “chapters” folder/)
+  assert.match(reasonFor(skipped, 'W', 'chapters', '00-Prologue'), /1 or more/)
+  assert.match(reasonFor(skipped, 'W', 'chapters', '01-'), /##-title/)
+  assert.match(reasonFor(skipped, 'W', 'chapters', '01-Real', '02-notes.txt'), /not a \.md file/)
+  assert.match(reasonFor(skipped, 'W', 'chapters', '01-Real', 'draft.md'), /##-title/)
+  assert.match(reasonFor(skipped, 'W', 'chapters', '01-Real', '03-SHOUT.MD'), /not a \.md file/)
+  assert.match(reasonFor(skipped, 'W', 'chapters', '01-Real', '04-.md'), /##-title/)
+  assert.match(reasonFor(skipped, 'W', 'chapters', '01-Real', 'old'), /folder inside a chapter/)
+  assert.equal(skipped.length, 11, JSON.stringify(skipped))
 
+  const w = works.find((work) => work.folder === 'W')
   assert.deepEqual(
-    works[0].chapters.map((c) => c.folder),
+    w.chapters.map((c) => c.folder),
     ['01-Real']
   )
   assert.deepEqual(
-    works[0].chapters[0].scenes.map((s) => s.filename),
+    w.chapters[0].scenes.map((s) => s.filename),
     ['01-ok.md']
   )
 })
 
 test('two new items with the same number are both skipped', () => {
   const root = makeLibrary({
-    'W/01-A/01-x.md': '',
-    'W/01-A/01-y.md': '',
-    'W/01-B/': null
+    'W/chapters/01-A/01-x.md': '',
+    'W/chapters/01-A/01-y.md': '',
+    'W/chapters/01-B/': null
   })
   const db = freshDb()
   const { added, skipped } = importLibrary(db, root)
   assert.deepEqual(added, { works: 1, chapters: 0, scenes: 0 })
-  assert.match(reasonFor(skipped, 'W', '01-A'), /also uses number 1/)
-  assert.match(reasonFor(skipped, 'W', '01-B'), /also uses number 1/)
+  assert.match(reasonFor(skipped, 'W', 'chapters', '01-A'), /also uses number 1/)
+  assert.match(reasonFor(skipped, 'W', 'chapters', '01-B'), /also uses number 1/)
 })
 
 test('re-import adds only what is new and leaves existing rows alone', () => {
-  const root = makeLibrary({ 'W/01-One/01-first.md': '' })
+  const root = makeLibrary({ 'W/chapters/01-One/01-first.md': '' })
   const db = freshDb()
   importLibrary(db, root)
 
@@ -150,8 +155,8 @@ test('re-import adds only what is new and leaves existing rows alone', () => {
   db.prepare(`UPDATE scenes SET title = 'Renamed', pov = 'Mara', status = 'drafted'`).run()
   db.prepare(`UPDATE chapters SET title = 'Edited chapter'`).run()
 
-  fs.writeFileSync(path.join(root, 'W', '01-One', '02-second.md'), '')
-  fs.mkdirSync(path.join(root, 'W', '02-Two'))
+  fs.writeFileSync(path.join(root, 'W', 'chapters', '01-One', '02-second.md'), '')
+  fs.mkdirSync(path.join(root, 'W', 'chapters', '02-Two'))
 
   const again = importLibrary(db, root)
   assert.deepEqual(again.added, { works: 0, chapters: 1, scenes: 1 })
@@ -167,24 +172,24 @@ test('re-import adds only what is new and leaves existing rows alone', () => {
 })
 
 test('a new file whose number is taken by an existing row is skipped', () => {
-  const root = makeLibrary({ 'W/01-One/01-first.md': '', 'W/01-One/': null })
+  const root = makeLibrary({ 'W/chapters/01-One/01-first.md': '', 'W/chapters/01-One/': null })
   const db = freshDb()
   importLibrary(db, root)
 
-  fs.writeFileSync(path.join(root, 'W', '01-One', '01-rival.md'), '')
-  fs.mkdirSync(path.join(root, 'W', '01-Other'))
+  fs.writeFileSync(path.join(root, 'W', 'chapters', '01-One', '01-rival.md'), '')
+  fs.mkdirSync(path.join(root, 'W', 'chapters', '01-Other'))
   const { added, skipped } = importLibrary(db, root)
   assert.deepEqual(added, { works: 0, chapters: 0, scenes: 0 })
   // The existing file is also on disk, so the scan sees two scenes numbered
   // 1; the new one is the one reported.
-  assert.match(reasonFor(skipped, 'W', '01-One', '01-rival.md'), /number 1/)
-  assert.match(reasonFor(skipped, 'W', '01-Other'), /number 1/)
+  assert.match(reasonFor(skipped, 'W', 'chapters', '01-One', '01-rival.md'), /number 1/)
+  assert.match(reasonFor(skipped, 'W', 'chapters', '01-Other'), /number 1/)
   assert.equal(skipped.length, 2)
 })
 
 test('a scene file differing only in case from an existing one is skipped', () => {
   const db = freshDb()
-  const root = makeLibrary({ 'W/01-One/': null })
+  const root = makeLibrary({ 'W/chapters/01-One/': null })
   importLibrary(db, root)
   const chapterId = db.prepare('SELECT id FROM chapters').pluck().get()
   // Stand-in for a file that existed under the other case (only possible
@@ -192,31 +197,40 @@ test('a scene file differing only in case from an existing one is skipped', () =
   db.prepare(`INSERT INTO scenes (chapter_id, position, title, filename, pov) VALUES (?, 5, 'x', '02-Scene.md', '')`).run(
     chapterId
   )
-  fs.writeFileSync(path.join(root, 'W', '01-One', '02-scene.md'), '')
+  fs.writeFileSync(path.join(root, 'W', 'chapters', '01-One', '02-scene.md'), '')
   const { added, skipped } = importLibrary(db, root)
   assert.equal(added.scenes, 0)
-  assert.match(reasonFor(skipped, 'W', '01-One', '02-scene.md'), /differs only in case/)
+  assert.match(reasonFor(skipped, 'W', 'chapters', '01-One', '02-scene.md'), /differs only in case/)
 })
 
 test('symbolic links are skipped, not followed', (t) => {
   const target = makeLibrary({ '01-x.md': '' })
-  const root = makeLibrary({ 'W/': null })
+  const root = makeLibrary({ 'W/chapters/': null })
   try {
-    fs.symlinkSync(target, path.join(root, 'W', '01-Linked'), 'dir')
+    fs.symlinkSync(target, path.join(root, 'W', 'chapters', '01-Linked'), 'dir')
   } catch (e) {
     t.skip(`can't create a symlink here (${e.code})`)
     return
   }
   const { works, skipped } = scanLibrary(root)
   assert.equal(works[0].chapters.length, 0)
-  assert.match(reasonFor(skipped, 'W', '01-Linked'), /symbolic link/)
+  assert.match(reasonFor(skipped, 'W', 'chapters', '01-Linked'), /symbolic link/)
+})
+
+test('a work laid out the pre-v2 way is imported with no chapters, and reported', () => {
+  const root = makeLibrary({ 'Old/01-One/01-a.md': 'words' })
+  const db = freshDb()
+  const { added, skipped } = importLibrary(db, root)
+  assert.deepEqual(added, { works: 1, chapters: 0, scenes: 0 })
+  assert.match(reasonFor(skipped, 'Old'), /move this work’s chapter folders into one/)
+  assert.equal(skipped.length, 1)
 })
 
 test('importing writes nothing to disk', () => {
   const root = makeLibrary({
-    'W/01-One/01-a.md': 'Some prose.\r\n\r\nMore.',
-    'W/01-One/bad name.md': 'keep me',
-    'W/02-Two/': null
+    'W/chapters/01-One/01-a.md': 'Some prose.\r\n\r\nMore.',
+    'W/chapters/01-One/bad name.md': 'keep me',
+    'W/chapters/02-Two/': null
   })
   const before = snapshot(root)
   importLibrary(freshDb(), root)
@@ -224,7 +238,7 @@ test('importing writes nothing to disk', () => {
 })
 
 test('a failure part-way adds nothing', () => {
-  const root = makeLibrary({ 'A/01-One/01-a.md': '', 'B/01-One/01-b.md': '' })
+  const root = makeLibrary({ 'A/chapters/01-One/01-a.md': '', 'B/chapters/01-One/01-b.md': '' })
   const db = freshDb()
   // Make the second work's insert fail.
   db.exec(`CREATE TRIGGER no_b BEFORE INSERT ON works WHEN NEW.folder = 'B' BEGIN SELECT RAISE(ABORT, 'boom'); END`)
@@ -234,7 +248,7 @@ test('a failure part-way adds nothing', () => {
 })
 
 test('worksMissingFrom lists works with no folder in the new library; deleteWorks cascades', () => {
-  const oldRoot = makeLibrary({ 'Kept/01-One/01-a.md': '', 'Gone/01-One/01-b.md': '' })
+  const oldRoot = makeLibrary({ 'Kept/chapters/01-One/01-a.md': '', 'Gone/chapters/01-One/01-b.md': '' })
   const newRoot = makeLibrary({ 'Kept/': null, 'Gone.md': '' })
   const db = freshDb()
   importLibrary(db, oldRoot)

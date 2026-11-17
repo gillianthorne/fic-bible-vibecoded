@@ -64,7 +64,7 @@ test('chapter total is the sum of file-derived scene counts', () => {
   assert.equal(overview.uncounted, 0)
   assert.equal(overview.wordcount, overview.scenes.reduce((sum, s) => sum + s.wordcount, 0))
   for (const s of overview.scenes) {
-    const file = path.join(root, 'salt-and-static', 'chapter-01', `scene-${String(s.position).padStart(2, '0')}.md`)
+    const file = path.join(root, 'salt-and-static', 'chapters', 'chapter-01', `scene-${String(s.position).padStart(2, '0')}.md`)
     assert.equal(s.wordcount, countProse(fs.readFileSync(file, 'utf8')).words)
     assert.equal(s.beats.total, s.beats.planned + s.beats.inDraft + s.beats.cut)
   }

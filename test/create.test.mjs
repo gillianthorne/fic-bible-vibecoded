@@ -28,6 +28,7 @@ test('creates a work folder, ##-title chapter folders and empty ##-title.md scen
   const workId = createWork(db, root, '  Salt and Static ')
   assert.deepEqual(db.prepare('SELECT title, folder FROM works').get(), { title: 'Salt and Static', folder: 'Salt and Static' })
   assert.ok(fs.statSync(path.join(root, 'Salt and Static')).isDirectory())
+  assert.deepEqual(fs.readdirSync(path.join(root, 'Salt and Static')).sort(), ['chapters', 'characters', 'notes'])
 
   const one = createChapter(db, root, workId, 'Signal')
   const two = createChapter(db, root, workId, 'The Tide Tables')
@@ -49,7 +50,7 @@ test('creates a work folder, ##-title chapter folders and empty ##-title.md scen
       { position: 2, title: 'Second', filename: '02-Second.md', pov: '', status: 'outlined' }
     ]
   )
-  const file = path.join(root, 'Salt and Static', '01-Signal', '02-Second.md')
+  const file = path.join(root, 'Salt and Static', 'chapters', '01-Signal', '02-Second.md')
   assert.equal(fs.readFileSync(file, 'utf8'), '')
 })
 
@@ -57,7 +58,7 @@ test('numbers continue from the highest, padded to two digits until 100', () => 
   const { db, root } = setup()
   const workId = createWork(db, root, 'W')
   db.prepare("INSERT INTO chapters (work_id, number, title, folder) VALUES (?, 99, 'Late', '99-Late')").run(workId)
-  fs.mkdirSync(path.join(root, 'W', '99-Late'))
+  fs.mkdirSync(path.join(root, 'W', 'chapters', '99-Late'))
   const id = createChapter(db, root, workId, 'Next')
   assert.equal(db.prepare('SELECT folder FROM chapters WHERE id = ?').pluck().get(id), '100-Next')
 })
@@ -96,7 +97,7 @@ test('titles that cannot be file names are refused, and nothing is created', () 
   // "CON" is only reserved as a whole name: 01-CON is fine for a chapter.
   const workId = createWork(db, root, 'W')
   createChapter(db, root, workId, 'CON')
-  assert.ok(fs.existsSync(path.join(root, 'W', '01-CON')))
+  assert.ok(fs.existsSync(path.join(root, 'W', 'chapters', '01-CON')))
 })
 
 test('a name already on disk, in any case, is refused and left untouched', () => {
@@ -111,13 +112,13 @@ test('a name already on disk, in any case, is refused and left untouched', () =>
 test('a number already used on disk by something not imported is refused', () => {
   const { db, root } = setup()
   const workId = createWork(db, root, 'W')
-  fs.mkdirSync(path.join(root, 'W', '01-Not imported yet'))
+  fs.mkdirSync(path.join(root, 'W', 'chapters', '01-Not imported yet'))
   assert.throws(() => createChapter(db, root, workId, 'New'), /already a chapter 1 on disk \(“01-Not imported yet”\)/)
   assert.equal(count(db, 'chapters'), 0)
 
   db.prepare("INSERT INTO chapters (work_id, number, title, folder) VALUES (?, 1, 'Not imported yet', '01-Not imported yet')").run(workId)
   const chapterId = db.prepare('SELECT id FROM chapters').pluck().get()
-  const stray = path.join(root, 'W', '01-Not imported yet', '01-Draft.md')
+  const stray = path.join(root, 'W', 'chapters', '01-Not imported yet', '01-Draft.md')
   fs.writeFileSync(stray, 'words already here')
   assert.throws(() => createScene(db, root, chapterId, 'Draft'), /already exists on disk/)
   assert.throws(() => createScene(db, root, chapterId, 'Other'), /already a scene 1 on disk/)
@@ -131,7 +132,7 @@ test('if the parent folder is missing on disk, the row is rolled back', () => {
   const chapterId = createChapter(db, root, workId, 'One')
   fs.rmSync(path.join(root, 'W'), { recursive: true })
   assert.throws(() => createScene(db, root, chapterId, 'S'), /chapter folder is missing on disk/)
-  assert.throws(() => createChapter(db, root, workId, 'Two'), /work folder is missing on disk/)
+  assert.throws(() => createChapter(db, root, workId, 'Two'), /work’s chapters folder is missing on disk/)
   assert.equal(count(db, 'scenes'), 0)
   assert.equal(count(db, 'chapters'), 1)
 })

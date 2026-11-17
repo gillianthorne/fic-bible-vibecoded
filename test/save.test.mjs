@@ -22,7 +22,7 @@ function setup() {
   const workId = createWork(db, root, 'Salt')
   const chapterId = createChapter(db, root, workId, 'Signal')
   const sceneId = createScene(db, root, chapterId, 'First')
-  const file = path.join(root, 'Salt', '01-Signal', '01-First.md')
+  const file = path.join(root, 'Salt', 'chapters', '01-Signal', '01-First.md')
   return { db, root, sceneId, file, dir: path.dirname(file) }
 }
 
