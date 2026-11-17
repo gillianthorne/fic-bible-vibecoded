@@ -1,5 +1,6 @@
 import {
   chapterOverview,
+  characterProfile,
   chapterProse,
   editNotes,
   libraryOverview,
@@ -11,16 +12,22 @@ import {
 } from './queries.js'
 import { checkLink } from './links.js'
 import { readSceneSource, saveSceneSource } from './save.js'
-import { createChapter, createScene, createWork } from './create.js'
+import { createChapter, createCharacter, createScene, createWork } from './create.js'
 import { deleteWorks, importLibrary, worksMissingFrom } from './import.js'
 import {
   createBeat,
+  createCharacterField,
   createEditNote,
   deleteBeat,
+  deleteCharacter,
+  deleteCharacterField,
   deleteEditNote,
   moveBeat,
+  moveCharacterField,
   updateBeat,
   updateChapter,
+  updateCharacter,
+  updateCharacterField,
   updateEditNote,
   updateScene,
   updateWork
@@ -188,6 +195,27 @@ export function createHandlers(open, library = null, links = null) {
       }),
 
     'work:update': (workId, patch) => respond(() => (updateWork(open().db, workId, patch), null)),
+
+    // Characters. Creating makes an empty notes file in the work's
+    // characters folder; every other edit is database rows only, and
+    // deleting leaves the notes file on disk.
+    'character:profile': (characterId) =>
+      respond(() => characterProfile(open().db, requireId(characterId, 'characterId'))),
+    'character:create': (workId, name) =>
+      respond(() => {
+        const { db, libraryRoot } = open()
+        return createCharacter(db, libraryRoot, workId, name)
+      }),
+    'character:update': (characterId, patch) =>
+      respond(() => (updateCharacter(open().db, characterId, patch), null)),
+    'character:delete': (characterId) => respond(() => (deleteCharacter(open().db, characterId), null)),
+    'characterField:create': (characterId, fields) =>
+      respond(() => createCharacterField(open().db, characterId, fields)),
+    'characterField:update': (fieldId, patch) =>
+      respond(() => (updateCharacterField(open().db, fieldId, patch), null)),
+    'characterField:move': (fieldId, direction) =>
+      respond(() => (moveCharacterField(open().db, fieldId, direction), null)),
+    'characterField:delete': (fieldId) => respond(() => (deleteCharacterField(open().db, fieldId), null)),
 
     // Previously used beat kinds and POVs, for the inputs' suggestions.
     suggestions: () => respond(() => suggestions(open().db)),

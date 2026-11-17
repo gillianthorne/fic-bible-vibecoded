@@ -9,6 +9,7 @@ import ProseViewer from './ProseViewer.jsx'
 import ProseEditor from './ProseEditor.jsx'
 import ChapterProse from './ChapterProse.jsx'
 import ImportReport from './ImportReport.jsx'
+import CharacterProfile from './CharacterProfile.jsx'
 import SidebarHandle, { useSidebarWidth } from './SidebarHandle.jsx'
 
 // Each screen sits on a sheet of paper; the kind sets how wide it may grow.
@@ -22,7 +23,7 @@ const HOME = { kind: 'home' }
 const sameScreen = (a, b) => a.kind === b.kind && a.id === b.id && a.view === b.view
 
 // selection is { kind: 'home' }, { kind: 'work', id }, { kind: 'chapter', id, view },
-// { kind: 'scene', id, view }
+// { kind: 'scene', id, view }, { kind: 'character', id }
 // or { kind: 'import', report } for the result of the last import.
 // view is 'prose' for the prose viewer (a scene's, or the whole chapter's),
 // or 'edit' for a scene's prose editor; anything else is the scene detail or chapter overview. The sidebar
@@ -34,8 +35,9 @@ const sameScreen = (a, b) => a.kind === b.kind && a.id === b.id && a.view === b.
 // Like expanded, it lasts as long as the app is open, and no longer.
 //
 // expanded holds only the sidebar rows the user has toggled, keyed
-// 'work:<id>' or 'chapter:<id>'. Anything not in it uses the default:
-// works open, chapters closed. It lives here rather than in the sidebar so
+// 'work:<id>', 'characters:<workId>', 'chapters:<workId>' or
+// 'chapter:<id>'. Anything not in it uses the default: works and their
+// Chapters group open; the Characters group and each chapter closed. It lives here rather than in the sidebar so
 // it lasts as long as the app is open, and no longer.
 export default function App() {
   const [nav, setNav] = useState({ selection: HOME, history: [] })
@@ -99,8 +101,9 @@ export default function App() {
     else navigate(next)
   }
 
-  const isExpanded = (key) => expanded[key] ?? key.startsWith('work:')
-  const toggle = (key) => setExpanded((prev) => ({ ...prev, [key]: !(prev[key] ?? key.startsWith('work:')) }))
+  const openByDefault = (key) => key.startsWith('work:') || key.startsWith('chapters:')
+  const isExpanded = (key) => expanded[key] ?? openByDefault(key)
+  const toggle = (key) => setExpanded((prev) => ({ ...prev, [key]: !(prev[key] ?? openByDefault(key)) }))
 
   // After the sidebar creates something: read the library again, unfold
   // the rows above it so it shows, and open it.
@@ -119,7 +122,12 @@ export default function App() {
   // Opening a scene from the chapter overview also opens its work and
   // chapter in the sidebar, so the scene shows there as selected.
   const openScene = (sceneId, chapterId, workId) => {
-    setExpanded((prev) => ({ ...prev, [`work:${workId}`]: true, [`chapter:${chapterId}`]: true }))
+    setExpanded((prev) => ({
+      ...prev,
+      [`work:${workId}`]: true,
+      [`chapters:${workId}`]: true,
+      [`chapter:${chapterId}`]: true
+    }))
     navigate({ kind: 'scene', id: sceneId })
   }
 
@@ -133,8 +141,25 @@ export default function App() {
   // Opening a chapter from the work overview also opens its work in the
   // sidebar, so the chapter shows there as selected.
   const openChapter = (chapterId, workId) => {
-    setExpanded((prev) => ({ ...prev, [`work:${workId}`]: true }))
+    setExpanded((prev) => ({ ...prev, [`work:${workId}`]: true, [`chapters:${workId}`]: true }))
     navigate({ kind: 'chapter', id: chapterId })
+  }
+
+  // Opening a character (from search or the breadcrumb) also opens their
+  // work and its Characters group in the sidebar.
+  const openCharacter = (characterId, workId) => {
+    setExpanded((prev) => ({ ...prev, [`work:${workId}`]: true, [`characters:${workId}`]: true }))
+    navigate({ kind: 'character', id: characterId })
+  }
+
+  // After deleting a character, their profile is gone: show their work,
+  // and forget the profile in history so Back can't return to it.
+  const characterDeleted = (character) => {
+    changed()
+    setNav((prev) => ({
+      selection: { kind: 'work', id: character.work.id },
+      history: prev.history.filter((s) => !(s.kind === 'character' && s.id === character.id))
+    }))
   }
 
   return (
@@ -159,6 +184,7 @@ export default function App() {
           onOpenWork={openWork}
           onOpenChapter={openChapter}
           onOpenScene={openScene}
+          onOpenCharacter={openCharacter}
         />
         <div className={`sheet sheet-${sheetKind(selection)}`}>
           {selection.kind === 'home' && <HomePage refreshKey={libraryVersion} onOpenWork={openWork} />}
@@ -171,6 +197,14 @@ export default function App() {
             />
           )}
           {selection.kind === 'import' && <ImportReport report={selection.report} />}
+          {selection.kind === 'character' && (
+            <CharacterProfile
+              characterId={selection.id}
+              refreshKey={libraryVersion}
+              onChanged={changed}
+              onDeleted={characterDeleted}
+            />
+          )}
           {selection.kind === 'chapter' && selection.view !== 'prose' && (
             <ChapterOverview
               chapterId={selection.id}

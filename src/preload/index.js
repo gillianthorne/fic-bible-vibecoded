@@ -30,6 +30,14 @@ contextBridge.exposeInMainWorld('ficBible', {
   createWork: (title) => ipcRenderer.invoke('work:create', title),
   createChapter: (workId, title) => ipcRenderer.invoke('chapter:create', workId, title),
   createScene: (chapterId, title) => ipcRenderer.invoke('scene:create', chapterId, title),
+  characterProfile: (characterId) => ipcRenderer.invoke('character:profile', characterId),
+  createCharacter: (workId, name) => ipcRenderer.invoke('character:create', workId, name),
+  updateCharacter: (characterId, patch) => ipcRenderer.invoke('character:update', characterId, patch),
+  deleteCharacter: (characterId) => ipcRenderer.invoke('character:delete', characterId),
+  createCharacterField: (characterId, fields) => ipcRenderer.invoke('characterField:create', characterId, fields),
+  updateCharacterField: (fieldId, patch) => ipcRenderer.invoke('characterField:update', fieldId, patch),
+  moveCharacterField: (fieldId, direction) => ipcRenderer.invoke('characterField:move', fieldId, direction),
+  deleteCharacterField: (fieldId) => ipcRenderer.invoke('characterField:delete', fieldId),
   suggestions: () => ipcRenderer.invoke('suggestions'),
   openLink: (url) => ipcRenderer.invoke('link:open', url)
 })

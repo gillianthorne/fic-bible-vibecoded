@@ -1,7 +1,7 @@
 import { useQuery } from './useQuery.js'
 
 // The bar above the sheet: a back button, then where the open screen sits,
-// as Home / work / chapter / scene. Every part but the last opens its
+// as Home / work / chapter / scene, or Home / work / character. Every part but the last opens its
 // screen; the last is the open screen itself. A prose view (a scene's or
 // a whole chapter's) adds a last part, Prose; the prose editor adds Edit
 // prose.
@@ -15,6 +15,9 @@ import { useQuery } from './useQuery.js'
 function locate(tree, selection) {
   for (const work of tree) {
     if (selection.kind === 'work' && work.id === selection.id) return { work }
+    for (const character of work.characters) {
+      if (selection.kind === 'character' && character.id === selection.id) return { work, character }
+    }
     for (const chapter of work.chapters) {
       if (selection.kind === 'chapter' && chapter.id === selection.id) return { work, chapter }
       for (const scene of chapter.scenes) {
@@ -49,10 +52,11 @@ export default function NavBar({
   onOpenHome,
   onOpenWork,
   onOpenChapter,
-  onOpenScene
+  onOpenScene,
+  onOpenCharacter
 }) {
   const tree = useQuery(() => window.ficBible.navigationTree(), 'navbar', refreshKey)
-  const { work, chapter, scene } = tree.ok ? locate(tree.data, selection) : {}
+  const { work, character, chapter, scene } = tree.ok ? locate(tree.data, selection) : {}
   const prose = selection.view === 'prose' || selection.view === 'edit'
 
   return (
@@ -68,6 +72,11 @@ export default function NavBar({
           {work && (
             <Crumb current={selection.kind === 'work'} onClick={() => onOpenWork(work.id)} title={work.title}>
               {work.title}
+            </Crumb>
+          )}
+          {character && (
+            <Crumb current={!selection.view} onClick={() => onOpenCharacter(character.id, work.id)} title={character.name}>
+              {character.name}
             </Crumb>
           )}
           {chapter && (
