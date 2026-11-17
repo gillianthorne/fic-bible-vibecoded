@@ -149,8 +149,8 @@ function CharacterField({ field, index, count, labels, onChanged }) {
 
   return (
     <li className="beat character-field">
+      <span className="character-field-label">{field.label}</span>
       <div className="beat-body">
-        <span className="character-field-label">{field.label}</span>
         <p className="character-field-value">{field.value || <span className="muted">—</span>}</p>
         {mode === 'confirm-delete' && (
           <div className="beat-confirm" role="alert">

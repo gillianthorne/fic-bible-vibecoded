@@ -2199,19 +2199,43 @@ select.edit-note-status-fixed {
   white-space: normal;
 }
 
-/* Character profile: fields as label over value, in the beat list's
-   rows. */
+/* Character profile: fields as a two-column table, labels right-aligned
+   against their values, one label column shared by every row. Each row
+   is a subgrid so its border and hover span the whole width; a row being
+   edited gives its form the full width. */
+.character-fields {
+  display: grid;
+  grid-template-columns: fit-content(14em) 1fr auto;
+  column-gap: 14px;
+}
 
+.character-fields > li {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  column-gap: 14px;
+  align-items: baseline;
+}
+
+.character-fields > li.beat-editing > .beat-body {
+  grid-column: 1 / -1;
+}
 
 .character-field-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
+  text-align: right;
+  overflow-wrap: anywhere;
   color: var(--ink-soft);
 }
 
 .character-field-value {
-  margin: 2px 0 0;
+  margin: 0;
   white-space: pre-wrap;
+}
+
+.character-fields .beat-tools {
+  align-self: start;
 }
 
 /* A character's notes: the prose editor's toolbar and styling, at the
