@@ -181,6 +181,7 @@ export default function App() {
         refreshKey={libraryVersion}
         onImported={showImport}
         onCreated={openCreated}
+        onChanged={changed}
       />
       <SidebarHandle width={sidebarWidth} onResize={setSidebarWidth} />
       <main className="main-pane" ref={mainPane}>

@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url'
 import { openSqlite } from '../src/main/sqlite.js'
 import { migrate } from '../src/main/migrate.js'
 import { createCharacter, createWork } from '../src/main/create.js'
-import { createCharacterField, updateCharacter } from '../src/main/edit.js'
+import { createCharacterField, updateCharacter, updateWork } from '../src/main/edit.js'
 import { searchCharacters } from '../src/main/search.js'
 
 const MIGRATIONS = fileURLToPath(new URL('../migrations', import.meta.url))
@@ -76,4 +76,13 @@ test('search reads and writes nothing it shouldn’t', () => {
   searchCharacters(db, root, 'bagel')
   assert.deepEqual(fs.readFileSync(notes('Hockey AU', 'Laura Stacey')), before)
   assert.throws(() => searchCharacters(db, root, 5), /must be text/)
+})
+
+test('a hidden work’s characters are not searched', () => {
+  const { db, root } = setup()
+  const hockey = db.prepare("SELECT id FROM works WHERE title = 'Hockey AU'").pluck().get()
+  updateWork(db, hockey, { hidden: true })
+  assert.deepEqual(names(searchCharacters(db, root, 'a')), [['Another Fic', ['Ana']]])
+  updateWork(db, hockey, { hidden: false })
+  assert.equal(searchCharacters(db, root, 'marie').works.length, 1)
 })
