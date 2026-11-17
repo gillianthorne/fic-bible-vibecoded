@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useQuery } from './useQuery.js'
 
 // The bar above the sheet: a back button, then where the open screen sits,
-// as Home / work / chapter / scene, or Home / work / character. Every part but the last opens its
+// as Home / work / chapter / scene, Home / work / character, or
+// Home / work / Lines, Timeline or a note page. Every part but the last opens its
 // screen; the last is the open screen itself. A prose view (a scene's or
 // a whole chapter's) adds a last part, Prose; the prose editor adds Edit
 // prose. On the right, a search box searches every work's characters;
@@ -17,6 +18,10 @@ import { useQuery } from './useQuery.js'
 function locate(tree, selection) {
   for (const work of tree) {
     if (selection.kind === 'work' && work.id === selection.id) return { work }
+    if ((selection.kind === 'lines' || selection.kind === 'timeline') && work.id === selection.id) return { work, notes: true }
+    for (const page of work.notePages) {
+      if (selection.kind === 'notePage' && page.id === selection.id) return { work, page }
+    }
     for (const character of work.characters) {
       if (selection.kind === 'character' && character.id === selection.id) return { work, character }
     }
@@ -60,7 +65,7 @@ export default function NavBar({
 }) {
   const [search, setSearch] = useState(selection.kind === 'search' ? selection.id : '')
   const tree = useQuery(() => window.ficBible.navigationTree(), 'navbar', refreshKey)
-  const { work, character, chapter, scene } = tree.ok ? locate(tree.data, selection) : {}
+  const { work, notes, page, character, chapter, scene } = tree.ok ? locate(tree.data, selection) : {}
   const prose = selection.view === 'prose' || selection.view === 'edit'
 
   return (
@@ -76,6 +81,12 @@ export default function NavBar({
           {work && (
             <Crumb current={selection.kind === 'work'} onClick={() => onOpenWork(work.id)} title={work.title}>
               {work.title}
+            </Crumb>
+          )}
+          {notes && <Crumb current>{selection.kind === 'lines' ? 'Lines' : 'Timeline'}</Crumb>}
+          {page && (
+            <Crumb current title={page.name}>
+              {page.name}
             </Crumb>
           )}
           {character && (

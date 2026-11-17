@@ -109,7 +109,8 @@ fic-library/
   The Long Winter/          a work, titled "The Long Winter"
     characters/
       Marie.md              a character, "Marie": her notes
-    notes/                  not used by the app yet
+    notes/
+      Logline.md            a note page, "Logline"
     chapters/
       01-First Snow/        chapter 1, "First Snow"
         01-arrival.md       scene 1, "arrival"

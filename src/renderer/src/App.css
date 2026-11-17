@@ -252,6 +252,8 @@ body {
 .sheet-scene,
 .sheet-character,
 .sheet-search,
+.sheet-timeline,
+.sheet-notePage,
 .sheet-import {
   max-width: 820px;
 }
@@ -2338,4 +2340,197 @@ select.edit-note-status-fixed {
   border-radius: 2px;
   background: rgba(212, 160, 79, 0.35);
   color: inherit;
+}
+
+/* Line dictionary: a table per type (or one table, ungrouped). Column
+   headers sort; dropped lines fade and strike through. */
+.sheet-lines {
+  max-width: 1100px;
+}
+
+.lines-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.lines-controls > .beat-editing {
+  flex: 1 1 100%;
+}
+
+.lines-group-toggle {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.lines-count {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+/* Fixed widths, so every type's table lines up with the others. */
+table.lines-table {
+  width: 100%;
+  margin-top: 6px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.lines-table .col-line {
+  width: 24%;
+}
+
+.lines-table :is(.col-type, .col-speaker, .col-chapter, .col-scene) {
+  width: 10%;
+}
+
+/* A used line's chapter and scene open them. */
+.lines-table .link-button {
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+  text-underline-offset: 2px;
+}
+
+.lines-table .col-status {
+  width: 88px;
+}
+
+.lines-table .col-tools {
+  width: 60px;
+}
+
+.lines-table td {
+  overflow-wrap: anywhere;
+}
+
+table.lines-table th,
+table.lines-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: top;
+}
+
+table.lines-table th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.sort-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.sort-button:hover {
+  color: var(--ink);
+}
+
+.line-text,
+.line-notes {
+  white-space: pre-wrap;
+}
+
+.line-notes {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.line-beat {
+  display: block;
+  font-size: 12px;
+}
+
+.line-dropped .line-text {
+  color: var(--ink-soft);
+  text-decoration: line-through;
+}
+
+.line-row:hover .edit-button {
+  opacity: 1;
+  color: var(--gold-deep);
+}
+
+.status-planned {
+  background: var(--chip-drafting);
+  color: var(--chip-drafting-ink);
+}
+
+.status-used {
+  background: var(--chip-posted);
+  color: var(--chip-posted-ink);
+}
+
+.status-dropped {
+  background: var(--chip-drafted);
+  color: var(--chip-drafted-ink);
+}
+
+/* Timeline: the in-fic date in a column of its own, right-aligned against
+   the event, like a character's field labels. */
+.timeline-events {
+  display: grid;
+  grid-template-columns: fit-content(12em) 1fr auto;
+  column-gap: 14px;
+}
+
+.timeline-events > li {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  column-gap: 14px;
+  align-items: baseline;
+}
+
+.timeline-events > li.beat-editing > .beat-body {
+  grid-column: 1 / -1;
+}
+
+.timeline-date {
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
+  overflow-wrap: anywhere;
+  color: var(--ink-soft);
+}
+
+.timeline-what,
+.timeline-notes {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.timeline-chapter {
+  font-size: 13px;
+}
+
+.timeline-notes {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.timeline-events .beat-tools {
+  align-self: start;
+}
+
+/* A note page: the whole sheet is for writing. */
+.note-page .editor-host .cm-content {
+  min-height: 55vh;
+}
+
+.title-row .page-order {
+  margin-left: auto;
+  align-self: center;
 }

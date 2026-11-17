@@ -3,8 +3,8 @@ import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
 import LibraryBar from './LibraryBar.jsx'
 
-// The navigation tree: works, each holding two groups, Characters and
-// Chapters; chapters expand to scenes. Clicking a work opens its overview,
+// The navigation tree: works, each holding three groups, Characters,
+// Notes and Chapters; chapters expand to scenes. Clicking a work opens its overview,
 // a character their profile, a chapter its overview, and a scene its
 // detail. Home, above the tree, opens the home page.
 //
@@ -194,7 +194,7 @@ function Group({ groupKey, label, count, hidesSelection, isExpanded, onToggle, c
             {open ? '▾' : '▸'}
           </span>
           <span className="tree-title">{label}</span>
-          <span className="tree-count">{count}</span>
+          {count !== null && <span className="tree-count">{count}</span>}
           {!open && hidesSelection && <HiddenSelection />}
         </button>
       </div>
@@ -240,6 +240,56 @@ function Characters({ work, selection, onSelect, isExpanded, onToggle, canCreate
   )
 }
 
+// The work's notes: its line dictionary, its timeline, and its freeform
+// note pages in the author's order.
+function Notes({ work, selection, onSelect, isExpanded, onToggle, canCreate, onCreated }) {
+  const groupKey = `notes:${work.id}`
+  return (
+    <Group
+      groupKey={groupKey}
+      label="Notes"
+      count={null}
+      hidesSelection={notesHold(work, selection)}
+      isExpanded={isExpanded}
+      onToggle={onToggle}
+    >
+      <ul className="tree-characters">
+        <li>
+          <Item kind="lines" id={work.id} selection={selection} onSelect={onSelect} className="tree-character">
+            <span className="tree-title">Lines</span>
+          </Item>
+        </li>
+        <li>
+          <Item kind="timeline" id={work.id} selection={selection} onSelect={onSelect} className="tree-character">
+            <span className="tree-title">Timeline</span>
+          </Item>
+        </li>
+        {work.notePages.map((p) => (
+          <li key={p.id} title={p.name}>
+            <Item kind="notePage" id={p.id} selection={selection} onSelect={onSelect} className="tree-character tree-note-page">
+              <span className="tree-title">{p.name}</span>
+            </Item>
+          </li>
+        ))}
+      </ul>
+      {canCreate && (
+        <NewItem
+          what="page"
+          label="name"
+          className="tree-new-character"
+          create={(name) => window.ficBible.createNotePage(work.id, name)}
+          onCreated={(id) => onCreated({ kind: 'notePage', id }, [`work:${work.id}`, groupKey])}
+        />
+      )}
+    </Group>
+  )
+}
+
+const notesHold = (work, selection) =>
+  isSelected(selection, 'lines', work.id) ||
+  isSelected(selection, 'timeline', work.id) ||
+  work.notePages.some((p) => isSelected(selection, 'notePage', p.id))
+
 // Clicking a work opens its overview and unfolds it. Clicking it again
 // while its overview is open folds or unfolds it.
 function Work({ work, selection, onSelect, isExpanded, onToggle, canCreate, onCreated }) {
@@ -248,7 +298,7 @@ function Work({ work, selection, onSelect, isExpanded, onToggle, canCreate, onCr
   const selected = isSelected(selection, 'work', work.id)
   const holdsCharacter = work.characters.some((c) => isSelected(selection, 'character', c.id))
   const holdsChapter = work.chapters.some((ch) => chapterHolds(ch, selection))
-  const hidesSelection = !open && (holdsCharacter || holdsChapter)
+  const hidesSelection = !open && (holdsCharacter || holdsChapter || notesHold(work, selection))
   function click() {
     if (selected || !open) onToggle(key)
     if (!selected) onSelect({ kind: 'work', id: work.id })
@@ -276,6 +326,15 @@ function Work({ work, selection, onSelect, isExpanded, onToggle, canCreate, onCr
       {open && (
         <ul className="tree-groups">
           <Characters
+            work={work}
+            selection={selection}
+            onSelect={onSelect}
+            isExpanded={isExpanded}
+            onToggle={onToggle}
+            canCreate={canCreate}
+            onCreated={onCreated}
+          />
+          <Notes
             work={work}
             selection={selection}
             onSelect={onSelect}

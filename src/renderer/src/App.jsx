@@ -11,6 +11,9 @@ import ChapterProse from './ChapterProse.jsx'
 import ImportReport from './ImportReport.jsx'
 import CharacterProfile from './CharacterProfile.jsx'
 import SearchResults from './SearchResults.jsx'
+import LineDictionary from './LineDictionary.jsx'
+import Timeline from './Timeline.jsx'
+import NotePage from './NotePage.jsx'
 import SidebarHandle, { useSidebarWidth } from './SidebarHandle.jsx'
 
 // Each screen sits on a sheet of paper; the kind sets how wide it may grow.
@@ -25,7 +28,8 @@ const sameScreen = (a, b) => a.kind === b.kind && a.id === b.id && a.view === b.
 
 // selection is { kind: 'home' }, { kind: 'work', id }, { kind: 'chapter', id, view },
 // { kind: 'scene', id, view }, { kind: 'character', id },
-// { kind: 'search', id: <the search text> }
+// { kind: 'search', id: <the search text> }, { kind: 'lines', id: <workId> },
+// { kind: 'timeline', id: <workId> }, { kind: 'notePage', id }
 // or { kind: 'import', report } for the result of the last import.
 // view is 'prose' for the prose viewer (a scene's, or the whole chapter's),
 // or 'edit' for a scene's prose editor; anything else is the scene detail or chapter overview. The sidebar
@@ -37,9 +41,10 @@ const sameScreen = (a, b) => a.kind === b.kind && a.id === b.id && a.view === b.
 // Like expanded, it lasts as long as the app is open, and no longer.
 //
 // expanded holds only the sidebar rows the user has toggled, keyed
-// 'work:<id>', 'characters:<workId>', 'chapters:<workId>' or
-// 'chapter:<id>'. Anything not in it uses the default: works and their
-// Chapters group open; the Characters group and each chapter closed. It lives here rather than in the sidebar so
+// 'work:<id>', 'characters:<workId>', 'notes:<workId>',
+// 'chapters:<workId>' or 'chapter:<id>'. Anything not in it uses the
+// default: works and their Chapters group open; the Characters and Notes
+// groups and each chapter closed. It lives here rather than in the sidebar so
 // it lasts as long as the app is open, and no longer.
 export default function App() {
   const [nav, setNav] = useState({ selection: HOME, history: [] })
@@ -155,15 +160,16 @@ export default function App() {
     navigate({ kind: 'character', id: characterId })
   }
 
-  // After deleting a character, their profile is gone: show their work,
-  // and forget the profile in history so Back can't return to it.
-  const characterDeleted = (character) => {
+  // After deleting a character or a note page, its screen is gone: show
+  // its work, and forget the screen in history so Back can't return to it.
+  const removed = (kind, id, workId) => {
     changed()
     setNav((prev) => ({
-      selection: { kind: 'work', id: character.work.id },
-      history: prev.history.filter((s) => !(s.kind === 'character' && s.id === character.id))
+      selection: { kind: 'work', id: workId },
+      history: prev.history.filter((s) => !(s.kind === kind && s.id === id))
     }))
   }
+  const characterDeleted = (character) => removed('character', character.id, character.work.id)
 
   return (
     <div className="layout" style={{ '--sidebar-width': `${sidebarWidth}px` }}>
@@ -203,6 +209,27 @@ export default function App() {
           {selection.kind === 'import' && <ImportReport report={selection.report} />}
           {selection.kind === 'search' && (
             <SearchResults query={selection.id} refreshKey={libraryVersion} onOpenCharacter={openCharacter} />
+          )}
+          {selection.kind === 'lines' && (
+            <LineDictionary
+              workId={selection.id}
+              refreshKey={libraryVersion}
+              onChanged={changed}
+              onOpenChapter={openChapter}
+              onOpenScene={openScene}
+            />
+          )}
+          {selection.kind === 'timeline' && (
+            <Timeline workId={selection.id} refreshKey={libraryVersion} onChanged={changed} onOpenChapter={openChapter} />
+          )}
+          {selection.kind === 'notePage' && (
+            <NotePage
+              pageId={selection.id}
+              refreshKey={libraryVersion}
+              onChanged={changed}
+              onDeleted={(page) => removed('notePage', page.id, page.work.id)}
+              onDirtyChange={setUnsaved}
+            />
           )}
           {selection.kind === 'character' && (
             <CharacterProfile
