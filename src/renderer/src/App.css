@@ -1500,6 +1500,11 @@ p.beat-summary {
   color: var(--gold-deep);
 }
 
+/* In a row's tool strip the strip already fades, so the icons don't fade again. */
+.main-pane .beat-tools .edit-button {
+  opacity: 1;
+}
+
 .main-pane .edit-button:hover {
   opacity: 1;
   color: var(--gold-deep);

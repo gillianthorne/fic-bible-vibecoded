@@ -190,12 +190,8 @@ function CharacterField({ field, index, count, labels, onChanged }) {
           >
             ↓
           </button>
-          <button type="button" aria-label={`Edit ${field.label}`} disabled={busy} onClick={() => setMode('edit')}>
-            Edit
-          </button>
-          <button type="button" aria-label={`Delete ${field.label}`} disabled={busy} onClick={() => setMode('confirm-delete')}>
-            Delete
-          </button>
+          <EditButton label={`Edit ${field.label}`} disabled={busy} onClick={() => setMode('edit')} />
+          <DeleteButton label={`Delete ${field.label}`} disabled={busy} onClick={() => setMode('confirm-delete')} />
         </div>
       )}
     </li>

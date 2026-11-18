@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
-import { Field, FormActions, SaveError, useSave } from './editing.jsx'
+import { DeleteButton, EditButton, Field, FormActions, SaveError, useSave } from './editing.jsx'
 
 // A work's timeline (spec: Timeline): events in story order, which the
 // author sets with up and down, each with a free-text in-fic date, an
@@ -129,12 +129,8 @@ function Event({ event, index, count, workId, chapters, onChanged, onOpenChapter
           >
             ↓
           </button>
-          <button type="button" aria-label={`Edit ${event.event}`} disabled={busy} onClick={() => setMode('edit')}>
-            Edit
-          </button>
-          <button type="button" aria-label={`Delete ${event.event}`} disabled={busy} onClick={() => setMode('confirm-delete')}>
-            Delete
-          </button>
+          <EditButton label={`Edit ${event.event}`} disabled={busy} onClick={() => setMode('edit')} />
+          <DeleteButton label={`Delete ${event.event}`} disabled={busy} onClick={() => setMode('confirm-delete')} />
         </div>
       )}
     </li>

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import {
   BEAT_STATUSES,
+  DeleteButton,
+  EditButton,
   Field,
   FormActions,
   NumberInput,
@@ -135,12 +137,8 @@ function Beat({ beat, index, count, paragraphs, kinds, onChanged }) {
           >
             ↓
           </button>
-          <button type="button" aria-label={`Edit ${label}`} disabled={busy} onClick={() => setMode('edit')}>
-            Edit
-          </button>
-          <button type="button" aria-label={`Delete ${label}`} disabled={busy} onClick={() => setMode('confirm-delete')}>
-            Delete
-          </button>
+          <EditButton label={`Edit ${label}`} disabled={busy} onClick={() => setMode('edit')} />
+          <DeleteButton label={`Delete ${label}`} disabled={busy} onClick={() => setMode('confirm-delete')} />
         </div>
       )}
     </li>
