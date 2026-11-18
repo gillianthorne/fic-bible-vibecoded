@@ -31,6 +31,40 @@ function save(w) {
   }
 }
 
+// Whether the sidebar is folded away, kept the same way as its width.
+const COLLAPSED_KEY = 'ficBible.sidebarCollapsed'
+
+function loadCollapsed() {
+  try {
+    return localStorage.getItem(COLLAPSED_KEY) === 'true'
+  } catch {
+    return false
+  }
+}
+
+export function useSidebarCollapsed() {
+  const [collapsed, setCollapsed] = useState(loadCollapsed)
+  const set = (next) => {
+    setCollapsed(next)
+    try {
+      localStorage.setItem(COLLAPSED_KEY, String(next))
+    } catch {
+      // Not saved: it lasts until the app closes.
+    }
+  }
+  return [collapsed, set]
+}
+
+// While the sidebar is folded away, a thin strip on the left edge opens
+// it again.
+export function SidebarRail({ onExpand }) {
+  return (
+    <button type="button" className="sidebar-rail" aria-label="Show sidebar" title="Show sidebar" onClick={onExpand}>
+      <span aria-hidden="true">»</span>
+    </button>
+  )
+}
+
 export function useSidebarWidth() {
   const [width, setWidth] = useState(load)
   const set = (w, persist = true) => {

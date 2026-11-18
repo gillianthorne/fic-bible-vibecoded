@@ -122,6 +122,50 @@ body {
   color: var(--desk-muted);
 }
 
+/* « in the sidebar's top corner folds it away; » on a thin strip at the
+   window's left edge brings it back. */
+.sidebar {
+  position: relative;
+}
+
+.sidebar .sidebar-collapse {
+  position: absolute;
+  top: 8px;
+  right: 6px;
+  width: auto;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--desk-muted);
+}
+
+.sidebar .sidebar-collapse:hover,
+.sidebar .sidebar-collapse:focus-visible {
+  color: var(--gold);
+}
+
+.sidebar-rail {
+  flex: 0 0 22px;
+  padding: 10px 0 0;
+  border: 0;
+  border-right: 2px solid var(--gold);
+  background: var(--desk-deep);
+  color: var(--desk-muted);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.sidebar-rail:hover,
+.sidebar-rail:focus-visible {
+  color: var(--gold);
+}
+
 /* The sidebar's right edge, dragged to resize it. A thin line with a
    wider grab area. */
 .sidebar-handle {
@@ -298,7 +342,7 @@ h2 {
 
 .library-bar {
   margin: 0 0 12px;
-  padding: 0 8px 12px;
+  padding: 0 24px 12px 8px;
   border-bottom: 1px solid var(--desk-line);
 }
 
