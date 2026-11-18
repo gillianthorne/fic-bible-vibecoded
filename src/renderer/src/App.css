@@ -2361,6 +2361,32 @@ select.edit-note-status-fixed {
   --prose-gutter: 0px;
 }
 
+/* Notes and note pages open read: the pencil at the top right opens the
+   editor. Paragraphs are spaced, not indented, since notes aren't prose. */
+.notes-view-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 4px;
+}
+
+.notes-view:hover .edit-button {
+  opacity: 1;
+  color: var(--gold-deep);
+}
+
+.notes-view .prose-text p {
+  text-indent: 0;
+}
+
+.notes-view .prose-text + .prose-text {
+  margin-top: 0.7em;
+}
+
+.notes-view .prose-heading {
+  margin-top: 0.4em;
+  text-align: left;
+}
+
 .character-notes .save-error {
   margin: 0 0 12px;
 }
