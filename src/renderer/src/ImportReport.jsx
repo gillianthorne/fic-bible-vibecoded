@@ -34,22 +34,24 @@ export default function ImportReport({ report }) {
         <>
           <h2>Skipped ({skipped.length})</h2>
           <p className="muted">These weren’t imported. Nothing on disk was changed.</p>
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">Path</th>
-                <th scope="col">Reason</th>
-              </tr>
-            </thead>
-            <tbody>
-              {skipped.map((s) => (
-                <tr key={s.path}>
-                  <td className="import-path">{s.path}</td>
-                  <td>{s.reason}</td>
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Path</th>
+                  <th scope="col">Reason</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {skipped.map((s) => (
+                  <tr key={s.path}>
+                    <td className="import-path">{s.path}</td>
+                    <td>{s.reason}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
     </article>

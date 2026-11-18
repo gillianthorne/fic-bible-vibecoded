@@ -90,6 +90,18 @@ body {
   outline-offset: 1px;
 }
 
+/* Every table sits in one of these. When the window is too narrow for
+   the table, it scrolls sideways here instead of crushing its columns.
+   The floor width is where wrapped text (titles, notes, lines) would
+   otherwise get too cramped to read. */
+.table-scroll {
+  overflow-x: auto;
+}
+
+.table-scroll > table {
+  min-width: 560px;
+}
+
 /* Layout: sidebar left, one main pane right */
 
 .layout {

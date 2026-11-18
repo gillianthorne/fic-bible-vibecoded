@@ -134,46 +134,48 @@ export default function WorkOverview({ workId, refreshKey, onChanged, onOpenChap
         {chapters.length === 0 ? (
           <p className="muted">No chapters in this work.</p>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th className="num">#</th>
-                <th>Title</th>
-                <th className="num">Words</th>
-                <th>Status</th>
-                <th>Link</th>
-              </tr>
-            </thead>
-            <tbody>
-              {chapters.map((ch) => (
-                <tr key={ch.id} onClick={() => onOpenChapter(ch.id, work.id)}>
-                  <td className="num">{ch.number}</td>
-                  <td>
-                    {/* No handler of its own: its click reaches the row's.
-                        The button makes the row reachable by keyboard. */}
-                    <button type="button" className="link-button scene-link">
-                      {ch.title}
-                    </button>
-                  </td>
-                  <td className="num">
-                    {number(ch.wordcount)}
-                    {ch.uncounted > 0 && (
-                      <span className="file-error" title={`${ch.uncounted} scene files couldn’t be read`}>
-                        {' '}
-                        *
-                      </span>
-                    )}
-                  </td>
-                  <td>
-                    <Status value={ch.status} />
-                  </td>
-                  <td onClick={(e) => e.stopPropagation()}>
-                    {ch.postedUrl ? <ExternalLink href={ch.postedUrl}>Open ↗</ExternalLink> : <span className="muted">—</span>}
-                  </td>
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th className="num">#</th>
+                  <th>Title</th>
+                  <th className="num">Words</th>
+                  <th>Status</th>
+                  <th>Link</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {chapters.map((ch) => (
+                  <tr key={ch.id} onClick={() => onOpenChapter(ch.id, work.id)}>
+                    <td className="num">{ch.number}</td>
+                    <td>
+                      {/* No handler of its own: its click reaches the row's.
+                          The button makes the row reachable by keyboard. */}
+                      <button type="button" className="link-button scene-link">
+                        {ch.title}
+                      </button>
+                    </td>
+                    <td className="num">
+                      {number(ch.wordcount)}
+                      {ch.uncounted > 0 && (
+                        <span className="file-error" title={`${ch.uncounted} scene files couldn’t be read`}>
+                          {' '}
+                          *
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      <Status value={ch.status} />
+                    </td>
+                    <td onClick={(e) => e.stopPropagation()}>
+                      {ch.postedUrl ? <ExternalLink href={ch.postedUrl}>Open ↗</ExternalLink> : <span className="muted">—</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
     </article>

@@ -181,65 +181,67 @@ export default function ChapterOverview({ chapterId, refreshKey, onChanged, onOp
       {scenes.length === 0 ? (
         <p className="muted">No scenes in this chapter.</p>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th rowSpan={2} className="num">#</th>
-              <th rowSpan={2}>Title</th>
-              <th rowSpan={2}>POV</th>
-              <th rowSpan={2}>Status</th>
-              <th rowSpan={2} className="num">Words</th>
-              <th colSpan={4} className="beats-group">Beats</th>
-            </tr>
-            <tr>
-              <th className="num">Planned</th>
-              <th className="num">In draft</th>
-              <th className="num">Cut</th>
-              <th className="num">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {scenes.map((scene) => (
-              <tr key={scene.id} onClick={() => onOpenScene(scene.id, chapter.id, chapter.work.id)}>
-                <td className="num">{scene.position}</td>
-                <td>
-                  {/* No handler of its own: its click, from the mouse or
-                      Enter/Space, reaches the row's. The button is what
-                      makes the row reachable by keyboard. */}
-                  <button type="button" className="link-button scene-link">
-                    {scene.title}
-                  </button>
-                </td>
-                <td>{scene.pov}</td>
-                <td>
-                  <Status value={scene.status} />
-                </td>
-                <td className="num">
-                  <Wordcount scene={scene} />
-                </td>
-                <td className="num">{scene.beats.planned}</td>
-                <td className="num">{scene.beats.inDraft}</td>
-                <td className="num">{scene.beats.cut}</td>
-                <td className="num">{scene.beats.total}</td>
+        <div className="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th rowSpan={2} className="num">#</th>
+                <th rowSpan={2}>Title</th>
+                <th rowSpan={2}>POV</th>
+                <th rowSpan={2}>Status</th>
+                <th rowSpan={2} className="num">Words</th>
+                <th colSpan={4} className="beats-group">Beats</th>
               </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr>
-              <th colSpan={4} scope="row">
-                Chapter total
-                {uncounted > 0 && (
-                  <span className="file-error">
-                    {' '}
-                    ({uncounted} {uncounted === 1 ? 'scene' : 'scenes'} not counted)
-                  </span>
-                )}
-              </th>
-              <td className="num">{number(wordcount)}</td>
-              <td colSpan={4} />
-            </tr>
-          </tfoot>
-        </table>
+              <tr>
+                <th className="num">Planned</th>
+                <th className="num">In draft</th>
+                <th className="num">Cut</th>
+                <th className="num">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {scenes.map((scene) => (
+                <tr key={scene.id} onClick={() => onOpenScene(scene.id, chapter.id, chapter.work.id)}>
+                  <td className="num">{scene.position}</td>
+                  <td>
+                    {/* No handler of its own: its click, from the mouse or
+                        Enter/Space, reaches the row's. The button is what
+                        makes the row reachable by keyboard. */}
+                    <button type="button" className="link-button scene-link">
+                      {scene.title}
+                    </button>
+                  </td>
+                  <td>{scene.pov}</td>
+                  <td>
+                    <Status value={scene.status} />
+                  </td>
+                  <td className="num">
+                    <Wordcount scene={scene} />
+                  </td>
+                  <td className="num">{scene.beats.planned}</td>
+                  <td className="num">{scene.beats.inDraft}</td>
+                  <td className="num">{scene.beats.cut}</td>
+                  <td className="num">{scene.beats.total}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr>
+                <th colSpan={4} scope="row">
+                  Chapter total
+                  {uncounted > 0 && (
+                    <span className="file-error">
+                      {' '}
+                      ({uncounted} {uncounted === 1 ? 'scene' : 'scenes'} not counted)
+                    </span>
+                  )}
+                </th>
+                <td className="num">{number(wordcount)}</td>
+                <td colSpan={4} />
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       )}
 
       {scenes.length > 0 && (
