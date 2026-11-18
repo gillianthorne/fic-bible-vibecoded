@@ -132,6 +132,25 @@ export function EditButton({ label, onClick, disabled }) {
   )
 }
 
+// A small arrow, styled like the pencil, that moves a row up or down
+// its list. label is its accessible name; title its tooltip, if shorter.
+export function MoveButton({ direction, label, title = label, onClick, disabled }) {
+  return (
+    <button type="button" className="edit-button" aria-label={label} title={title} disabled={disabled} onClick={onClick}>
+      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+        <path
+          d={direction === 'up' ? 'M8 13V3M3.8 7.2 8 3l4.2 4.2' : 'M8 3v10M3.8 8.8 8 13l4.2-4.2'}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </button>
+  )
+}
+
 // A small trash can, the pencil's partner, that starts deleting
 // something. Styled like the pencil, but red on hover. label names what
 // it deletes ("Delete edit note").

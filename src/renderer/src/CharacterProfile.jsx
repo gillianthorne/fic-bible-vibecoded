@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
 import CharacterNotes from './CharacterNotes.jsx'
-import { DeleteButton, EditButton, Field, FormActions, SaveError, SuggestInput, useSave, useSuggestions } from './editing.jsx'
+import { DeleteButton, EditButton, MoveButton, Field, FormActions, SaveError, SuggestInput, useSave, useSuggestions } from './editing.jsx'
 
 // One character's profile (spec: Character profile): name, age and
 // birthday, then the author's own label-and-value fields in order, then
@@ -172,24 +172,20 @@ function CharacterField({ field, index, count, labels, onChanged }) {
       </div>
       {mode === 'view' && (
         <div className="beat-tools">
-          <button
-            type="button"
-            aria-label={`Move ${field.label} up`}
+          <MoveButton
+            direction="up"
+            label={`Move ${field.label} up`}
             title="Move up"
             disabled={busy || index === 0}
             onClick={() => save(() => window.ficBible.moveCharacterField(field.id, 'up'), onChanged)}
-          >
-            ↑
-          </button>
-          <button
-            type="button"
-            aria-label={`Move ${field.label} down`}
+          />
+          <MoveButton
+            direction="down"
+            label={`Move ${field.label} down`}
             title="Move down"
             disabled={busy || index === count - 1}
             onClick={() => save(() => window.ficBible.moveCharacterField(field.id, 'down'), onChanged)}
-          >
-            ↓
-          </button>
+          />
           <EditButton label={`Edit ${field.label}`} disabled={busy} onClick={() => setMode('edit')} />
           <DeleteButton label={`Delete ${field.label}`} disabled={busy} onClick={() => setMode('confirm-delete')} />
         </div>

@@ -1392,7 +1392,6 @@ p.beat-summary {
 
 .edit-actions button,
 .beat-confirm button,
-.beat-tools button,
 .add-beat {
   padding: 3px 10px;
   border: 1px solid var(--rule-strong);
@@ -1404,7 +1403,6 @@ p.beat-summary {
 
 .edit-actions button:hover:not(:disabled),
 .beat-confirm button:hover:not(:disabled),
-.beat-tools button:hover:not(:disabled),
 .add-beat:hover {
   border-color: var(--gold-deep);
   background: var(--paper-shade);
@@ -1446,18 +1444,13 @@ p.beat-summary {
   display: flex;
   flex: 0 0 auto;
   align-items: flex-start;
-  gap: 4px;
+  gap: 2px;
   opacity: 0.35;
 }
 
 .beat:hover .beat-tools,
 .beat-tools:focus-within {
   opacity: 1;
-}
-
-.beat-tools button {
-  padding: 1px 7px;
-  font-size: 12px;
 }
 
 .beat-confirm {
