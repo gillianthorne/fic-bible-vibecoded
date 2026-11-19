@@ -1,13 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery } from './useQuery.js'
+import { SEARCH_SCOPES } from './SearchResults.jsx'
 
 // The bar above the sheet: a back button, then where the open screen sits,
 // as Home / work / chapter / scene, Home / work / character, or
 // Home / work / Lines, Timeline or a note page. Every part but the last opens its
 // screen; the last is the open screen itself. A prose view (a scene's or
 // a whole chapter's) adds a last part, Prose; the prose editor adds Edit
-// prose. On the right, a search box searches every work's characters;
-// Enter opens the results.
+// prose. On the right, a search box searches every work's characters,
+// notes and chapters, with a menu beside it picking which; Enter opens
+// the results on that tab.
 //
 // Titles come from the navigation tree, the same read the sidebar does, so
 // this reads no files. refreshKey re-reads it after an import or edit, so
@@ -64,6 +66,11 @@ export default function NavBar({
   onSearch
 }) {
   const [search, setSearch] = useState(selection.kind === 'search' ? selection.id : '')
+  const [scope, setScope] = useState(selection.kind === 'search' ? selection.view : 'everything')
+  // Switching tabs on the results page moves the menu with it.
+  useEffect(() => {
+    if (selection.kind === 'search') setScope(selection.view)
+  }, [selection])
   const tree = useQuery(() => window.ficBible.navigationTree(), 'navbar', refreshKey)
   const { work, notes, page, character, chapter, scene } = tree.ok ? locate(tree.data, selection) : {}
   const prose = selection.view === 'prose' || selection.view === 'edit'
@@ -122,14 +129,21 @@ export default function NavBar({
         role="search"
         onSubmit={(e) => {
           e.preventDefault()
-          if (search.trim()) onSearch(search.trim())
+          if (search.trim()) onSearch(search.trim(), scope)
         }}
       >
+        <select value={scope} aria-label="What to search" onChange={(e) => setScope(e.target.value)}>
+          {SEARCH_SCOPES.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.label}
+            </option>
+          ))}
+        </select>
         <input
           type="search"
           value={search}
-          aria-label="Search characters in every work"
-          placeholder="Search characters…"
+          aria-label="Search every work"
+          placeholder="Search…"
           onChange={(e) => setSearch(e.target.value)}
         />
       </form>

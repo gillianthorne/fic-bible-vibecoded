@@ -2492,11 +2492,13 @@ select.edit-note-status-fixed {
 /* Search: a box at the right of the bar above the sheet, and the results
    screen, grouped by work. */
 .nav-search {
+  display: flex;
+  gap: 4px;
   margin-left: auto;
 }
 
+.nav-search select,
 .nav-search input {
-  width: 14em;
   padding: 4px 8px;
   border: 1px solid var(--rule-strong);
   border-radius: 4px;
@@ -2506,6 +2508,11 @@ select.edit-note-status-fixed {
   font-size: 13px;
 }
 
+.nav-search input {
+  width: 14em;
+}
+
+.nav-search select:focus,
 .nav-search input:focus {
   border-color: var(--gold-deep);
   outline: none;
@@ -2523,6 +2530,66 @@ select.edit-note-status-fixed {
 .search-results h2 {
   margin: 24px 0 6px;
   font-size: 17px;
+}
+
+/* Tabs: one per kind of result, each with its count. */
+.search-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 14px;
+  border-bottom: 1px solid var(--rule-strong);
+}
+
+.search-tab {
+  margin-bottom: -1px;
+  padding: 5px 12px;
+  border: 1px solid transparent;
+  border-radius: 4px 4px 0 0;
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.search-tab:hover {
+  color: var(--ink);
+}
+
+.search-tab.current {
+  border-color: var(--rule-strong);
+  border-bottom-color: var(--paper);
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.search-count {
+  margin-left: 2px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+
+.search-results h3 {
+  margin: 14px 0 2px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+}
+
+.search-context {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.search-more {
+  margin: 2px 0 0;
+  font-size: 13px;
 }
 
 .search-list {
