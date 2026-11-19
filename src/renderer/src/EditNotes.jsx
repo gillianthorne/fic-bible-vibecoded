@@ -410,24 +410,26 @@ export default function EditNotesTable({ scene, editKinds, onChanged }) {
     <>
       <Summary notes={notes} />
       {notes.length > 0 && (
-        <table className="edit-notes">
-          <thead>
-            <tr>
-              <th className="num">¶</th>
-              <th>Kind</th>
-              <th>Note</th>
-              <th>Status</th>
-              <th>
-                <span className="visually-hidden">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {notes.map((note) => (
-              <NoteRow key={note.id} note={note} paragraphs={scene.paragraphs} editKinds={editKinds} onChanged={onChanged} />
-            ))}
-          </tbody>
-        </table>
+        <div className="table-scroll">
+          <table className="edit-notes">
+            <thead>
+              <tr>
+                <th className="num">¶</th>
+                <th>Kind</th>
+                <th>Note</th>
+                <th>Status</th>
+                <th>
+                  <span className="visually-hidden">Actions</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {notes.map((note) => (
+                <NoteRow key={note.id} note={note} paragraphs={scene.paragraphs} editKinds={editKinds} onChanged={onChanged} />
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
       <AddNote sceneId={scene.id} editKinds={editKinds} paragraphs={scene.paragraphs} onChanged={onChanged} />
     </>

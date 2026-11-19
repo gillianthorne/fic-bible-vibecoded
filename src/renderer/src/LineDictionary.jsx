@@ -246,37 +246,39 @@ function LineTable({ lines, showType, sort, onSort, ...rowProps }) {
   const columns = COLUMNS.filter(([key]) => showType || key !== 'type')
   const columnCount = columns.length + 1
   return (
-    <table className="lines-table">
-      <thead>
-        <tr>
-          {columns.map(([key, label]) => {
-            const active = sort?.key === key
-            return (
-              <th
-                key={key}
-                className={`col-${key}`}
-                aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined}
-              >
-                <button type="button" className="sort-button" onClick={() => onSort(key)}>
-                  {label}
-                  <span className="sort-mark" aria-hidden="true">
-                    {active ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''}
-                  </span>
-                </button>
-              </th>
-            )
-          })}
-          <th className="col-tools">
-            <span className="visually-hidden">Edit or delete</span>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {sorted(lines, sort).map((line) => (
-          <LineRow key={line.id} line={line} showType={showType} columnCount={columnCount} {...rowProps} />
-        ))}
-      </tbody>
-    </table>
+    <div className="table-scroll">
+      <table className="lines-table">
+        <thead>
+          <tr>
+            {columns.map(([key, label]) => {
+              const active = sort?.key === key
+              return (
+                <th
+                  key={key}
+                  className={`col-${key}`}
+                  aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined}
+                >
+                  <button type="button" className="sort-button" onClick={() => onSort(key)}>
+                    {label}
+                    <span className="sort-mark" aria-hidden="true">
+                      {active ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''}
+                    </span>
+                  </button>
+                </th>
+              )
+            })}
+            <th className="col-tools">
+              <span className="visually-hidden">Edit or delete</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {sorted(lines, sort).map((line) => (
+            <LineRow key={line.id} line={line} showType={showType} columnCount={columnCount} {...rowProps} />
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
 

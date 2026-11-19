@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
-import { Field, FormActions, SaveError, useSave } from './editing.jsx'
+import { DeleteButton, EditButton, MoveButton, Field, FormActions, SaveError, useSave } from './editing.jsx'
 
 // A work's timeline (spec: Timeline): events in story order, which the
 // author sets with up and down, each with a free-text in-fic date, an
@@ -111,30 +111,22 @@ function Event({ event, index, count, workId, chapters, onChanged, onOpenChapter
       </div>
       {mode === 'view' && (
         <div className="beat-tools">
-          <button
-            type="button"
-            aria-label={`Move ${event.event} earlier`}
+          <MoveButton
+            direction="up"
+            label={`Move ${event.event} earlier`}
             title="Move earlier"
             disabled={busy || index === 0}
             onClick={() => save(() => window.ficBible.moveTimelineEvent(event.id, 'up'), onChanged)}
-          >
-            ↑
-          </button>
-          <button
-            type="button"
-            aria-label={`Move ${event.event} later`}
+          />
+          <MoveButton
+            direction="down"
+            label={`Move ${event.event} later`}
             title="Move later"
             disabled={busy || index === count - 1}
             onClick={() => save(() => window.ficBible.moveTimelineEvent(event.id, 'down'), onChanged)}
-          >
-            ↓
-          </button>
-          <button type="button" aria-label={`Edit ${event.event}`} disabled={busy} onClick={() => setMode('edit')}>
-            Edit
-          </button>
-          <button type="button" aria-label={`Delete ${event.event}`} disabled={busy} onClick={() => setMode('confirm-delete')}>
-            Delete
-          </button>
+          />
+          <EditButton label={`Edit ${event.event}`} disabled={busy} onClick={() => setMode('edit')} />
+          <DeleteButton label={`Delete ${event.event}`} disabled={busy} onClick={() => setMode('confirm-delete')} />
         </div>
       )}
     </li>

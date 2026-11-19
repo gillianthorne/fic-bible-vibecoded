@@ -60,35 +60,37 @@ export default function ChapterEditNotes({ notes, scenes, editKinds, onChanged, 
             {group.kind || <span className="muted">No kind</span>}{' '}
             <span className="muted chapter-edit-count">{group.notes.length}</span>
           </h3>
-          <table className="edit-notes">
-            <thead>
-              <tr>
-                <th>Scene</th>
-                <th className="num">¶</th>
-                <th>Note</th>
-                <th>Status</th>
-                <th>
-                  <span className="visually-hidden">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {group.notes.map((note) => (
-                <NoteRow
-                  key={note.id}
-                  note={note}
-                  paragraphs={paragraphs.get(note.sceneId) ?? null}
-                  editKinds={editKinds}
-                  onChanged={onChanged}
-                  sceneCell={
-                    <button type="button" className="link-button" onClick={() => onOpenScene(note.sceneId)}>
-                      {note.scenePosition}. {note.sceneTitle}
-                    </button>
-                  }
-                />
-              ))}
-            </tbody>
-          </table>
+          <div className="table-scroll">
+            <table className="edit-notes">
+              <thead>
+                <tr>
+                  <th>Scene</th>
+                  <th className="num">¶</th>
+                  <th>Note</th>
+                  <th>Status</th>
+                  <th>
+                    <span className="visually-hidden">Actions</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {group.notes.map((note) => (
+                  <NoteRow
+                    key={note.id}
+                    note={note}
+                    paragraphs={paragraphs.get(note.sceneId) ?? null}
+                    editKinds={editKinds}
+                    onChanged={onChanged}
+                    sceneCell={
+                      <button type="button" className="link-button" onClick={() => onOpenScene(note.sceneId)}>
+                        {note.scenePosition}. {note.sceneTitle}
+                      </button>
+                    }
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ))}
     </section>

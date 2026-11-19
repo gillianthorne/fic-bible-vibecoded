@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
-import { DeleteButton, EditButton, FormActions, SaveError, useSave } from './editing.jsx'
+import { DeleteButton, EditButton, MoveButton, FormActions, SaveError, useSave } from './editing.jsx'
 import MarkdownFileEditor from './MarkdownFileEditor.jsx'
 
 // One freeform note page (spec: Note pages): its name, which can be
@@ -50,24 +50,20 @@ function Title({ page, onChanged, onDeleted }) {
         <EditButton label="Rename page" onClick={() => setMode('rename')} />
         <DeleteButton label="Delete page" onClick={() => setMode('confirm-delete')} />
         <span className="beat-tools page-order">
-          <button
-            type="button"
+          <MoveButton
+            direction="up"
+            label="Move page up in the list"
             title="Move up in the list"
-            aria-label="Move page up in the list"
             disabled={busy}
             onClick={() => save(() => window.ficBible.moveNotePage(page.id, 'up'), onChanged)}
-          >
-            ↑
-          </button>
-          <button
-            type="button"
+          />
+          <MoveButton
+            direction="down"
+            label="Move page down in the list"
             title="Move down in the list"
-            aria-label="Move page down in the list"
             disabled={busy}
             onClick={() => save(() => window.ficBible.moveNotePage(page.id, 'down'), onChanged)}
-          >
-            ↓
-          </button>
+          />
         </span>
       </div>
       {mode === 'confirm-delete' && (

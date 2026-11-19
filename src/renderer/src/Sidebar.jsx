@@ -448,7 +448,7 @@ function HiddenWorks({ works, selection, isExpanded, onToggle, ...props }) {
 // reads the library again, unfolds expandKeys and opens the new item.
 // onChanged runs after hiding or unhiding a work, so every screen reads
 // the library again.
-export default function Sidebar({ selection, onSelect, isExpanded, onToggle, refreshKey, onImported, onCreated, onChanged }) {
+export default function Sidebar({ selection, onSelect, isExpanded, onToggle, refreshKey, onImported, onCreated, onChanged, onCollapse }) {
   const tree = useQuery(() => window.ficBible.navigationTree(), `tree:${refreshKey}`)
   const info = useQuery(() => window.ficBible.libraryInfo(), 'library-info', refreshKey)
   const canCreate = info.ok === true && info.data.canChange
@@ -467,6 +467,9 @@ export default function Sidebar({ selection, onSelect, isExpanded, onToggle, ref
 
   return (
     <nav className="sidebar" aria-label="Works, characters, chapters and scenes">
+      <button type="button" className="sidebar-collapse" aria-label="Hide sidebar" title="Hide sidebar" onClick={onCollapse}>
+        <span aria-hidden="true">«</span>
+      </button>
       <LibraryBar refreshKey={refreshKey} onImported={onImported} />
       <Item kind="home" selection={selection} onSelect={onSelect} className="tree-home">
         <span className="tree-title">Home</span>

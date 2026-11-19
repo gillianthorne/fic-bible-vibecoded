@@ -14,7 +14,7 @@ import SearchResults from './SearchResults.jsx'
 import LineDictionary from './LineDictionary.jsx'
 import Timeline from './Timeline.jsx'
 import NotePage from './NotePage.jsx'
-import SidebarHandle, { useSidebarWidth } from './SidebarHandle.jsx'
+import SidebarHandle, { SidebarRail, useSidebarCollapsed, useSidebarWidth } from './SidebarHandle.jsx'
 
 // Each screen sits on a sheet of paper; the kind sets how wide it may grow.
 function sheetKind(selection) {
@@ -53,6 +53,7 @@ export default function App() {
   // read the library again.
   const [libraryVersion, setLibraryVersion] = useState(0)
   const [sidebarWidth, setSidebarWidth] = useSidebarWidth()
+  const [sidebarCollapsed, setSidebarCollapsed] = useSidebarCollapsed()
   const changed = () => setLibraryVersion((v) => v + 1)
   const { selection, history } = nav
 
@@ -173,17 +174,24 @@ export default function App() {
 
   return (
     <div className="layout" style={{ '--sidebar-width': `${sidebarWidth}px` }}>
-      <Sidebar
-        selection={selection}
-        onSelect={navigate}
-        isExpanded={isExpanded}
-        onToggle={toggle}
-        refreshKey={libraryVersion}
-        onImported={showImport}
-        onCreated={openCreated}
-        onChanged={changed}
-      />
-      <SidebarHandle width={sidebarWidth} onResize={setSidebarWidth} />
+      {sidebarCollapsed ? (
+        <SidebarRail onExpand={() => setSidebarCollapsed(false)} />
+      ) : (
+        <>
+          <Sidebar
+            selection={selection}
+            onSelect={navigate}
+            isExpanded={isExpanded}
+            onToggle={toggle}
+            refreshKey={libraryVersion}
+            onImported={showImport}
+            onCreated={openCreated}
+            onChanged={changed}
+            onCollapse={() => setSidebarCollapsed(true)}
+          />
+          <SidebarHandle width={sidebarWidth} onResize={setSidebarWidth} />
+        </>
+      )}
       <main className="main-pane" ref={mainPane}>
         <NavBar
           selection={selection}

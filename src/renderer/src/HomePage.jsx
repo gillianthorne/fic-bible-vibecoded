@@ -32,44 +32,46 @@ function FandomSection({ group, onOpenWork }) {
         <h2>{name}</h2>
         <span className="muted">{words(total)}</span>
       </div>
-      <table>
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Ship</th>
-            <th className="num">Chapters</th>
-            <th className="num">Words</th>
-            <th>Link</th>
-          </tr>
-        </thead>
-        <tbody>
-          {group.works.map((work) => (
-            <tr key={work.id} onClick={() => onOpenWork(work.id)}>
-              <td>
-                {/* No handler of its own: its click reaches the row's.
-                    The button makes the row reachable by keyboard. */}
-                <button type="button" className="link-button scene-link">
-                  {work.title}
-                </button>
-              </td>
-              <td>{work.ship ?? <span className="muted">{work.fandom ? 'Gen' : '—'}</span>}</td>
-              <td className="num">{work.chapterCount}</td>
-              <td className="num">
-                {number(work.wordcount)}
-                {work.uncounted > 0 && (
-                  <span className="file-error" title={`${work.uncounted} scene files couldn’t be read`}>
-                    {' '}
-                    *
-                  </span>
-                )}
-              </td>
-              <td onClick={(e) => e.stopPropagation()}>
-                {work.url ? <ExternalLink href={work.url}>Open ↗</ExternalLink> : <span className="muted">—</span>}
-              </td>
+      <div className="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Ship</th>
+              <th className="num">Chapters</th>
+              <th className="num">Words</th>
+              <th>Link</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {group.works.map((work) => (
+              <tr key={work.id} onClick={() => onOpenWork(work.id)}>
+                <td>
+                  {/* No handler of its own: its click reaches the row's.
+                      The button makes the row reachable by keyboard. */}
+                  <button type="button" className="link-button scene-link">
+                    {work.title}
+                  </button>
+                </td>
+                <td>{work.ship ?? <span className="muted">{work.fandom ? 'Gen' : '—'}</span>}</td>
+                <td className="num">{work.chapterCount}</td>
+                <td className="num">
+                  {number(work.wordcount)}
+                  {work.uncounted > 0 && (
+                    <span className="file-error" title={`${work.uncounted} scene files couldn’t be read`}>
+                      {' '}
+                      *
+                    </span>
+                  )}
+                </td>
+                <td onClick={(e) => e.stopPropagation()}>
+                  {work.url ? <ExternalLink href={work.url}>Open ↗</ExternalLink> : <span className="muted">—</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   )
 }

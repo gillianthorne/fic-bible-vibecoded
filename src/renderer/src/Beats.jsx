@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import {
   BEAT_STATUSES,
+  DeleteButton,
+  EditButton,
+  MoveButton,
   Field,
   FormActions,
   NumberInput,
@@ -117,30 +120,22 @@ function Beat({ beat, index, count, paragraphs, kinds, onChanged }) {
       </div>
       {mode === 'view' && (
         <div className="beat-tools">
-          <button
-            type="button"
-            aria-label={`Move ${label} up`}
+          <MoveButton
+            direction="up"
+            label={`Move ${label} up`}
             title="Move up"
             disabled={busy || index === 0}
             onClick={() => save(() => window.ficBible.moveBeat(beat.id, 'up'), onChanged)}
-          >
-            ↑
-          </button>
-          <button
-            type="button"
-            aria-label={`Move ${label} down`}
+          />
+          <MoveButton
+            direction="down"
+            label={`Move ${label} down`}
             title="Move down"
             disabled={busy || index === count - 1}
             onClick={() => save(() => window.ficBible.moveBeat(beat.id, 'down'), onChanged)}
-          >
-            ↓
-          </button>
-          <button type="button" aria-label={`Edit ${label}`} disabled={busy} onClick={() => setMode('edit')}>
-            Edit
-          </button>
-          <button type="button" aria-label={`Delete ${label}`} disabled={busy} onClick={() => setMode('confirm-delete')}>
-            Delete
-          </button>
+          />
+          <EditButton label={`Edit ${label}`} disabled={busy} onClick={() => setMode('edit')} />
+          <DeleteButton label={`Delete ${label}`} disabled={busy} onClick={() => setMode('confirm-delete')} />
         </div>
       )}
     </li>
