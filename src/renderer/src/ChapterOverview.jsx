@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
+import ExportButtons from './ExportButtons.jsx'
 import { number, Status, Wordcount } from './labels.jsx'
 import {
   CHAPTER_STATUSES,
@@ -169,6 +170,7 @@ export default function ChapterOverview({ chapterId, refreshKey, onChanged, onOp
           Read chapter →
         </button>
       )}
+      {scenes.length > 0 && <ExportButtons key={`export-${chapter.id}`} chapterId={chapter.id} />}
 
       <Notes
         key={`notes-${chapter.id}`}

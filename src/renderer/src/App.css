@@ -1281,6 +1281,7 @@ p.beat-summary {
   font-size: 15px;
 }
 
+.prose-export .link-button,
 .prose-viewer header .prose-export .link-button {
   display: inline;
   margin: 0 0 0 10px;
