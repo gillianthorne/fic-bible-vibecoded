@@ -28,7 +28,7 @@ const sameScreen = (a, b) => a.kind === b.kind && a.id === b.id && a.view === b.
 
 // selection is { kind: 'home' }, { kind: 'work', id }, { kind: 'chapter', id, view },
 // { kind: 'scene', id, view }, { kind: 'character', id },
-// { kind: 'search', id: <the search text> }, { kind: 'lines', id: <workId> },
+// { kind: 'search', id: <the search text>, view: <tab> }, { kind: 'lines', id: <workId> },
 // { kind: 'timeline', id: <workId> }, { kind: 'notePage', id }
 // or { kind: 'import', report } for the result of the last import.
 // view is 'prose' for the prose viewer (a scene's, or the whole chapter's),
@@ -81,6 +81,10 @@ export default function App() {
       sameScreen(prev.selection, next) ? prev : { selection: next, history: [...prev.history, prev.selection] }
     )
   }
+
+  // Swaps the open screen for another without a step in history, as
+  // switching tabs on the search results does.
+  const replace = (next) => setNav((prev) => ({ ...prev, selection: next }))
 
   const goBack = () =>
     history.length > 0 &&
@@ -161,6 +165,18 @@ export default function App() {
     navigate({ kind: 'character', id: characterId })
   }
 
+  // Opening a search result: its screen, with its work (and the group it
+  // sits in) opened in the sidebar.
+  const openSearchResult = (result, workId) => {
+    if (result.kind === 'character') return openCharacter(result.id, workId)
+    if (result.kind === 'chapter') return openChapter(result.id, workId)
+    if (result.kind === 'scene') return openScene(result.id, result.chapterId, workId)
+    setExpanded((prev) => ({ ...prev, [`work:${workId}`]: true, [`notes:${workId}`]: true }))
+    if (result.kind === 'line') navigate({ kind: 'lines', id: workId })
+    else if (result.kind === 'timeline') navigate({ kind: 'timeline', id: workId })
+    else if (result.kind === 'notePage') navigate({ kind: 'notePage', id: result.id })
+  }
+
   // After deleting a character or a note page, its screen is gone: show
   // its work, and forget the screen in history so Back can't return to it.
   const removed = (kind, id, workId) => {
@@ -203,7 +219,7 @@ export default function App() {
           onOpenChapter={openChapter}
           onOpenScene={openScene}
           onOpenCharacter={openCharacter}
-          onSearch={(query) => navigate({ kind: 'search', id: query })}
+          onSearch={(query, scope) => navigate({ kind: 'search', id: query, view: scope })}
         />
         <div className={`sheet sheet-${sheetKind(selection)}`}>
           {selection.kind === 'home' && <HomePage refreshKey={libraryVersion} onOpenWork={openWork} />}
@@ -217,7 +233,13 @@ export default function App() {
           )}
           {selection.kind === 'import' && <ImportReport report={selection.report} />}
           {selection.kind === 'search' && (
-            <SearchResults query={selection.id} refreshKey={libraryVersion} onOpenCharacter={openCharacter} />
+            <SearchResults
+              query={selection.id}
+              scope={selection.view}
+              refreshKey={libraryVersion}
+              onScope={(scope) => replace({ ...selection, view: scope })}
+              onOpen={openSearchResult}
+            />
           )}
           {selection.kind === 'lines' && (
             <LineDictionary

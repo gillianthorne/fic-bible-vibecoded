@@ -57,7 +57,7 @@ contextBridge.exposeInMainWorld('ficBible', {
   deleteNotePage: (pageId) => ipcRenderer.invoke('notePage:delete', pageId),
   notePage: (pageId) => ipcRenderer.invoke('notePage:read', pageId),
   saveNotePage: (pageId, text, baseHash) => ipcRenderer.invoke('notePage:save', pageId, text, baseHash),
-  searchCharacters: (query) => ipcRenderer.invoke('search:characters', query),
+  search: (query) => ipcRenderer.invoke('search:everything', query),
   suggestions: () => ipcRenderer.invoke('suggestions'),
   openLink: (url) => ipcRenderer.invoke('link:open', url)
 })
