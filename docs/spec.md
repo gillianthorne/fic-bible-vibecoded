@@ -37,7 +37,7 @@ The app must be packaged and installable on both platforms — running it from a
 
 Six views in v1, and five more in v2 (character profile, search, line dictionary, timeline, note pages). A persistent sidebar on the left, one main pane on the right.
 
-Above the main pane, a Back button returns to the previous screen, and a breadcrumb (Home / work / chapter / scene, Home / work / character, or Home / work / Lines, Timeline or a note page) opens any level above the current one. History lasts until the app closes. Beside the breadcrumb, a search box (v2) searches every work's characters: see Search.
+Above the main pane, a Back button returns to the previous screen, and a breadcrumb (Home / work / chapter / scene, Home / work / character, or Home / work / Lines, Timeline or a note page) opens any level above the current one. History lasts until the app closes. Beside the breadcrumb, a search box (v2) searches every work's characters, notes and chapters: see Search.
 
 ### 1. Navigation tree (sidebar, always visible)
 
@@ -109,11 +109,21 @@ Deleting a character deletes their row and fields; their notes file is left on d
 
 ### 8. Search (main pane, v2)
 
-Typing in the search box and pressing Enter lists every character, across every work that isn't hidden, that matches. A character matches when the search text appears, ignoring case, in their name, age, birthday, any field's label or value, or their notes file. "bagel" finds every bagel order written down anywhere.
+Typing in the search box and pressing Enter lists everything, across every work that isn't hidden, that holds the search text, ignoring case. "bagel" finds every bagel order written down anywhere.
 
-Results are grouped by work. Each shows the character's name and what matched: the field as "label: value", or a line of the notes around the match. Clicking a result opens that character's profile.
+Beside the box, a menu picks what to search: Everything (the default), Characters, Notes or Chapters. The results page has the same four as tabs, each with its count of results, so the choice can change there without typing the search again. The menu picks the tab the results open on.
 
-Notes files are read at search time, as wordcounts are. Nothing from them is copied into the database to make searching faster: an index of their text would be a field in both stores.
+What each searches:
+
+- **Characters**: a character's name, age, birthday, any field's label or value, and their notes file.
+- **Notes**: a line's text, type, speaker and notes; a timeline event's event, date and notes; a note page's name and its file.
+- **Chapters**: a chapter's title and notes; a scene's title, POV and notes, its beats (kind and content), its edit notes (kind and note), and its prose file.
+
+Statuses are not searched: a status word would match a whole column of rows.
+
+Results are grouped by work, in the sidebar's order, and under Everything by kind within each work. Each result is one character, line, timeline event, note page, chapter or scene, with its name highlighted where it matched and, beneath it, what else matched: a field as "label: value", or a line of a file around the match. A prose match is given by paragraph number (never line number); a scene shows its first three matching paragraphs and a count of the rest. Clicking a result opens its screen: a character's profile, the work's line dictionary or timeline, a note page, a chapter overview or a scene detail.
+
+Files (character notes, note pages, scene prose) are read at search time, as wordcounts are. Nothing from them is copied into the database to make searching faster: an index of their text would be a field in both stores. A file that can't be read is listed below the results rather than silently left out.
 
 ### 9. Line dictionary (main pane, v2)
 
@@ -150,7 +160,7 @@ The work's existing `notes` field, shown on the work overview, stays as it is: a
 
 ### What the app does not have in v1
 
-No search (character search added in v2: see Search), no settings UI beyond picking the library root, no themes, no keyboard-shortcut system, no onboarding, no splash screen. (The prose editor's own Ctrl-B, Ctrl-I and Ctrl-S work only inside the editor, and are not a shortcut system.)
+No search (added in v2: see Search), no settings UI beyond picking the library root, no themes, no keyboard-shortcut system, no onboarding, no splash screen. (The prose editor's own Ctrl-B, Ctrl-I and Ctrl-S work only inside the editor, and are not a shortcut system.)
 
 ## Storage model
 
@@ -396,7 +406,7 @@ Explicitly not in v1:
 3. Cross-reference views — every scene where a given beat kind or POV appears
 4. Synced database — keep the database in the library folder so a cloud folder (e.g. OneDrive) carries it between laptops with the prose. Replaces "the data is per-machine"; a cloud service can't merge a database, so the app would need to warn when it finds a conflict copy
 5. Edit notes — per-paragraph corrections and notes for revising, added from the prose viewer and worked through in the editor. Built: see Scene detail, Scene prose viewer, Scene prose editor, and the edit_notes table
-6. Characters — a profile per character in each work, with fixed fields, the author's own label-and-value fields, and freeform notes in a file, plus a search across every work's characters. Changes the work folder layout to `characters/`, `notes/` and `chapters/`. See Character profile, Search, Work folder layout, and the characters and character_fields tables
+6. Characters — a profile per character in each work, with fixed fields, the author's own label-and-value fields, and freeform notes in a file, plus a search across every work's characters (since widened to notes and chapters: see Search). Changes the work folder layout to `characters/`, `notes/` and `chapters/`. See Character profile, Search, Work folder layout, and the characters and character_fields tables
 7. Notes — per work: a line dictionary (lines tracked by type, speaker, chapter, scene and status, optionally tied to a beat), a timeline of in-fic events in story order, and freeform note pages as markdown files in the work's `notes/` folder. See Line dictionary, Timeline, Note pages, and the lines, timeline_events and note_pages tables
 
 Anything added in v2 must not break the two rules this model rests on: no field in both stores, and no stored wordcounts outside a snapshots table.
