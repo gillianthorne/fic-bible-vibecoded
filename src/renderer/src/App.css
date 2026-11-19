@@ -130,12 +130,12 @@ body {
 
 .sidebar .sidebar-collapse {
   position: absolute;
-  top: 8px;
-  right: 6px;
+  top: 4px;
+  right: 4px;
   width: auto;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 15px;
+  padding: 2px 8px 4px;
+  border-radius: 4px;
+  font-size: 24px;
   line-height: 1;
   color: var(--desk-muted);
 }
@@ -146,14 +146,14 @@ body {
 }
 
 .sidebar-rail {
-  flex: 0 0 22px;
-  padding: 10px 0 0;
+  flex: 0 0 32px;
+  padding: 6px 0 0;
   border: 0;
   border-right: 2px solid var(--gold);
   background: var(--desk-deep);
   color: var(--desk-muted);
   font: inherit;
-  font-size: 15px;
+  font-size: 24px;
   line-height: 1;
   cursor: pointer;
   display: flex;
@@ -342,7 +342,7 @@ h2 {
 
 .library-bar {
   margin: 0 0 12px;
-  padding: 0 24px 12px 8px;
+  padding: 0 40px 12px 8px;
   border-bottom: 1px solid var(--desk-line);
 }
 
