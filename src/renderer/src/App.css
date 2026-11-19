@@ -2496,33 +2496,46 @@ select.edit-note-status-fixed {
   padding: 10px 6px 3em;
 }
 
-/* Search: a box at the right of the bar above the sheet, and the results
-   screen, grouped by work. */
+/* Search: one field at the right of the bar above the sheet, the scope
+   menu and the text joined, with a short rule between them; and the
+   results screen, grouped by work. */
 .nav-search {
   display: flex;
-  gap: 4px;
+  align-items: center;
   margin-left: auto;
+  border: 1px solid var(--rule-strong);
+  border-radius: 4px;
+  background: var(--paper-sunk);
+}
+
+.nav-search:focus-within {
+  border-color: var(--gold-deep);
 }
 
 .nav-search select,
 .nav-search input {
   padding: 4px 8px;
-  border: 1px solid var(--rule-strong);
-  border-radius: 4px;
-  background: var(--paper-sunk);
+  border: 0;
+  background: none;
   color: var(--ink);
   font: inherit;
   font-size: 13px;
+  outline: none;
+}
+
+.nav-search select {
+  cursor: pointer;
 }
 
 .nav-search input {
   width: 14em;
 }
 
-.nav-search select:focus,
-.nav-search input:focus {
-  border-color: var(--gold-deep);
-  outline: none;
+.nav-search-divider {
+  flex: none;
+  width: 1px;
+  height: 14px;
+  background: var(--rule-strong);
 }
 
 .search-results header p {

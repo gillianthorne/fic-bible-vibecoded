@@ -139,6 +139,7 @@ export default function NavBar({
             </option>
           ))}
         </select>
+        <span className="nav-search-divider" aria-hidden="true" />
         <input
           type="search"
           value={search}
