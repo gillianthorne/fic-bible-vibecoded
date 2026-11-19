@@ -12,7 +12,7 @@ import {
 } from './queries.js'
 import { checkLink } from './links.js'
 import { buildChapterExport, writeExport } from './export.js'
-import { searchCharacters } from './search.js'
+import { search } from './search.js'
 import {
   createLine,
   createTimelineEvent,
@@ -293,12 +293,12 @@ export function createHandlers(open, library = null, links = null, exporter = nu
         return saveNotePage(db, libraryRoot, pageId, text, baseHash)
       }),
 
-    // Every work's characters whose name, age, birthday, fields or notes
-    // file hold the text, ignoring case. Reads only.
-    'search:characters': (query) =>
+    // Every work's characters, notes and chapters that hold the text,
+    // ignoring case (spec: Search). Reads only.
+    'search:everything': (query) =>
       respond(() => {
         const { db, libraryRoot } = open()
-        return searchCharacters(db, libraryRoot, query)
+        return search(db, libraryRoot, query)
       }),
 
     // A character's notes file, for the profile's editor. data is null for
