@@ -11,6 +11,7 @@ import {
   workOverview
 } from './queries.js'
 import { checkLink } from './links.js'
+import { buildChapterExport, writeExport } from './export.js'
 import { searchCharacters } from './search.js'
 import {
   createLine,
@@ -103,8 +104,27 @@ function requireId(value, name) {
 
 // `links` is how a link reaches the browser, injected so tests can fake
 // it: { openExternal(url) -> Promise }. null means links can't be opened.
-export function createHandlers(open, library = null, links = null) {
+//
+// `exporter` is the save dialog for exports, injected the same way:
+// { chooseFile(defaultName, format) -> Promise<absolute path | null if
+// cancelled> }. null means exports can't be saved.
+export function createHandlers(open, library = null, links = null, exporter = null) {
   return {
+    // A whole chapter to a new .html or .md file the author picks. data is
+    // the path written, or null if they cancelled or the chapter doesn't
+    // exist. Never writes over a file or inside the library (export.js).
+    'chapter:export': (chapterId, format) =>
+      respondAsync(async () => {
+        const id = requireId(chapterId, 'chapterId')
+        if (!exporter) throw new Error('Exports can’t be saved here.')
+        const { db, libraryRoot } = open()
+        const built = buildChapterExport(db, libraryRoot, id, format)
+        if (!built) return null
+        const file = await exporter.chooseFile(built.filename, format)
+        if (!file) return null
+        return writeExport(file, built.text, format, libraryRoot)
+      }),
+
     // Hands an http(s) link to the default browser. Anything else is
     // refused here, in the main process, whatever the renderer sent.
     'link:open': (url) =>

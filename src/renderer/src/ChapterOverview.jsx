@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
+import ExportButtons from './ExportButtons.jsx'
 import { number, Status, Wordcount } from './labels.jsx'
 import {
   CHAPTER_STATUSES,
@@ -110,7 +111,8 @@ function ChapterForm({ chapter, onDone, onCancel }) {
   )
 }
 
-function ChapterHeader({ chapter, onChanged }) {
+// actions sit at the right end of the title row (the Export button).
+function ChapterHeader({ chapter, onChanged, actions }) {
   const [editing, setEditing] = useState(false)
   return (
     <header>
@@ -131,6 +133,7 @@ function ChapterHeader({ chapter, onChanged }) {
               Chapter {chapter.number}: {chapter.title}
             </h1>
             <EditButton label="Edit chapter" onClick={() => setEditing(true)} />
+            {actions && <div className="title-row-actions">{actions}</div>}
           </div>
           <p>
             <Status value={chapter.status} />
@@ -163,7 +166,12 @@ export default function ChapterOverview({ chapterId, refreshKey, onChanged, onOp
   const { chapter, scenes, wordcount, uncounted } = result.data
   return (
     <article className="chapter-overview">
-      <ChapterHeader key={chapter.id} chapter={chapter} onChanged={onChanged} />
+      <ChapterHeader
+        key={chapter.id}
+        chapter={chapter}
+        onChanged={onChanged}
+        actions={scenes.length > 0 && <ExportButtons key={`export-${chapter.id}`} chapterId={chapter.id} />}
+      />
       {scenes.length > 0 && (
         <button type="button" className="link-button view-prose" onClick={onOpenProse}>
           Read chapter →

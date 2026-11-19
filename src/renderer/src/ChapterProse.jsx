@@ -2,6 +2,7 @@ import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
 import { number } from './labels.jsx'
 import { Body, Flip } from './ProseViewer.jsx'
+import ExportButtons from './ExportButtons.jsx'
 
 // Read-only view of a whole chapter: every scene's prose in order, on one
 // page, to read straight through. Each scene is numbered by paragraph from
@@ -48,7 +49,10 @@ export default function ChapterProse({ chapterId, onBack, onOpenScene, onOpenCha
   return (
     <article className="prose-viewer chapter-prose">
       <header>
-        {back}
+        <div className="prose-header-top">
+          {back}
+          {chapter.scenes.length > 0 && <ExportButtons chapterId={chapter.id} />}
+        </div>
         <p className="muted">{chapter.work.title}</p>
         <h1>{chapterLabel(chapter)}</h1>
         <p className="muted">

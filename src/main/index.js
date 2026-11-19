@@ -145,7 +145,23 @@ const library = testLibraryEnv
 // refused anything but http(s).
 const links = { openExternal: (url) => shell.openExternal(url) }
 
-for (const [channel, handler] of Object.entries(createHandlers(openLibrary, library, links))) {
+// The save dialog for chapter exports, starting in Documents. The handler
+// refuses an existing file or a path inside the library, whatever is picked.
+const exporter = {
+  chooseFile: async (defaultName, format) => {
+    const result = await dialog.showSaveDialog(BrowserWindow.getFocusedWindow(), {
+      title: format === 'html' ? 'Export chapter as HTML' : 'Export chapter as Markdown',
+      defaultPath: path.join(app.getPath('documents'), defaultName),
+      filters:
+        format === 'html'
+          ? [{ name: 'HTML', extensions: ['html'] }]
+          : [{ name: 'Markdown', extensions: ['md'] }]
+    })
+    return result.canceled ? null : result.filePath || null
+  }
+}
+
+for (const [channel, handler] of Object.entries(createHandlers(openLibrary, library, links, exporter))) {
   ipcMain.handle(channel, (_event, ...args) => handler(...args))
 }
 
