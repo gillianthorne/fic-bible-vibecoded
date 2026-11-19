@@ -1275,6 +1275,22 @@ p.beat-summary {
   margin: 0;
 }
 
+/* Export links under the jump list, with where the file went below. */
+.prose-export {
+  margin-top: 10px;
+  font-size: 15px;
+}
+
+.prose-viewer header .prose-export .link-button {
+  display: inline;
+  margin: 0 0 0 10px;
+}
+
+.prose-export p {
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+}
+
 .chapter-prose-scene {
   scroll-margin-top: 16px;
 }

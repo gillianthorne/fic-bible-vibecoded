@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useQuery } from './useQuery.js'
 import { QueryError } from './QueryError.jsx'
 import { number } from './labels.jsx'
@@ -14,6 +15,36 @@ const count = (n, noun) => `${number(n)} ${noun}${n === 1 ? '' : 's'}`
 const anchor = (sceneId) => `chapter-prose-scene-${sceneId}`
 
 const chapterLabel = (c) => `Chapter ${c.number}: ${c.title}`
+
+// Export .html (for AO3) and Export .md (for editors): each asks where to
+// save, then says where it went or why it didn't.
+function ExportButtons({ chapterId }) {
+  const [status, setStatus] = useState(null)
+  const [busy, setBusy] = useState(false)
+
+  async function run(format) {
+    setBusy(true)
+    setStatus(null)
+    const result = await window.ficBible.exportChapter(chapterId, format)
+    setBusy(false)
+    if (result.ok === false) setStatus({ error: result.error })
+    else if (result.data) setStatus({ saved: result.data })
+  }
+
+  return (
+    <div className="prose-export">
+      <span className="muted">Export:</span>
+      <button type="button" className="link-button" disabled={busy} onClick={() => run('html')}>
+        .html
+      </button>
+      <button type="button" className="link-button" disabled={busy} onClick={() => run('md')}>
+        .md
+      </button>
+      {status?.saved && <p className="muted">Saved to {status.saved}</p>}
+      {status?.error && <p className="file-error">{status.error}</p>}
+    </div>
+  )
+}
 
 function jumpTo(sceneId) {
   document.getElementById(anchor(sceneId))?.scrollIntoView({ block: 'start' })
@@ -69,6 +100,7 @@ export default function ChapterProse({ chapterId, onBack, onOpenScene, onOpenCha
             </ol>
           </nav>
         )}
+        {chapter.scenes.length > 0 && <ExportButtons chapterId={chapter.id} />}
         {flip}
       </header>
 
