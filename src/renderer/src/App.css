@@ -1275,20 +1275,71 @@ p.beat-summary {
   margin: 0;
 }
 
-/* Export links under the jump list, with where the file went below. */
-.prose-export {
-  margin-top: 10px;
-  font-size: 15px;
+/* Export: a gold button opening a menu of formats, with where the file
+   went below it. On the chapter overview and the chapter prose page. */
+.chapter-export {
+  position: relative;
+  width: fit-content;
+  margin-top: 14px;
 }
 
-.prose-export .link-button,
-.prose-viewer header .prose-export .link-button {
-  display: inline;
-  margin: 0 0 0 10px;
+.prose-viewer header .chapter-export {
+  margin: 14px auto 0;
 }
 
-.prose-export p {
+.export-toggle {
+  padding: 5px 14px;
+  border: 1px solid var(--gold-deep);
+  border-radius: 4px;
+  background: var(--primary);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.export-toggle:hover:not(:disabled),
+.export-toggle[aria-expanded='true'] {
+  background: var(--primary-hover);
+}
+
+.export-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 10;
+  min-width: max-content;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  border: 1px solid var(--rule-strong);
+  border-radius: 4px;
+  background: var(--paper-sunk);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
+  text-align: left;
+}
+
+.export-menu button {
+  display: block;
+  width: 100%;
+  padding: 6px 14px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.export-menu button:hover,
+.export-menu button:focus-visible {
+  background: var(--paper-shade);
+}
+
+.chapter-export p,
+.prose-viewer header .chapter-export p {
   margin-top: 6px;
+  font-size: 14px;
   overflow-wrap: anywhere;
 }
 
