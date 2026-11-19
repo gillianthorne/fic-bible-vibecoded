@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 
-// An Export button, on the chapter overview and the chapter prose page,
-// opening a menu of formats. Picking one asks where to save, then says
-// where it went or why it didn't. A new format is one more entry here
+// An Export button, at the top right of the chapter overview and the
+// chapter prose page, opening a menu of formats. Picking one asks where to
+// save, then says where it went or why it didn't, in a box under the
+// button that a click anywhere else closes. A new format is one more entry here
 // (and in FORMATS in src/main/export.js).
 const FORMATS = [
   { format: 'html', label: 'HTML', hint: 'for posting on AO3' },
@@ -15,18 +16,23 @@ export default function ExportButtons({ chapterId }) {
   const [busy, setBusy] = useState(false)
   const ref = useRef(null)
 
-  // Closes on a click anywhere else, or Escape.
+  // The menu or the result box closes on a click anywhere else, or Escape.
+  const shown = open || status !== null
   useEffect(() => {
-    if (!open) return
-    const onDown = (e) => ref.current?.contains(e.target) || setOpen(false)
-    const onKey = (e) => e.key === 'Escape' && setOpen(false)
+    if (!shown) return
+    const close = () => {
+      setOpen(false)
+      setStatus(null)
+    }
+    const onDown = (e) => ref.current?.contains(e.target) || close()
+    const onKey = (e) => e.key === 'Escape' && close()
     document.addEventListener('mousedown', onDown)
     document.addEventListener('keydown', onKey)
     return () => {
       document.removeEventListener('mousedown', onDown)
       document.removeEventListener('keydown', onKey)
     }
-  }, [open])
+  }, [shown])
 
   async function run(format) {
     setOpen(false)
@@ -46,7 +52,10 @@ export default function ExportButtons({ chapterId }) {
         aria-haspopup="menu"
         aria-expanded={open}
         disabled={busy}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          setStatus(null)
+          setOpen((o) => !o)
+        }}
       >
         {busy ? 'Exporting…' : 'Export'} <span aria-hidden="true">▾</span>
       </button>
@@ -61,8 +70,11 @@ export default function ExportButtons({ chapterId }) {
           ))}
         </ul>
       )}
-      {status?.saved && <p className="muted">Saved to {status.saved}</p>}
-      {status?.error && <p className="file-error">{status.error}</p>}
+      {status && (
+        <p className={status.error ? 'export-status file-error' : 'export-status'} role="status">
+          {status.error ?? `Saved to ${status.saved}`}
+        </p>
+      )}
     </div>
   )
 }

@@ -49,7 +49,10 @@ export default function ChapterProse({ chapterId, onBack, onOpenScene, onOpenCha
   return (
     <article className="prose-viewer chapter-prose">
       <header>
-        {back}
+        <div className="prose-header-top">
+          {back}
+          {chapter.scenes.length > 0 && <ExportButtons chapterId={chapter.id} />}
+        </div>
         <p className="muted">{chapter.work.title}</p>
         <h1>{chapterLabel(chapter)}</h1>
         <p className="muted">
@@ -70,7 +73,6 @@ export default function ChapterProse({ chapterId, onBack, onOpenScene, onOpenCha
             </ol>
           </nav>
         )}
-        {chapter.scenes.length > 0 && <ExportButtons chapterId={chapter.id} />}
         {flip}
       </header>
 

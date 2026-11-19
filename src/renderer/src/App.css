@@ -1275,16 +1275,29 @@ p.beat-summary {
   margin: 0;
 }
 
-/* Export: an outlined button opening a menu of formats, with where the file
-   went below it. On the chapter overview and the chapter prose page. */
+/* Export: an outlined button at the top right opening a menu of formats,
+   with where the file went in a box below it. On the chapter overview and
+   the chapter prose page. */
 .chapter-export {
   position: relative;
-  width: fit-content;
-  margin-top: 14px;
 }
 
-.prose-viewer header .chapter-export {
-  margin: 14px auto 0;
+/* Chapter overview: at the right end of the title row. */
+.title-row-actions {
+  margin-left: auto;
+}
+
+/* Chapter prose: on the back link's line, at the right. */
+.prose-header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.prose-viewer header .prose-header-top .link-button {
+  margin-bottom: 0;
 }
 
 .export-toggle {
@@ -1306,7 +1319,7 @@ p.beat-summary {
 .export-menu {
   position: absolute;
   top: calc(100% + 4px);
-  left: 0;
+  right: 0;
   z-index: 10;
   min-width: max-content;
   margin: 0;
@@ -1336,10 +1349,23 @@ p.beat-summary {
   background: var(--paper-shade);
 }
 
-.chapter-export p,
-.prose-viewer header .chapter-export p {
-  margin-top: 6px;
+.chapter-export .export-status,
+.prose-viewer header .chapter-export .export-status {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 10;
+  width: max-content;
+  max-width: min(420px, 80vw);
+  margin: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 4px;
+  background: var(--paper-sunk);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
   font-size: 14px;
+  font-weight: normal;
+  text-align: left;
   overflow-wrap: anywhere;
 }
 
