@@ -67,6 +67,8 @@ Below the scenes, every edit note in the chapter (v2), grouped by kind — ignor
 
 A Read chapter link opens the whole chapter's prose: every scene in order on one page, each numbered by paragraph from 1, with a jump list to each scene and links to the previous and next chapter.
 
+The chapter's prose page has two export buttons (v2), Export .html and Export .md, each writing the whole chapter, every scene in order, to a new file the author picks in a save dialog. Scene titles are left out, and scenes are separated by `~*~`. The .html is for posting on AO3: a fragment to paste into AO3's HTML box, with no `<html>`, `<head>` or title, just paragraphs (line breaks within one kept), bold, italic, strikethrough, headings, quotes and lists, with anything else, raw HTML included, shown as typed. A scene break inside a scene comes out as `~*~` too. The .md is for sending to someone to edit: the chapter's number and title as a heading, then each scene's text as written. A scene whose file can't be read stops the export, and the app says which, rather than leaving a gap.
+
 ### 4. Scene prose viewer (main pane)
 
 Read-only display of the scene's markdown file **with paragraph numbers shown**. This exists specifically so a paragraph reference can be located, and so a beat can be pointed at a real passage. No editing, no formatting toolbar: editing is a separate screen, opened from an Edit prose button here and on the scene detail.
@@ -345,6 +347,7 @@ The v1 write boundary, stated precisely because it is easy to widen by accident:
 - The app **may create** a new empty folder when a work or chapter is created, and a new empty scene file when a scene is created. Each is named as import expects (a work's folder is its title; a chapter is `##-title`; a scene is `##-title.md`) and always comes after the existing ones. If the name is already taken on disk, nothing is created.
 - In v2, creating a work also creates its three empty folders, `characters/`, `notes/` and `chapters/`, and a new chapter's folder goes in `chapters/`. Creating a character creates a new empty notes file, `<name>.md`, in the work's `characters/` folder, creating that folder first if it is missing. If the file's name is already taken on disk, or the name can't be used as a filename on both Linux and Windows, nothing is created and the app says why.
 - Creating a note page creates a new empty file, `<name>.md`, in the work's `notes/` folder, creating that folder first if it is missing, under the same rules as a character's notes file.
+- Exporting a chapter (v2) writes one new file, at the path the author picks in a save dialog. It is never written over an existing file, and never anywhere inside the library folder, so an export can't touch the prose or be imported back as prose. If either is asked for, nothing is written and the app says why
 - The app **must never write to a file that has content**, with three exceptions, added in v2: saving a scene from the prose editor, saving a character's notes from their profile, and saving a note page
 
 Those three saves are the only writes to an existing file, and all are guarded the same way:
@@ -382,7 +385,7 @@ Explicitly not in v1:
 - Editing prose in the app (added in v2: see Scene prose editor)
 - Wordcount history or progress-over-time
 - Cross-reference search across beats
-- Chapter file assembly for posting
+- Chapter file assembly for posting (added in v2 as export: see Chapter overview, and File handling)
 - Any import from the existing spreadsheet beyond a one-off
 - Accounts, sync, sharing, or anything multi-user
 
