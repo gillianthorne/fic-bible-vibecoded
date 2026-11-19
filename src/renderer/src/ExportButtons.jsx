@@ -42,7 +42,7 @@ export default function ExportButtons({ chapterId }) {
     <div className="chapter-export" ref={ref}>
       <button
         type="button"
-        className="button-primary export-toggle"
+        className="export-toggle"
         aria-haspopup="menu"
         aria-expanded={open}
         disabled={busy}

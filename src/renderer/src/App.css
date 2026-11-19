@@ -1275,7 +1275,7 @@ p.beat-summary {
   margin: 0;
 }
 
-/* Export: a gold button opening a menu of formats, with where the file
+/* Export: an outlined button opening a menu of formats, with where the file
    went below it. On the chapter overview and the chapter prose page. */
 .chapter-export {
   position: relative;
@@ -1288,19 +1288,19 @@ p.beat-summary {
 }
 
 .export-toggle {
-  padding: 5px 14px;
-  border: 1px solid var(--gold-deep);
+  padding: 4px 12px;
+  border: 1px solid var(--rule-strong);
   border-radius: 4px;
-  background: var(--primary);
+  background: var(--paper-sunk);
   color: var(--ink);
   font: inherit;
-  font-weight: 600;
   cursor: pointer;
 }
 
 .export-toggle:hover:not(:disabled),
 .export-toggle[aria-expanded='true'] {
-  background: var(--primary-hover);
+  border-color: var(--gold-deep);
+  background: var(--paper-shade);
 }
 
 .export-menu {
