@@ -2529,15 +2529,17 @@ select.edit-note-status-fixed {
   outline: none;
 }
 
-/* The menu's text in the link colour, a deep gold-brown; its arrow is drawn here, in
-   the divider's colour (--rule-strong, written out since a data URL can't
-   read a variable), since the native arrow takes the text's colour. */
+/* The menu's text bold, in the link colour (a deep gold-brown). Its arrow
+   is drawn here, in the divider's colour (--rule-strong, written out since
+   a data URL can't read a variable), since the native arrow takes the
+   text's colour. */
 .nav-search select {
   appearance: none;
   padding-right: 22px;
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23c7b08e' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
     no-repeat right 6px center;
   color: var(--link);
+  font-weight: 600;
   cursor: pointer;
 }
 
