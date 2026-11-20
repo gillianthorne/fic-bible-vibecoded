@@ -274,17 +274,40 @@ Include these edge cases deliberately:
 
 ## Screenshots
 
+All screenshots show the seeded test library (`npm run dev:test`).
+
+![The home page: total wordcount and every work grouped by fandom](docs/screenshots/home.png)
+
+*The home page: the total wordcount, and every work grouped by fandom with
+its chapter count and wordcount. The sidebar on the left lists every work's
+characters, notes and chapters.*
+
+![The work overview: a work's notes and its chapters with wordcount, status and link](docs/screenshots/work-overview.png)
+
+*The work overview: the work's notes, and each chapter with its wordcount,
+status and posted link.*
+
 ![The chapter overview: every scene in a chapter with its POV, status, wordcount and beats](docs/screenshots/chapter-overview.png)
 
-*The chapter overview: every scene with its POV, status, wordcount and beat counts.*
+*The chapter overview: every scene with its POV, status, wordcount and beat
+counts by status, plus the chapter total, Export menu and edit notes.*
 
 ![The scene detail: a scene's fields and its beats, editable in place](docs/screenshots/scene-detail.png)
 
-*The scene detail: the scene's fields and its beats, editable in place.*
+*The scene detail: the scene's POV, status, position and wordcount, and its
+beats with a progress bar for how many have landed. Beats can be reordered,
+edited and deleted in place.*
 
-![The prose editor with paragraph numbers and edit-note badges](docs/screenshots/prose-editor.png)
+![The prose viewer: the scene's text with paragraph numbers](docs/screenshots/prose-viewer.png)
 
-*The prose editor, with paragraph numbers and edit-note badges in the margin.*
+*The prose viewer: the scene's text with paragraph numbers, which beats and
+edit notes point to, and links to the previous and next scene.*
+
+![The prose editor: markdown source with a formatting toolbar and paragraph numbers](docs/screenshots/prose-editor.png)
+
+*The prose editor: the markdown source styled as it reads, with a formatting
+toolbar, paragraph numbers, the scene's edit notes alongside, and an
+explicit Save.*
 
 ## Future Improvements
 
